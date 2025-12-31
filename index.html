@@ -2,27 +2,31 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>CBT Online</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>CBT Sederhana</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="card">
-  <h2>CBT Online</h2>
+<h2>CBT TEST</h2>
 
-  <input id="nama" placeholder="Nama siswa">
-  <input id="token" placeholder="Token ujian">
+<label>Nama</label>
+<input id="nama" placeholder="Nama siswa">
 
-  <button onclick="start()">Mulai</button>
+<label>Token</label>
+<input id="token" placeholder="Token ujian">
 
-  <div id="soal"></div>
+<hr>
 
-  <button id="kirim" onclick="submit()" style="display:none">
-    Kirim Jawaban
-  </button>
+<p>Jawaban (contoh 5 soal):</p>
+<input class="jwb" placeholder="Soal 1 (A/B/C/D)">
+<input class="jwb" placeholder="Soal 2">
+<input class="jwb" placeholder="Soal 3">
+<input class="jwb" placeholder="Soal 4">
+<input class="jwb" placeholder="Soal 5">
 
-  <pre id="log"></pre>
-</div>
+<button onclick="kirim()">KIRIM</button>
+
+<pre id="log"></pre>
 
 <script src="script.js"></script>
 </body>
