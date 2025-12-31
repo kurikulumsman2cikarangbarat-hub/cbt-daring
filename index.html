@@ -1,53 +1,29 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>CBT Online – SMAN 2 Cikarang Barat</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>CBT Online</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div class="app">
+<div class="card">
+  <h2>CBT Online</h2>
 
-  <!-- LOGIN -->
-  <section id="loginView" class="card active">
-    <h1>CBT Online</h1>
-    <p class="subtitle">SMAN 2 Cikarang Barat</p>
+  <input id="nama" placeholder="Nama siswa">
+  <input id="token" placeholder="Token ujian">
 
-    <input id="nama" placeholder="Nama Lengkap">
-    <input id="token" placeholder="Token Ujian">
+  <button onclick="start()">Mulai</button>
 
-    <button onclick="start()">Mulai Ujian</button>
-    <p id="loginError" class="error"></p>
-  </section>
+  <div id="soal"></div>
 
-  <!-- UJIAN -->
-  <section id="examView" class="card">
-    <header>
-      <span id="counter">Soal 1</span>
-      <span id="timer">00:00</span>
-    </header>
+  <button id="kirim" onclick="submit()" style="display:none">
+    Kirim Jawaban
+  </button>
 
-    <div id="soal"></div>
-    <div id="opsi"></div>
-
-    <footer>
-      <button onclick="prev()">◀</button>
-      <button onclick="next()">▶</button>
-      <button class="submit" onclick="submit()">Kirim</button>
-    </footer>
-  </section>
-
-  <!-- HASIL -->
-  <section id="resultView" class="card">
-    <h2>Ujian Selesai</h2>
-    <p id="resultText"></p>
-    <button onclick="location.reload()">Keluar</button>
-  </section>
-
+  <pre id="log"></pre>
 </div>
 
-<script src="app.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
