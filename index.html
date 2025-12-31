@@ -1,245 +1,48 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🛠️ Database Admin & Checker - SMAN 2 Cikarang Barat</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #2563eb;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --info: #8b5cf6;
-            --dark: #1f2937;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background: #f3f4f6; min-height: 100vh; padding: 20px; color: var(--dark); }
-        .container { max-width: 1200px; margin: 0 auto; }
-
-        /* Header */
-        .header { text-align: center; margin-bottom: 30px; padding: 30px; background: white; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .header h1 { color: var(--primary); margin-bottom: 10px; }
-        .worker-url { background: #eff6ff; padding: 10px 20px; border-radius: 30px; color: var(--primary); font-family: monospace; font-weight: bold; font-size: 0.9rem; border: 1px solid #dbeafe; }
-
-        /* Status Cards */
-        .status-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; border-bottom: 1px solid #f3f4f6; padding-bottom: 10px; }
-        .card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; }
-        
-        .bg-conn { background: var(--primary); }
-        .bg-data { background: var(--info); }
-        .bg-perf { background: var(--success); }
-
-        /* Indicators */
-        .status-indicator { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; }
-        .status-loading { background: #e5e7eb; color: #6b7280; }
-        .status-ready { background: #d1fae5; color: #065f46; }
-        .status-error { background: #fee2e2; color: #991b1b; }
-
-        .metric-box { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .metric { background: #f9fafb; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #f3f4f6; }
-        .metric-val { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
-        .metric-label { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; }
-
-        /* Admin Toolbox */
-        .admin-toolbox { background: white; border-radius: 15px; padding: 20px; margin-bottom: 30px; }
-        .tool-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
-        .tool-btn { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer; transition: 0.2s; text-decoration: none; color: var(--dark); font-size: 0.9rem; }
-        .tool-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
-
-        /* Logs */
-        .log-container { background: #1e293b; color: #38bdf8; padding: 20px; border-radius: 15px; font-family: 'Courier New', monospace; font-size: 0.85rem; max-height: 300px; overflow-y: auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
-        .log-entry { margin-bottom: 5px; border-left: 2px solid #334155; padding-left: 10px; }
-        .log-err { color: #f87171; }
-        .log-succ { color: #4ade80; }
-
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-        @media (max-width: 768px) { .status-cards { grid-template-columns: 1fr; } }
-    </style>
+<meta charset="UTF-8">
+<title>Worker Diagnostic</title>
+<style>
+body { font-family: system-ui; background:#f4f6f8; padding:30px }
+.card { background:#fff; padding:20px; border-radius:10px; max-width:500px }
+button { padding:10px 15px; margin-top:10px }
+pre { background:#111; color:#0f0; padding:10px; border-radius:8px }
+</style>
 </head>
 <body>
 
-<div class="container">
-    <header class="header">
-        <h1><i class="fas fa-tools"></i> Database Admin Hub</h1>
-        <p>SMAN 2 Cikarang Barat - Monitoring System</p>
-        <div class="worker-url" id="display-url">Memuat Worker URL...</div>
-    </header>
-
-    <section class="admin-toolbox">
-        <h3 style="display:flex; align-items:center; gap:10px;">
-            <i class="fas fa-toolbox" style="color:var(--primary)"></i> Quick Admin Tools
-        </h3>
-        <div class="tool-grid">
-            <a href="#" onclick="runFullCheck()" class="tool-btn"><i class="fas fa-sync"></i> Refresh All Data</a>
-            <a href="https://app.nocodb.com/" target="_blank" class="tool-btn"><i class="fas fa-external-link-alt"></i> Open NocoDB Panel</a>
-            <a href="#" onclick="viewRaw('data')" class="tool-btn"><i class="fas fa-users"></i> View Raw Guru</a>
-            <a href="#" onclick="viewRaw('bank_soal')" class="tool-btn"><i class="fas fa-file-invoice"></i> View Raw Soal</a>
-        </div>
-    </section>
-
-    <div class="status-cards">
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon bg-conn"><i class="fas fa-network-wired"></i></div>
-                <div>
-                    <div style="font-weight:bold">Worker Connection</div>
-                    <div style="font-size:0.8rem; color:#6b7280">Cloudflare Edge Status</div>
-                </div>
-            </div>
-            <div id="conn-status" class="status-indicator status-loading">
-                <i class="fas fa-spinner spin"></i> <span>Checking...</span>
-            </div>
-            <div class="metric-box">
-                <div class="metric">
-                    <div class="metric-val" id="lat-val">-</div>
-                    <div class="metric-label">Latency</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-val" id="api-val">OK</div>
-                    <div class="metric-label">API</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-val" id="cors-val">YES</div>
-                    <div class="metric-label">CORS</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon bg-data"><i class="fas fa-database"></i></div>
-                <div>
-                    <div style="font-weight:bold">Data Statistics</div>
-                    <div style="font-size:0.8rem; color:#6b7280">NocoDB Row Counts</div>
-                </div>
-            </div>
-            <div id="data-status" class="status-indicator status-loading">
-                <i class="fas fa-spinner spin"></i> <span>Counting...</span>
-            </div>
-            <div class="metric-box">
-                <div class="metric">
-                    <div class="metric-val" id="count-guru">0</div>
-                    <div class="metric-label">Guru</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-val" id="count-ujian">0</div>
-                    <div class="metric-label">Ujian</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-val" id="count-soal">0</div>
-                    <div class="metric-label">Soal</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div style="margin-bottom:10px; font-weight:bold; display:flex; align-items:center; gap:10px;">
-        <i class="fas fa-terminal"></i> Live Diagnostic Logs
-    </div>
-    <div class="log-container" id="log-console">
-        <div class="log-entry">System ready. Click "Refresh All Data" to begin.</div>
-    </div>
-
-    <footer style="text-align:center; margin-top:30px; color:#9ca3af; font-size:0.8rem;">
-        &copy; 2025 SMAN 2 Cikarang Barat | Database Environment: <span id="env-tag">Production</span>
-    </footer>
+<div class="card">
+  <h2>Worker Connection Test</h2>
+  <button onclick="testHealth()">Test Health</button>
+  <button onclick="testStats()">Test Stats</button>
+  <pre id="out">Idle...</pre>
 </div>
 
 <script>
-    const CONFIG = {
-        WORKER_URL: 'https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev',
-        ENDPOINTS: ['data', 'ujian', 'bank_soal']
-    };
+const WORKER = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
 
-    document.getElementById('display-url').textContent = CONFIG.WORKER_URL;
+async function testHealth() {
+  out.textContent = "Testing /api/health ...";
+  try {
+    const r = await fetch(`${WORKER}/api/health`);
+    out.textContent = JSON.stringify(await r.json(), null, 2);
+  } catch (e) {
+    out.textContent = e.toString();
+  }
+}
 
-    function addLog(msg, type = '') {
-        const console = document.getElementById('log-console');
-        const time = new Date().toLocaleTimeString();
-        const div = document.createElement('div');
-        div.className = `log-entry ${type === 'err' ? 'log-err' : (type === 'succ' ? 'log-succ' : '')}`;
-        div.innerHTML = `[${time}] ${msg}`;
-        console.insertBefore(div, console.firstChild);
-    }
+async function testStats() {
+  out.textContent = "Testing /api/stats ...";
+  try {
+    const r = await fetch(`${WORKER}/api/stats`);
+    out.textContent = JSON.stringify(await r.json(), null, 2);
+  } catch (e) {
+    out.textContent = e.toString();
+  }
+}
 
-    function updateIndicator(id, status, text) {
-        const el = document.getElementById(id);
-        el.className = `status-indicator status-${status}`;
-        el.innerHTML = `<i class="fas ${status === 'ready' ? 'fa-check-circle' : (status === 'error' ? 'fa-times-circle' : 'fa-spinner spin')}"></i> <span>${text}</span>`;
-    }
-
-    async function viewRaw(table) {
-        addLog(`Opening raw data for: ${table}...`);
-        window.open(`${CONFIG.WORKER_URL}/api/${table}?limit=10`, '_blank');
-    }
-
-    async function checkTable(table) {
-        try {
-            const start = Date.now();
-            const response = await fetch(`${CONFIG.WORKER_URL}/api/${table}?limit=1000`);
-            const duration = Date.now() - start;
-
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            const result = await response.json();
-            const data = result.list || (Array.isArray(result) ? result : []);
-            
-            addLog(`Table ${table.toUpperCase()} fetched in ${duration}ms`, 'succ');
-            return data.length;
-        } catch (e) {
-            addLog(`Error fetching ${table}: ${e.message}`, 'err');
-            return 'ERR';
-        }
-    }
-
-    async function runFullCheck() {
-        addLog('Starting full diagnostic sequence...');
-        
-        // Reset Indicators
-        updateIndicator('conn-status', 'loading', 'Testing Edge...');
-        updateIndicator('data-status', 'loading', 'Counting...');
-
-        const startTime = Date.now();
-
-        // 1. Connection & Latency Check
-        try {
-            const res = await fetch(`${CONFIG.WORKER_URL}/api/data?limit=1`);
-            const latency = Date.now() - startTime;
-            document.getElementById('lat-val').textContent = latency + 'ms';
-            updateIndicator('conn-status', 'ready', 'Worker Online');
-            addLog(`Latency check complete: ${latency}ms`, 'succ');
-        } catch (e) {
-            updateIndicator('conn-status', 'error', 'Worker Offline');
-            addLog('Worker unreachable. Check CORS or URL.', 'err');
-            return;
-        }
-
-        // 2. Data Integrity Check
-        const countGuru = await checkTable('data');
-        const countUjian = await checkTable('ujian');
-        const countSoal = await checkTable('bank_soal');
-
-        document.getElementById('count-guru').textContent = countGuru;
-        document.getElementById('count-ujian').textContent = countUjian;
-        document.getElementById('count-soal').textContent = countSoal;
-
-        if (countGuru !== 'ERR') {
-            updateIndicator('data-status', 'ready', 'Database Synced');
-            addLog('All tables verified and accessible.', 'succ');
-        } else {
-            updateIndicator('data-status', 'error', 'Data Error');
-        }
-    }
-
-    // Run on load
-    window.onload = runFullCheck;
+const out = document.getElementById("out");
 </script>
 
 </body>
