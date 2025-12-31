@@ -1,13 +1,10 @@
-<!DOCTYPE html>
-<html>
-<body>
 <button onclick="test()">Test Worker</button>
 <pre id="out"></pre>
 
 <script>
 async function test() {
   const out = document.getElementById("out");
-  out.textContent = "Mengirim request...\n";
+  out.textContent = "Mengirim request...";
 
   try {
     const res = await fetch(
@@ -18,18 +15,14 @@ async function test() {
         body: JSON.stringify({
           token: "SALAH",
           nama: "TEST",
-          jawaban: []
+          jawaban: ["A","B","C"]
         })
       }
     );
 
-    out.textContent += "Status: " + res.status + "\n";
-    out.textContent += await res.text();
-
+    out.textContent = await res.text();
   } catch (e) {
-    out.textContent += "ERROR:\n" + e;
+    out.textContent = "ERROR:\n" + e;
   }
 }
 </script>
-</body>
-</html>
