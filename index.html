@@ -2,23 +2,58 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>CBT SMAN 2 Cikarang Barat</title>
+  <title>Test Koneksi Worker - NocoDB</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 30px;
+    }
+    .card {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.1);
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #1a73e8;
+      color: #fff;
+      cursor: pointer;
+    }
+    pre {
+      background: #111;
+      color: #0f0;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+    .ok { color: green; font-weight: bold; }
+    .fail { color: red; font-weight: bold; }
+  </style>
 </head>
 <body>
 
-<div class="container">
-  <h2>CBT Online</h2>
+<div class="card">
+  <h2>🔌 Test Koneksi Worker → NocoDB</h2>
+  <p>Domain ini harus diizinkan oleh Worker (CORS).</p>
 
-  <input id="nama" placeholder="Nama Lengkap">
-  <input id="token" placeholder="Token Ujian">
+  <button onclick="testConnection()">Tes Koneksi</button>
 
-  <button onclick="submitUjian()">KIRIM</button>
-
-  <pre id="result"></pre>
+  <div id="status" style="margin-top:15px;"></div>
+  <pre id="output"></pre>
 </div>
 
-<script src="script.js"></script>
-</body>
-</html>
+<script>
+async function testConnection() {
+  const status = document.getElementById("status");
+  const output = document.getElementById("output");
+
+  status.innerHTML = "⏳ Menghub
