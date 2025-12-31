@@ -2,47 +2,34 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Worker Diagnostic</title>
+<title>Worker Status Test</title>
 <style>
-body { font-family: system-ui; background:#f4f6f8; padding:30px }
-.card { background:#fff; padding:20px; border-radius:10px; max-width:500px }
-button { padding:10px 15px; margin-top:10px }
-pre { background:#111; color:#0f0; padding:10px; border-radius:8px }
+body { font-family: sans-serif; padding: 30px; }
+pre { background:#111; color:#0f0; padding:15px; }
+button { padding:10px 20px; }
 </style>
 </head>
 <body>
 
-<div class="card">
-  <h2>Worker Connection Test</h2>
-  <button onclick="testHealth()">Test Health</button>
-  <button onclick="testStats()">Test Stats</button>
-  <pre id="out">Idle...</pre>
-</div>
+<h2>Cloudflare Worker Status</h2>
+<button onclick="check()">Cek Koneksi</button>
+
+<pre id="out">Klik tombol...</pre>
 
 <script>
-const WORKER = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
-
-async function testHealth() {
-  out.textContent = "Testing /api/health ...";
+async function check() {
+  document.getElementById("out").textContent = "Menghubungkan...";
   try {
-    const r = await fetch(`${WORKER}/api/health`);
-    out.textContent = JSON.stringify(await r.json(), null, 2);
+    const res = await fetch(
+      "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev/api/status"
+    );
+    const json = await res.json();
+    document.getElementById("out").textContent =
+      JSON.stringify(json, null, 2);
   } catch (e) {
-    out.textContent = e.toString();
+    document.getElementById("out").textContent = e.toString();
   }
 }
-
-async function testStats() {
-  out.textContent = "Testing /api/stats ...";
-  try {
-    const r = await fetch(`${WORKER}/api/stats`);
-    out.textContent = JSON.stringify(await r.json(), null, 2);
-  } catch (e) {
-    out.textContent = e.toString();
-  }
-}
-
-const out = document.getElementById("out");
 </script>
 
 </body>
