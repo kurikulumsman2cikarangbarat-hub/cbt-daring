@@ -1,28 +1,27 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>CBT Minimal</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>CBT Online</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h2>CBT Online</h2>
-
 <div id="login">
-  <input id="token" placeholder="Token Ujian" />
-  <input id="nama" placeholder="Nama Siswa" />
+  <h2>CBT Online</h2>
+  <input id="token" placeholder="Token Ujian">
+  <input id="nama" placeholder="Nama Peserta">
   <button onclick="login()">Masuk</button>
 </div>
 
 <div id="exam" hidden>
   <h3 id="soal"></h3>
   <div id="opsi"></div>
-  <button onclick="kirim()">Kirim</button>
+  <button onclick="submit()">Kirim</button>
 </div>
 
-<pre id="log"></pre>
+<pre id="debug"></pre>
 
-<script src="script.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
