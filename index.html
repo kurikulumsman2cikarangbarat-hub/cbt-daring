@@ -2,58 +2,46 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Test Koneksi Worker - NocoDB</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      padding: 30px;
-    }
-    .card {
-      max-width: 600px;
-      margin: auto;
-      background: #fff;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,.1);
-    }
-    button {
-      padding: 12px 20px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      background: #1a73e8;
-      color: #fff;
-      cursor: pointer;
-    }
-    pre {
-      background: #111;
-      color: #0f0;
-      padding: 15px;
-      border-radius: 8px;
-      overflow-x: auto;
-      margin-top: 15px;
-    }
-    .ok { color: green; font-weight: bold; }
-    .fail { color: red; font-weight: bold; }
-  </style>
+  <title>Test Worker CBT</title>
 </head>
 <body>
 
-<div class="card">
-  <h2>🔌 Test Koneksi Worker → NocoDB</h2>
-  <p>Domain ini harus diizinkan oleh Worker (CORS).</p>
+<h2>Test Koneksi Worker → NocoDB</h2>
+<button onclick="test()">TEST KIRIM</button>
 
-  <button onclick="testConnection()">Tes Koneksi</button>
-
-  <div id="status" style="margin-top:15px;"></div>
-  <pre id="output"></pre>
-</div>
+<pre id="out"></pre>
 
 <script>
-async function testConnection() {
-  const status = document.getElementById("status");
-  const output = document.getElementById("output");
+async function test() {
+  const out = document.getElementById("out");
+  out.textContent = "Mengirim request...\n";
 
-  status.innerHTML = "⏳ Menghub
+  try {
+    const res = await fetch(
+      "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev/api/submit-ujian",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          token: "TESTTOKEN",
+          nama: "TES SISWA",
+          jawaban: "ABCDE",
+          tab_switch: 0
+        })
+      }
+    );
+
+    const text = await res.text();
+    out.textContent += "STATUS: " + res.status + "\n";
+    out.textContent += "RESPONSE:\n" + text;
+
+  } catch (e) {
+    out.textContent += "ERROR:\n" + e.message;
+  }
+}
+</script>
+
+</body>
+</html>
