@@ -3,62 +3,71 @@ const WORKER = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
 let soal = [];
 let jawaban = [];
 
-async function start() {
-  const token = document.getElementById("token").value;
-  const log = document.getElementById("log");
+function log(msg) {
+  document.getElementById("log").textContent = JSON.stringify(msg, null, 2);
+}
 
-  log.textContent = "Mengambil soal...";
+async function login() {
+  const token = document.getElementById("token").value.trim();
+  const nama = document.getElementById("nama").value.trim();
 
-  const res = await fetch(`${WORKER}/api/soal?token=${token}`);
+  if (!token || !nama) return alert("Lengkapi data");
+
+  const res = await fetch(`${WORKER}/api/submit-ujian`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      mode: "cek",
+      token,
+      nama,
+      jawaban: []
+    })
+  });
+
   const data = await res.json();
+  log(data);
 
-  if (!data.ok) {
-    log.textContent = data.error;
+  if (!res.ok) {
+    alert(data.error);
     return;
   }
 
   soal = data.soal;
-  render();
+  document.getElementById("login").hidden = true;
+  document.getElementById("exam").hidden = false;
+
+  tampilSoal(0);
 }
 
-function render() {
-  const box = document.getElementById("soal");
-  box.innerHTML = "";
+function tampilSoal(i) {
+  const q = soal[i];
+  document.getElementById("soal").innerHTML = q.soal;
 
-  soal.forEach((q, i) => {
-    box.innerHTML += `
-      <div class="soal">
-        <b>${i+1}. ${q.soal}</b>
-        ${q.opsi.map(o => `
-          <label class="opsi">
-            <input type="radio" name="q${i}" value="${o}" 
-              onchange="jawaban[${i}]='${o}'">
-            ${o}
-          </label>
-        `).join("")}
-      </div>
-    `;
+  const opsi = document.getElementById("opsi");
+  opsi.innerHTML = "";
+
+  ["A","B","C","D","E"].forEach(h => {
+    if (q[`opsi_${h.toLowerCase()}`]) {
+      const b = document.createElement("button");
+      b.textContent = `${h}. ${q[`opsi_${h.toLowerCase()}`]}`;
+      b.onclick = () => jawaban[i] = h;
+      opsi.appendChild(b);
+    }
   });
-
-  document.getElementById("kirim").style.display = "block";
 }
 
-async function submit() {
-  const payload = {
-    nama: document.getElementById("nama").value,
-    token: document.getElementById("token").value,
-    jawaban
-  };
+async function kirim() {
+  const token = document.getElementById("token").value.trim();
+  const nama = document.getElementById("nama").value.trim();
 
-  const log = document.getElementById("log");
-  log.textContent = "Mengirim jawaban...";
-
-  const res = await fetch(`${WORKER}/api/submit`, {
+  const res = await fetch(`${WORKER}/api/submit-ujian`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({ token, nama, jawaban })
   });
 
   const data = await res.json();
-  log.textContent = JSON.stringify(data, null, 2);
+  log(data);
+
+  alert(`Nilai: ${data.nilai}`);
 }
