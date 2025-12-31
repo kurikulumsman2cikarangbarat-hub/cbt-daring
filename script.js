@@ -1,111 +1,64 @@
 const WORKER = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
 
 let soal = [];
-let index = 0;
 let jawaban = [];
-let timer = 0;
-let tabSwitch = 0;
 
-/* ============ UI HELPERS ============ */
-function show(id) {
-  document.querySelectorAll(".card").forEach(v => v.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-}
-
-/* ============ START ============ */
 async function start() {
-  const nama = namaInput.value.trim();
-  const token = tokenInput.value.trim();
+  const token = document.getElementById("token").value;
+  const log = document.getElementById("log");
 
-  if (!nama || !token) {
-    loginError.innerText = "Lengkapi data";
-    return;
-  }
-
-  loginError.innerText = "Memuat soal...";
+  log.textContent = "Mengambil soal...";
 
   const res = await fetch(`${WORKER}/api/soal?token=${token}`);
   const data = await res.json();
 
-  if (!data.soal) {
-    loginError.innerText = "Token tidak valid";
+  if (!data.ok) {
+    log.textContent = data.error;
     return;
   }
 
   soal = data.soal;
-  jawaban = new Array(soal.length).fill(null);
-  timer = data.durasi * 60;
-
-  show("examView");
   render();
-  runTimer();
 }
 
-/* ============ RENDER ============ */
 function render() {
-  counter.innerText = `Soal ${index + 1} / ${soal.length}`;
-  soalDiv.innerHTML = soal[index].soal;
+  const box = document.getElementById("soal");
+  box.innerHTML = "";
 
-  opsi.innerHTML = "";
-  soal[index].opsi.forEach((o, i) => {
-    const div = document.createElement("div");
-    div.className = "option" + (jawaban[index] === i ? " active" : "");
-    div.innerText = o;
-    div.onclick = () => {
-      jawaban[index] = i;
-      render();
-    };
-    opsi.appendChild(div);
+  soal.forEach((q, i) => {
+    box.innerHTML += `
+      <div class="soal">
+        <b>${i+1}. ${q.soal}</b>
+        ${q.opsi.map(o => `
+          <label class="opsi">
+            <input type="radio" name="q${i}" value="${o}" 
+              onchange="jawaban[${i}]='${o}'">
+            ${o}
+          </label>
+        `).join("")}
+      </div>
+    `;
   });
+
+  document.getElementById("kirim").style.display = "block";
 }
 
-/* ============ NAV ============ */
-function next() {
-  if (index < soal.length - 1) index++;
-  render();
-}
-
-function prev() {
-  if (index > 0) index--;
-  render();
-}
-
-/* ============ TIMER ============ */
-function runTimer() {
-  setInterval(() => {
-    timer--;
-    const m = String(Math.floor(timer / 60)).padStart(2, "0");
-    const s = String(timer % 60).padStart(2, "0");
-    timerDisplay.innerText = `${m}:${s}`;
-    if (timer <= 0) submit();
-  }, 1000);
-}
-
-/* ============ SUBMIT ============ */
 async function submit() {
-  show("resultView");
-  resultText.innerText = "Mengirim jawaban...";
+  const payload = {
+    nama: document.getElementById("nama").value,
+    token: document.getElementById("token").value,
+    jawaban
+  };
 
-  const res = await fetch(`${WORKER}/api/submit-ujian`, {
+  const log = document.getElementById("log");
+  log.textContent = "Mengirim jawaban...";
+
+  const res = await fetch(`${WORKER}/api/submit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      nama: namaInput.value,
-      token: tokenInput.value,
-      jawaban,
-      tab_switch: tabSwitch
-    })
+    body: JSON.stringify(payload)
   });
 
   const data = await res.json();
-
-  resultText.innerHTML = `
-    Nilai: <b>${data.nilai}</b><br>
-    Benar: ${data.benar} / ${data.total}
-  `;
+  log.textContent = JSON.stringify(data, null, 2);
 }
-
-/* ============ CHEAT TRACK ============ */
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) tabSwitch++;
-});
