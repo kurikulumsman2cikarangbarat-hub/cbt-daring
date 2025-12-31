@@ -1,19 +1,18 @@
 body {
-  font-family: Arial, sans-serif;
-  padding: 30px;
+  font-family: system-ui;
+  padding: 40px;
+  background: #f4f6f8;
 }
 
 input, button {
-  padding: 10px;
-  margin: 5px 0;
-  width: 250px;
+  padding: 12px;
+  margin: 6px 0;
+  width: 280px;
 }
 
 button {
+  background: #2563eb;
+  color: white;
+  border: none;
   cursor: pointer;
-}
-
-#opsi button {
-  display: block;
-  margin: 5px 0;
 }
