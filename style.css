@@ -1,27 +1,24 @@
-body {
-  font-family: system-ui, sans-serif;
-  max-width: 400px;
-  margin: 40px auto;
-}
+const WORKER_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev/api/submit-ujian";
 
-input, button {
-  width: 100%;
-  padding: 10px;
-  margin: 6px 0;
-  font-size: 16px;
-}
+async function kirim() {
+  const nama = document.getElementById("nama").value.trim();
+  const token = document.getElementById("token").value.trim();
+  const jawaban = [...document.querySelectorAll(".jwb")]
+    .map(i => i.value.trim().toUpperCase());
 
-button {
-  background: #1a73e8;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
+  const log = document.getElementById("log");
+  log.textContent = "Mengirim...";
 
-pre {
-  background: #111;
-  color: #0f0;
-  padding: 10px;
-  margin-top: 15px;
-  font-size: 14px;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nama, token, jawaban })
+    });
+
+    const text = await res.text();
+    log.textContent = text;
+  } catch (e) {
+    log.textContent = "ERROR: " + e.message;
+  }
 }
