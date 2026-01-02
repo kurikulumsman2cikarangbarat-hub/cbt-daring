@@ -6,10 +6,25 @@
         textarea { width: 100%; height: 200px; margin: 10px 0; }
         .success { color: green; }
         .error { color: red; }
+        .token-input { 
+            padding: 10px; 
+            width: 300px; 
+            margin-bottom: 20px; 
+            border: 2px solid #ddd; 
+            border-radius: 5px; 
+        }
     </style>
 </head>
 <body>
     <h1>Import Data CBT</h1>
+    
+    <!-- TAMBAHKAN INPUT ADMIN TOKEN DI SINI -->
+    <h3>🔐 Admin Token (wajib)</h3>
+    <input type="password" id="adminToken" class="token-input" placeholder="Masukkan admin token dari Cloudflare...">
+    <button onclick="testConnection()">Test Koneksi</button>
+    <div id="tokenStatus"></div>
+    
+    <hr>
     
     <h2>1. Import Ujian (JSON)</h2>
     <textarea id="ujianJson" placeholder='[{"token": "MAT2024", "mapel": "...", "nama_guru": "...", "durasi": 120}]'></textarea>
@@ -28,7 +43,42 @@
     <script>
         const API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
         
+        // FUNGSI BARU: TEST KONEKSI DENGAN TOKEN
+        async function testConnection() {
+            const token = document.getElementById('adminToken').value;
+            if (!token) {
+                document.getElementById('tokenStatus').innerHTML = 
+                    '<p class="error">❌ Token admin belum diisi!</p>';
+                return;
+            }
+            
+            try {
+                const resp = await fetch(`${API_URL}/api/admin/stats`, {
+                    headers: { 'X-Admin-Token': token }
+                });
+                
+                if (resp.ok) {
+                    document.getElementById('tokenStatus').innerHTML = 
+                        '<p class="success">✅ Token valid! Koneksi berhasil.</p>';
+                } else {
+                    document.getElementById('tokenStatus').innerHTML = 
+                        '<p class="error">❌ Token tidak valid atau error koneksi</p>';
+                }
+            } catch (error) {
+                document.getElementById('tokenStatus').innerHTML = 
+                    `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        // UPDATE FUNGSI IMPORT UJIAN DENGAN TOKEN
         async function importUjian() {
+            const adminToken = document.getElementById('adminToken').value;
+            if (!adminToken) {
+                document.getElementById('result').innerHTML = 
+                    '<p class="error">❌ Token admin harus diisi terlebih dahulu!</p>';
+                return;
+            }
+            
             try {
                 const data = JSON.parse(document.getElementById('ujianJson').value);
                 const result = document.getElementById('result');
@@ -36,11 +86,17 @@
                 for (const ujian of data) {
                     const resp = await fetch(`${API_URL}/api/admin/ujian`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-Admin-Token': adminToken  // TAMBAHKAN HEADER INI
+                        },
                         body: JSON.stringify(ujian)
                     });
                     
-                    if (!resp.ok) throw new Error(`Gagal: ${await resp.text()}`);
+                    if (!resp.ok) {
+                        const errorData = await resp.json();
+                        throw new Error(`Gagal: ${errorData.error || resp.statusText}`);
+                    }
                 }
                 
                 result.innerHTML = `<p class="success">✅ ${data.length} ujian berhasil diimport!</p>`;
@@ -50,23 +106,46 @@
             }
         }
         
+        // UPDATE FUNGSI IMPORT SOAL DENGAN TOKEN
         async function importSoal() {
+            const adminToken = document.getElementById('adminToken').value;
+            if (!adminToken) {
+                document.getElementById('result').innerHTML = 
+                    '<p class="error">❌ Token admin harus diisi terlebih dahulu!</p>';
+                return;
+            }
+            
             try {
                 const data = JSON.parse(document.getElementById('soalJson').value);
                 const result = document.getElementById('result');
                 let success = 0;
+                let failed = 0;
                 
                 for (const soal of data) {
-                    const resp = await fetch(`${API_URL}/api/admin/soal`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(soal)
-                    });
-                    
-                    if (resp.ok) success++;
+                    try {
+                        const resp = await fetch(`${API_URL}/api/admin/soal`, {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'X-Admin-Token': adminToken  // TAMBAHKAN HEADER INI
+                            },
+                            body: JSON.stringify(soal)
+                        });
+                        
+                        if (resp.ok) {
+                            success++;
+                        } else {
+                            failed++;
+                            const errorData = await resp.json();
+                            console.error(`Gagal import soal: ${errorData.error}`);
+                        }
+                    } catch (error) {
+                        failed++;
+                        console.error(`Error: ${error.message}`);
+                    }
                 }
                 
-                result.innerHTML = `<p class="success">✅ ${success}/${data.length} soal berhasil diimport!</p>`;
+                result.innerHTML = `<p class="success">✅ ${success}/${data.length} soal berhasil diimport! (Gagal: ${failed})</p>`;
             } catch (error) {
                 document.getElementById('result').innerHTML = 
                     `<p class="error">❌ Error: ${error.message}</p>`;
@@ -95,6 +174,24 @@
             document.getElementById('soalJson').value = JSON.stringify(data, null, 2);
             alert(`✅ CSV parsed: ${data.length} soal siap diimport`);
         }
+        
+        // LOAD CONTOH DATA
+        window.onload = function() {
+            // Contoh data ujian
+            document.getElementById('ujianJson').value = `[
+  {
+    "token": "SSLG101",
+    "mapel": "Sosiologi",
+    "nama_guru": "Donny Nugroho, S.Sos.",
+    "durasi": 60,
+    "aktif": 1
+  }
+]`;
+            
+            // Pesan awal
+            document.getElementById('result').innerHTML = 
+                '<p>⚠️ Masukkan Admin Token terlebih dahulu, lalu klik "Test Koneksi"</p>';
+        };
     </script>
 </body>
 </html>
