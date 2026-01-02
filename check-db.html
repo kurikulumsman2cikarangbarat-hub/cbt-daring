@@ -7,36 +7,79 @@
   
   <script>
     const API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
-    const ADMIN_TOKEN = "DwiW1980"; // Ganti dengan token Anda
+    const ADMIN_TOKEN = "DwiW1980"; // Pastikan ini benar
     
     async function checkDB() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = "⏳ Mengambil data...";
+      
       try {
-        const resp = await fetch(`${API_URL}/api/debug/tables`, {
-          headers: { 'X-Admin-Token': ADMIN_TOKEN }
-        });
-        const data = await resp.json();
+        console.log("Mengakses:", `${API_URL}/api/debug/tables`);
         
-        let html = '<h3>📊 Database Tables:</h3>';
-        for (const table of data.tables || []) {
-          html += `<h4>Table: ${table.name}</h4>`;
-          html += '<table border="1"><tr><th>CID</th><th>Name</th><th>Type</th><th>Not Null</th></tr>';
+        const response = await fetch(`${API_URL}/api/debug/tables`, {
+          method: 'GET',
+          headers: { 
+            'X-Admin-Token': ADMIN_TOKEN,
+            'Accept': 'application/json'
+          }
+        });
+        
+        // Ambil raw text dulu
+        const rawText = await response.text();
+        console.log("Raw response:", rawText.substring(0, 500));
+        
+        // Coba parse JSON
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch (e) {
+          throw new Error(`Response bukan JSON! Server mengembalikan:\n\n"${rawText.substring(0, 100)}..."`);
+        }
+        
+        // Jika sampai sini, tampilkan data
+        if (!data.tables || data.tables.length === 0) {
+          resultDiv.innerHTML = "<p>Tidak ada tabel di database.</p>";
+          return;
+        }
+        
+        let html = '<h3>📊 Tabel Database:</h3>';
+        for (const table of data.tables) {
+          html += `<h4>Tabel: ${table.name}</h4>`;
+          html += '<table border="1" style="border-collapse: collapse;"><tr><th>CID</th><th>Nama Kolom</th><th>Tipe</th><th>Not Null</th><th>PK</th></tr>';
           
           const cols = data.structures?.[table.name] || [];
           cols.forEach(col => {
             html += `<tr>
               <td>${col.cid}</td>
-              <td>${col.name}</td>
+              <td><strong>${col.name}</strong></td>
               <td>${col.type}</td>
-              <td>${col.notnull}</td>
+              <td>${col.notnull ? '✅' : '❌'}</td>
+              <td>${col.pk ? '✅' : ''}</td>
             </tr>`;
           });
-          
-          html += '</table>';
+          html += '</table><br>';
         }
         
-        document.getElementById('result').innerHTML = html;
+        resultDiv.innerHTML = html;
+        
       } catch (error) {
-        document.getElementById('result').innerHTML = `Error: ${error.message}`;
+        resultDiv.innerHTML = `
+          <div style="color: red; background: #ffeeee; padding: 15px; border: 2px solid red; border-radius: 5px;">
+            <h3>❌ Gagal Mengambil Data:</h3>
+            <p><strong>${error.message}</strong></p>
+            <hr>
+            <h4>Langkah Debug:</h4>
+            <ol>
+              <li>Buka <b>DevTools (F12) → Network tab</b></li>
+              <li>Klik tombol "Check Database" lagi</li>
+              <li>Klik request ke <code>/api/debug/tables</code></li>
+              <li>Lihat <b>Response tab</b> untuk melihat apa yang sebenarnya dikembalikan server</li>
+              <li>Copy response tersebut dan beritahu saya</li>
+            </ol>
+            <p>Atau coba akses langsung:<br>
+            <a href="${API_URL}/api/debug/tables" target="_blank">${API_URL}/api/debug/tables</a></p>
+          </div>
+        `;
       }
     }
   </script>
