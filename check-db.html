@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h2>Cek Database Structure</h2>
+  <button onclick="checkDB()">Check Database</button>
+  <div id="result"></div>
+  
+  <script>
+    const API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
+    const ADMIN_TOKEN = "DwiwW1980"; // Ganti dengan token Anda
+    
+    async function checkDB() {
+      try {
+        const resp = await fetch(`${API_URL}/api/debug/tables`, {
+          headers: { 'X-Admin-Token': ADMIN_TOKEN }
+        });
+        const data = await resp.json();
+        
+        let html = '<h3>📊 Database Tables:</h3>';
+        for (const table of data.tables || []) {
+          html += `<h4>Table: ${table.name}</h4>`;
+          html += '<table border="1"><tr><th>CID</th><th>Name</th><th>Type</th><th>Not Null</th></tr>';
+          
+          const cols = data.structures?.[table.name] || [];
+          cols.forEach(col => {
+            html += `<tr>
+              <td>${col.cid}</td>
+              <td>${col.name}</td>
+              <td>${col.type}</td>
+              <td>${col.notnull}</td>
+            </tr>`;
+          });
+          
+          html += '</table>';
+        }
+        
+        document.getElementById('result').innerHTML = html;
+      } catch (error) {
+        document.getElementById('result').innerHTML = `Error: ${error.message}`;
+      }
+    }
+  </script>
+</body>
+</html>
