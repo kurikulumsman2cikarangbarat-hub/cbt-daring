@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug Worker - Solusi 2</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    button { margin: 5px; padding: 10px; background: #28a745; color: white; border: none; cursor: pointer; }
+    button:hover { opacity: 0.9; }
+    .error { color: #721c24; background: #f8d7da; padding: 15px; border: 1px solid #f5c6cb; border-radius: 5px; }
+    .info { color: #0c5460; background: #d1ecf1; padding: 15px; border: 1px solid #bee5eb; }
+    .success { color: #155724; background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; }
+    code { background: #f8f9fa; padding: 2px 5px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h2>🔧 Debug Worker - Solusi 2</h2>
+  
+  <div style="margin: 20px 0;">
+    <strong>API URL:</strong> <code id="apiUrl">https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev</code><br>
+    <strong>Token:</strong> <code id="token">Dekkl386</code>
+  </div>
+  
+  <button onclick="testWorkerStatus()">1. Test Koneksi Worker</button>
+  <button onclick="findActiveEndpoints()">2. Cari Endpoint Aktif</button>
+  <button onclick="testWithoutToken()">3. Test Tanpa Token</button>
+  <button onclick="testWithPost()">4. Test Method POST</button>
+  
+  <div id="result" style="margin-top: 20px;"></div>
+  
+  <script>
+    const API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
+    const ADMIN_TOKEN = "Dekkl386";
+    
+    // =============== FUNGSI 1: TEST STATUS WORKER ===============
+    async function testWorkerStatus() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = "<div class='info'>🔄 Testing koneksi ke Worker...</div>";
+      
+      let html = '<h3>🔍 Test Koneksi Dasar</h3>';
+      
+      // Test 1: Ping Worker tanpa path
+      try {
+        console.log("Pinging Worker...");
+        const start = Date.now();
+        const resp = await fetch(API_URL, { method: 'HEAD' });
+        const pingTime = Date.now() - start;
+        
+        html += `<p>✅ Worker aktif. Ping: ${pingTime}ms</p>`;
+        html += `<p>Status: ${resp.status} ${resp.statusText}</p>`;
+        
+        // Cek headers
+        html += '<p><strong>Headers yang diterima:</strong></p><ul>';
+        for (const [key, value] of resp.headers.entries()) {
+          html += `<li><code>${key}</code>: ${value}</li>`;
+        }
+        html += '</ul>';
+        
+      } catch (e) {
+        html += `<div class='error'>
+          <p>❌ Worker tidak dapat diakses: ${e.message}</p>
+          <p>Kemungkinan:</p>
+          <ul>
+            <li>Worker di-delete/di-nonaktifkan</li>
+            <li>Domain salah: <code>${API_URL}</code></li>
+            <li>Ada firewall/CORS issue</li>
+          </ul>
+        </div>`;
+        resultDiv.innerHTML = html;
+        return;
+      }
+      
+      // Test 2: Cek route root dengan GET
+      html += '<hr><h4>Test Route Root (GET /)</h4>';
+      try {
+        const resp = await fetch(API_URL + '/', { 
+          method: 'GET',
+          headers: { 'X-Admin-Token': ADMIN_TOKEN }
+        });
+        const text = await resp.text();
+        
+        html += `<p>Status: <code>${resp.status} ${resp.statusText}</code></p>`;
+        html += `<p>Response (100 karakter pertama):</p>
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace;">
+                  ${escapeHtml(text.substring(0, 100))}
+                </div>`;
+        
+        if (resp.status === 404) {
+          html += `<div class='error'>
+            <p>⚠️ Route root (/) mengembalikan 404.</p>
+            <p>Ini berarti Worker TIDAK memiliki handler default.</p>
+            <p>Worker hanya menangani route tertentu saja.</p>
+          </div>`;
+        }
+        
+      } catch (e) {
+        html += `<p>Error: ${e.message}</p>`;
+      }
+      
+      resultDiv.innerHTML = html;
+    }
+    
+    // =============== FUNGSI 2: CARI ENDPOINT AKTIF ===============
+    async function findActiveEndpoints() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = "<div class='info'>🔍 Mencari endpoint aktif...</div>";
+      
+      // Endpoint yang umum di ABK (Asesmen Berbasis Komputer)
+      const possibleEndpoints = [
+        '/api/soal', '/api/questions', '/soal', '/questions',
+        '/api/ujian', '/exam', '/ujian',
+        '/api/siswa', '/api/student', '/siswa',
+        '/api/auth', '/auth/login', '/login',
+        '/api/submit', '/submit',
+        '/api/hasil', '/results',
+        '/api/admin', '/admin/login',
+        '/api/export', '/export',
+        '/api/import', '/import',
+        '/api/report', '/laporan',
+        '/api/settings', '/settings',
+        '/api/status', '/status',
+        '/health', '/ping'
+      ];
+      
+      let html = '<h3>🔎 Mencari Endpoint ABK yang Aktif</h3>';
+      html += '<p>Mencoba endpoint umum untuk sistem ujian/asesmen...</p>';
+      html += '<table style="width: 100%; border-collapse: collapse; margin: 10px 0;">';
+      html += '<tr style="background: #f2f2f2;"><th>Endpoint</th><th>Method</th><th>Status</th><th>Response</th></tr>';
+      
+      let foundActive = false;
+      
+      for (const endpoint of possibleEndpoints) {
+        // Coba GET dulu
+        try {
+          const resp = await fetch(API_URL + endpoint, {
+            method: 'GET',
+            headers: { 'X-Admin-Token': ADMIN_TOKEN }
+          });
+          
+          const status = resp.status;
+          const text = await resp.text().then(t => t.substring(0, 80));
+          
+          const statusColor = status === 200 ? 'green' : 
+                             status === 404 ? 'gray' : 
+                             status === 401 || status === 403 ? 'orange' : 'red';
+          
+          html += `<tr>
+            <td><code>${endpoint}</code></td>
+            <td>GET</td>
+            <td style="color: ${statusColor}"><strong>${status}</strong></td>
+            <td><small>${escapeHtml(text) || '(empty)'}</small></td>
+          </tr>`;
+          
+          if (status !== 404) {
+            foundActive = true;
+            console.log(`🎯 Found active endpoint: ${endpoint} (${status})`);
+          }
+          
+        } catch (e) {
+          html += `<tr>
+            <td><code>${endpoint}</code></td>
+            <td>GET</td>
+            <td style="color: red">ERROR</td>
+            <td>${e.message}</td>
+          </tr>`;
+        }
+        
+        // Coba POST juga untuk API endpoints
+        try {
+          const resp = await fetch(API_URL + endpoint, {
+            method: 'POST',
+            headers: { 
+              'X-Admin-Token': ADMIN_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ test: true })
+          });
+          
+          const status = resp.status;
+          if (status !== 404 && status !== 405) {
+            html += `<tr style="background: #f0fff0;">
+              <td><code>${endpoint}</code></td>
+              <td>POST</td>
+              <td style="color: green"><strong>${status} ✓</strong></td>
+              <td><small>POST method works!</small></td>
+            </tr>`;
+            foundActive = true;
+          }
+          
+        } catch (e) {
+          // Ignore POST errors
+        }
+      }
+      
+      html += '</table>';
+      
+      if (!foundActive) {
+        html += `<div class='error'>
+          <h4>⚠️ Tidak ada endpoint aktif yang ditemukan!</h4>
+          <p>Kemungkinan:</p>
+          <ol>
+            <li><strong>Worker tidak memiliki handler sama sekali</strong> - Perlu setup ulang Worker</li>
+            <li><strong>Semua endpoint membutuhkan method khusus</strong> - Coba tombol "Test Method POST"</li>
+            <li><strong>Token salah atau tidak diperlukan</strong> - Coba tombol "Test Tanpa Token"</li>
+            <li><strong>Worker menggunakan path yang sangat spesifik</strong> - Cek kode sumber Worker</li>
+          </ol>
+        </div>`;
+      } else {
+        html += `<div class='success'>
+          <p>✅ Ditemukan endpoint aktif! Lihat yang statusnya bukan 404.</p>
+          <p>Sekarang coba akses endpoint tersebut langsung di browser.</p>
+        </div>`;
+      }
+      
+      resultDiv.innerHTML = html;
+    }
+    
+    // =============== FUNGSI 3: TEST TANPA TOKEN ===============
+    async function testWithoutToken() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = "<div class='info'>🔓 Testing tanpa header token...</div>";
+      
+      const testEndpoints = ['/', '/api/soal', '/api/status', '/health'];
+      
+      let html = '<h3>🔓 Test Tanpa Authentication</h3>';
+      html += '<p>Mencoba akses tanpa header <code>X-Admin-Token</code>:</p>';
+      html += '<ul>';
+      
+      for (const endpoint of testEndpoints) {
+        try {
+          const resp = await fetch(API_URL + endpoint);
+          html += `<li><code>${endpoint}</code>: ${resp.status} ${resp.statusText}</li>`;
+          if (resp.status === 200) {
+            html += ` <span style="color: green">✓ Public access!</span>`;
+          } else if (resp.status === 401) {
+            html += ` <span style="color: orange">✓ Butuh auth</span>`;
+          }
+        } catch (e) {
+          html += `<li><code>${endpoint}</code>: ERROR - ${e.message}</li>`;
+        }
+      }
+      
+      html += '</ul>';
+      html += `<div class='info'>
+        <p><strong>Kesimpulan:</strong> Jika tanpa token bisa akses, berarti endpoint public.</p>
+        <p>Jika dapat 401, berarti butuh token tapi mungkin header berbeda.</p>
+      </div>`;
+      
+      resultDiv.innerHTML = html;
+    }
+    
+    // =============== FUNGSI 4: TEST METHOD POST ===============
+    async function testWithPost() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = "<div class='info'>📤 Testing dengan method POST...</div>";
+      
+      const endpoints = ['/', '/api/debug/tables', '/api/tables', '/api/admin'];
+      
+      let html = '<h3>📤 Test Method POST</h3>';
+      html += '<p>Mungkin Worker hanya menerima POST request:</p>';
+      html += '<table style="width: 100%;"><tr><th>Endpoint</th><th>Status</th><th>Info</th></tr>';
+      
+      for (const endpoint of endpoints) {
+        try {
+          const resp = await fetch(API_URL + endpoint, {
+            method: 'POST',
+            headers: { 
+              'X-Admin-Token': ADMIN_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              action: 'get_tables',
+              debug: true,
+              timestamp: new Date().toISOString()
+            })
+          });
+          
+          const text = await resp.text();
+          html += `<tr>
+            <td><code>POST ${endpoint}</code></td>
+            <td>${resp.status}</td>
+            <td><small>${escapeHtml(text.substring(0, 60))}</small></td>
+          </tr>`;
+          
+        } catch (e) {
+          html += `<tr>
+            <td><code>POST ${endpoint}</code></td>
+            <td style="color: red">ERROR</td>
+            <td>${e.message}</td>
+          </tr>`;
+        }
+      }
+      
+      html += '</table>';
+      resultDiv.innerHTML = html;
+    }
+    
+    // Helper function
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
