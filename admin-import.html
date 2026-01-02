@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - Import Data</title>
+    <style>
+        textarea { width: 100%; height: 200px; margin: 10px 0; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Import Data CBT</h1>
+    
+    <h2>1. Import Ujian (JSON)</h2>
+    <textarea id="ujianJson" placeholder='[{"token": "MAT2024", "mapel": "...", "nama_guru": "...", "durasi": 120}]'></textarea>
+    <button onclick="importUjian()">Import Ujian</button>
+    
+    <h2>2. Import Soal (JSON)</h2>
+    <textarea id="soalJson" placeholder='[{"token": "MAT2024", "soal": "...", "opsi_a": "...", "kunci": "A"}]'></textarea>
+    <button onclick="importSoal()">Import Soal</button>
+    
+    <h2>3. Import Soal (CSV)</h2>
+    <textarea id="soalCsv" placeholder="token,soal,opsi_a,opsi_b,kunci&#10;MAT2024,Soal...,A,B,A"></textarea>
+    <button onclick="importCsv()">Import CSV</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        const API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
+        
+        async function importUjian() {
+            try {
+                const data = JSON.parse(document.getElementById('ujianJson').value);
+                const result = document.getElementById('result');
+                
+                for (const ujian of data) {
+                    const resp = await fetch(`${API_URL}/api/admin/ujian`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(ujian)
+                    });
+                    
+                    if (!resp.ok) throw new Error(`Gagal: ${await resp.text()}`);
+                }
+                
+                result.innerHTML = `<p class="success">✅ ${data.length} ujian berhasil diimport!</p>`;
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function importSoal() {
+            try {
+                const data = JSON.parse(document.getElementById('soalJson').value);
+                const result = document.getElementById('result');
+                let success = 0;
+                
+                for (const soal of data) {
+                    const resp = await fetch(`${API_URL}/api/admin/soal`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(soal)
+                    });
+                    
+                    if (resp.ok) success++;
+                }
+                
+                result.innerHTML = `<p class="success">✅ ${success}/${data.length} soal berhasil diimport!</p>`;
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+        
+        function importCsv() {
+            const csv = document.getElementById('soalCsv').value;
+            const lines = csv.split('\n');
+            const headers = lines[0].split(',');
+            
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                
+                const values = lines[i].split(',');
+                const obj = {};
+                
+                headers.forEach((header, index) => {
+                    obj[header.trim()] = values[index] ? values[index].trim() : '';
+                });
+                
+                data.push(obj);
+            }
+            
+            document.getElementById('soalJson').value = JSON.stringify(data, null, 2);
+            alert(`✅ CSV parsed: ${data.length} soal siap diimport`);
+        }
+    </script>
+</body>
+</html>
