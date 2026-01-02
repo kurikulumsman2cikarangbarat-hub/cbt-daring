@@ -1,26 +1,130 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>CBT Online</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CBT SMAN 2 Cikarang Barat</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <!-- Register Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.error('Service Worker failed:', err));
+            });
+        }
+    </script>
 </head>
 <body>
 
-<div id="login">
-  <h2>CBT Online</h2>
-  <input id="token" placeholder="Token Ujian">
-  <input id="nama" placeholder="Nama Peserta">
-  <button onclick="login()">Masuk</button>
-</div>
+<div class="container">
+    <div id="toast"></div>
+    
+    <!-- Modal Konfirmasi Submit -->
+    <div id="modal-confirm" class="modal" style="display: none;">
+        <h3>Selesaikan Ujian?</h3>
+        <p style="margin: 15px 0;">Pastikan semua jawaban sudah benar. Jawaban yang sudah dikirim tidak dapat diubah.</p>
+        <button class="btn-kirim" style="display:block; width:100%; padding:15px; margin-bottom:10px;" onclick="submitData()">YA, KIRIM SEKARANG</button>
+        <button onclick="hideConfirm()" style="background:none; border:none; color:#ccc; cursor:pointer;">Kembali ke Soal</button>
+    </div>
 
-<div id="exam" hidden>
-  <h3 id="soal"></h3>
-  <div id="opsi"></div>
-  <button onclick="submit()">Kirim</button>
-</div>
+    <!-- View Login -->
+    <div id="view-login" class="page active">
+        <div class="header" style="margin: -25px -25px 25px -25px; margin-bottom: 20px;">
+            <h2>CBT SMAN 2 Cikarang Barat</h2>
+        </div>
+        <label>Nama Peserta</label>
+        <input type="text" id="input-nama" placeholder="Nama Lengkap...">
+        
+        <label>Kelas</label>
+        <select id="input-kelas">
+            <option value="" disabled selected>-- Pilih Tingkat --</option>
+            <option value="X">Kelas X</option>
+            <option value="XI">Kelas XI</option>
+            <option value="XII">Kelas XII</option>
+        </select>
+        
+        <label>Rombel</label>
+        <select id="input-kelompok">
+            <option value="" disabled selected>-- Pilih Kelas --</option>
+            <option value="A">X - A</option>
+            <option value="B">X - B</option>
+            <option value="C">X - C</option>
+            <option value="D">X - D</option>
+            <option value="E">X - E</option>
+            <option value="F">X - F</option>
+            <option value="G">X - G</option>
+            <option value="H">X - H</option>
+            <option value="I">X - I</option>
+            <option value="J">X - J</option>
+            <option value="K">X - K</option>
+            <option value="L">X - L</option>
+            <!-- Repeat for XI and XII if needed -->
+        </select>
+        
+        <label>Token Ujian</label>
+        <input type="text" id="input-token" placeholder="Masukkan token...">
+        
+        <button onclick="login()" style="width:100%; padding:18px; background:#1a73e8; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">MASUK UJIAN</button>
+        
+        <div class="footer-text" style="margin-top: 30px; text-align: center; color: #666; font-size: 0.9rem;">
+            Sistem CBT Aman • Dibuat oleh Donny Nugroho
+        </div>
+    </div>
 
-<pre id="debug"></pre>
+    <!-- View Loading -->
+    <div id="view-loading" class="page" style="text-align: center; justify-content: center;">
+        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #1a73e8; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+        <h3 id="loading-text">Memproses...</h3>
+    </div>
+
+    <!-- View Welcome -->
+    <div id="view-welcome" class="page" style="text-align: center; justify-content: center; padding: 30px;">
+        <h2 style="color: #1a73e8; margin-bottom: 20px;">Selamat Datang!</h2>
+        <div id="welcome-text"></div>
+        <button onclick="startExam()" style="padding: 15px 40px; background: #1a73e8; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem;">
+            MULAI UJIAN
+        </button>
+    </div>
+
+    <!-- View Exam -->
+    <div id="view-exam" class="page" style="padding: 0;">
+        <div class="timer-info">
+            <span>SOAL <span id="q-number">1</span></span>
+            <span id="timer-display">00:00</span>
+            <button onclick="toggleFullscreen()" style="background:none; border:none; color:#1a73e8; cursor:pointer; font-size:0.9rem;">⛶ Fullscreen</button>
+        </div>
+        <div style="padding: 20px; flex-grow: 1; overflow-y: auto;">
+            <img id="q-img" style="width:100%; max-height:300px; object-fit:contain; display:none; border-radius:10px; margin-bottom:15px; background:#f5f5f5;">
+            <div id="q-text" style="font-size: 1.1rem; margin-bottom: 20px; line-height:1.6;"></div>
+            <div id="q-options"></div>
+        </div>
+        <div class="control-bar">
+            <button class="btn-circle" onclick="prevQ()">❮</button>
+            <button id="btn-kirim-trigger" class="btn-kirim" onclick="showConfirm()">KIRIM JAWABAN</button>
+            <button class="btn-circle" onclick="nextQ()">❯</button>
+        </div>
+        <div class="nav-grid" id="nav-grid"></div>
+        
+        <div class="footer-text" style="text-align: center; padding: 10px; color: #666; font-size: 0.8rem; border-top: 1px solid #eee;">
+            Sistem CBT Aman • Powered by Cloudflare
+        </div>
+    </div>
+
+    <!-- View Result -->
+    <div id="view-result" class="page" style="text-align: center; justify-content: center;">
+        <div style="font-size: 5rem;">✅</div>
+        <h2 style="color: #27ae60; margin: 15px 0;">Terima Kasih</h2>
+        <div id="final-msg" style="line-height: 1.6; color:#555; max-width:500px;"></div>
+        <button onclick="location.reload()" style="margin-top:25px; padding:12px 30px; background:#eee; border:none; border-radius:8px; cursor:pointer;">Selesai</button>
+        
+        <div class="footer-text" style="margin-top: 30px; color: #666; font-size: 0.9rem;">
+            Sistem CBT Aman • Dibuat oleh Donny Nugroho
+        </div>
+    </div>
+</div>
 
 <script src="app.js"></script>
 </body>
