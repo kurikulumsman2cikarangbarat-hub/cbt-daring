@@ -210,11 +210,17 @@ async function handleLogin() {
         state.sessionSeed = loginData.session_seed;
         state.examData = loginData.ujian;
         
-        // Step 3: Get questions
+        console.log('DEBUG - Session data:', {
+            sessionId: state.sessionId,
+            sessionSeed: state.sessionSeed,
+            examData: state.examData
+        });
+        
+        // Step 3: Get questions with CORRECT parameters
         document.getElementById('loading-message').textContent = 'Mengambil soal ujian...';
         
         const soalRes = await fetch(
-            `${API_URL}/api/soal?token=${encodeURIComponent(token)}&session_seed=${state.sessionSeed}`
+            `${API_URL}/api/soal?token=${encodeURIComponent(token)}&session_id=${encodeURIComponent(state.sessionId)}`
         );
         
         if (!soalRes.ok) {
@@ -248,7 +254,8 @@ async function handleLogin() {
         console.log('Login berhasil:', {
             sessionId: state.sessionId,
             jumlahSoal: state.questions.length,
-            durasi: state.examData.durasi
+            durasi: state.examData.durasi,
+            questions: state.questions.length
         });
         
     } catch (error) {
@@ -386,6 +393,9 @@ function selectAnswer(answer) {
     const currentIndex = state.currentIndex;
     state.answers[currentIndex] = answer;
     
+    console.log(`DEBUG - Jawaban untuk soal ${currentIndex + 1}: ${answer}`);
+    console.log('DEBUG - Total jawaban:', Object.keys(state.answers).length);
+    
     // Update UI
     const options = document.querySelectorAll('.option');
     options.forEach(opt => opt.classList.remove('selected'));
@@ -480,23 +490,33 @@ async function submitExam() {
     document.getElementById('loading-message').textContent = 'Mengirim jawaban...';
     
     try {
-        // Prepare answer string
-        let jawabanString = '';
-        let jawabanDetail = {};
+        // Siapkan jawaban sebagai ARRAY (format yang diharapkan oleh worker)
+        let jawabanArray = [];
         
         for (let i = 0; i < state.questions.length; i++) {
             const answer = state.answers[i] || '-';
-            jawabanString += answer;
-            
-            // Simpan detail jawaban untuk validasi
-            jawabanDetail[i] = {
-                question_id: state.questions[i]?.original_id || i,
-                answer: answer,
-                question_number: i + 1
-            };
+            jawabanArray.push(answer);
         }
         
-        // Submit to server dengan data yang benar
+        // Debug data yang akan dikirim
+        console.log('DEBUG - Data yang akan dikirim:', {
+            session_id: state.sessionId,
+            jawaban_array: jawabanArray,
+            jawaban_length: jawabanArray.length,
+            questions_length: state.questions.length,
+            tab_switch_count: state.tabSwitchCount
+        });
+        
+        // Cek jika ada jawaban kosong
+        const unanswered = [];
+        for (let i = 0; i < state.questions.length; i++) {
+            if (!state.answers[i]) unanswered.push(i + 1);
+        }
+        if (unanswered.length > 0) {
+            console.log('Peringatan: Soal belum terjawab:', unanswered);
+        }
+        
+        // Submit dengan format yang BENAR (jawaban sebagai array)
         const submitRes = await fetch(`${API_URL}/api/nilai`, {
             method: 'POST',
             headers: { 
@@ -505,8 +525,7 @@ async function submitExam() {
             },
             body: JSON.stringify({
                 session_id: state.sessionId,
-                jawaban: jawabanString,
-                jawaban_detail: jawabanDetail,
+                jawaban: jawabanArray,  // KIRIM sebagai ARRAY (sesuai dengan worker)
                 tab_switch_count: state.tabSwitchCount
             })
         });
@@ -521,18 +540,26 @@ async function submitExam() {
             throw new Error(submitData.error || 'Gagal mengirim jawaban');
         }
         
+        console.log('DEBUG - Response dari server:', submitData);
+        
         // Show result
         showResult(submitData);
         
     } catch (error) {
         console.error('Submit error:', error);
+        
         // Fallback to local result jika server error
+        const benar = Object.keys(state.answers).length;
+        const totalSoal = state.questions.length;
+        const nilai = totalSoal > 0 ? Math.round((benar / totalSoal) * 100) : 0;
+        
         showResult({
             success: true,
             hasil: {
-                benar: Object.keys(state.answers).length,
-                total_soal: state.questions.length,
-                nilai: Math.round((Object.keys(state.answers).length / state.questions.length) * 100)
+                benar: benar,
+                total_soal: totalSoal,
+                nilai: nilai,
+                salah: totalSoal - benar
             }
         });
     }
