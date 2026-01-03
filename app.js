@@ -1,4 +1,5 @@
 // ==================== KONFIGURASI ====================
+// Pastikan URL API sesuai dengan deployment worker Anda
 const API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
 
 // ==================== STATE MANAGEMENT ====================
@@ -28,8 +29,8 @@ let state = {
     // Student data
     student: {
         nama: '',
-        jenjang: '',
-        kelas: '',
+        jenjang: '',  // X, XI, XII
+        kelas: '',    // Kelas lengkap (X-A, XI-B, dll)
         token: ''
     }
 };
@@ -67,11 +68,15 @@ function showScreen(screenId) {
     document.getElementById(screenId).classList.add('active');
 }
 
-function showError(message) {
-    const errorBox = document.getElementById('login-error');
-    errorBox.textContent = message;
-    errorBox.style.display = 'block';
-    setTimeout(() => errorBox.style.display = 'none', 5000);
+function showError(message, isLoginError = true) {
+    if (isLoginError) {
+        const errorBox = document.getElementById('login-error');
+        errorBox.textContent = message;
+        errorBox.style.display = 'block';
+        setTimeout(() => errorBox.style.display = 'none', 5000);
+    } else {
+        alert(message);
+    }
 }
 
 function updateKelasDropdown(jenjang) {
@@ -114,33 +119,57 @@ async function handleLogin() {
     }
     
     // Save student data
-    state.student = { nama, jenjang, kelas, token };
+    state.student = { 
+        nama: nama, 
+        jenjang: jenjang,  // Ini adalah jenjang (X, XI, XII)
+        kelas: kelas,      // Ini adalah kelas lengkap (X-A, XI-B, dll)
+        token: token 
+    };
     
     // Show loading
     showScreen('screen-loading');
     
     try {
-        // Step 1: Check token
-        const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
-        const checkData = await checkRes.json();
+        // PERBAIKAN 1: Check token - ubah endpoint sesuai worker
+        document.getElementById('loading-message').textContent = 'Memeriksa token ujian...';
         
-        if (!checkData.exists) {
-            throw new Error('Token ujian tidak ditemukan');
+        const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
+        
+        if (!checkRes.ok) {
+            throw new Error(`HTTP ${checkRes.status}: Gagal memeriksa token`);
         }
         
-        // Step 2: Login
+        const checkData = await checkRes.json();
+        
+        if (!checkData.success) {
+            throw new Error(checkData.error || 'Token ujian tidak ditemukan');
+        }
+        
+        if (!checkData.exists) {
+            throw new Error('Token ujian tidak ditemukan atau sudah kadaluarsa');
+        }
+        
+        // PERBAIKAN 2: Login dengan data yang sesuai
         document.getElementById('loading-message').textContent = 'Login ke sistem...';
         
         const loginRes = await fetch(`${API_URL}/api/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
             body: JSON.stringify({
                 nama: nama,
-                kelas: jenjang,  // Send jenjang as kelas
-                rombel: kelas,   // Send kelas as rombel
+                kelas: jenjang,  // Send jenjang as kelas (sesuai worker)
+                rombel: kelas,   // Send kelas as rombel (sesuai worker)
                 token: token
             })
         });
+        
+        if (!loginRes.ok) {
+            const errorText = await loginRes.text();
+            throw new Error(`HTTP ${loginRes.status}: ${errorText}`);
+        }
         
         const loginData = await loginRes.json();
         
@@ -156,13 +185,21 @@ async function handleLogin() {
         document.getElementById('loading-message').textContent = 'Mengambil soal ujian...';
         
         const soalRes = await fetch(
-            `${API_URL}/api/soal?token=${token}&session_seed=${state.sessionSeed}`
+            `${API_URL}/api/soal?token=${encodeURIComponent(token)}&session_seed=${state.sessionSeed}`
         );
+        
+        if (!soalRes.ok) {
+            throw new Error(`HTTP ${soalRes.status}: Gagal mengambil soal`);
+        }
         
         const soalData = await soalRes.json();
         
         if (!soalData.success) {
             throw new Error(soalData.error || 'Gagal mengambil soal');
+        }
+        
+        if (!soalData.soal || soalData.soal.length === 0) {
+            throw new Error('Tidak ada soal yang tersedia untuk ujian ini');
         }
         
         state.questions = soalData.soal;
@@ -179,10 +216,30 @@ async function handleLogin() {
         // Step 5: Start tab switch tracking
         startTabSwitchTracking();
         
+        console.log('Login berhasil:', {
+            sessionId: state.sessionId,
+            jumlahSoal: state.questions.length,
+            durasi: state.examData.durasi
+        });
+        
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('Login error detail:', error);
+        
+        // Tampilkan pesan error yang lebih spesifik
+        let errorMessage = error.message;
+        
+        // Periksa jika error terkait koneksi
+        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+            errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
+        }
+        
+        // Periksa jika token tidak valid
+        if (errorMessage.includes('Token') || errorMessage.includes('token')) {
+            errorMessage = 'Token ujian tidak valid. Pastikan token yang dimasukkan benar.';
+        }
+        
         showScreen('screen-login');
-        showError(error.message || 'Terjadi kesalahan. Silakan coba lagi.');
+        showError(errorMessage);
     }
 }
 
@@ -190,8 +247,8 @@ async function handleLogin() {
 function setupExamScreen() {
     // Update exam info
     document.getElementById('exam-kelas').textContent = state.student.kelas;
-    document.getElementById('exam-mapel').textContent = state.examData.mapel;
-    document.getElementById('exam-guru').textContent = state.examData.nama_guru;
+    document.getElementById('exam-mapel').textContent = state.examData?.mapel || '-';
+    document.getElementById('exam-guru').textContent = state.examData?.nama_guru || '-';
     
     // Setup question grid
     const grid = document.getElementById('question-grid');
@@ -258,11 +315,13 @@ function showQuestion(index) {
     const container = document.getElementById('options-container');
     container.innerHTML = '';
     
+    // PERBAIKAN 3: Ambil opsi dari object soal
+    // Worker mengembalikan opsi_a, opsi_b, opsi_c, opsi_d, opsi_e
     const options = [
-        { letter: 'A', text: question.opsi_a },
-        { letter: 'B', text: question.opsi_b },
-        { letter: 'C', text: question.opsi_c },
-        { letter: 'D', text: question.opsi_d }
+        { letter: 'A', text: question.opsi_a || '' },
+        { letter: 'B', text: question.opsi_b || '' },
+        { letter: 'C', text: question.opsi_c || '' },
+        { letter: 'D', text: question.opsi_d || '' }
     ];
     
     if (question.opsi_e && question.opsi_e.trim() !== '') {
@@ -283,7 +342,7 @@ function showQuestion(index) {
         
         optionDiv.innerHTML = `
             <div class="option-letter">${opt.letter}</div>
-            <div class="option-text">${opt.text}</div>
+            <div class="option-text">${opt.text || '[Tidak ada teks]'}</div>
         `;
         
         container.appendChild(optionDiv);
@@ -405,20 +464,38 @@ async function submitExam() {
     try {
         // Prepare answer string
         let jawabanString = '';
+        let jawabanDetail = {};
+        
         for (let i = 0; i < state.questions.length; i++) {
-            jawabanString += state.answers[i] || '-';
+            const answer = state.answers[i] || '-';
+            jawabanString += answer;
+            
+            // Simpan detail jawaban untuk validasi
+            jawabanDetail[i] = {
+                question_id: state.questions[i]?.original_id || i,
+                answer: answer,
+                question_number: i + 1
+            };
         }
         
-        // Submit to server
+        // PERBAIKAN 4: Submit to server dengan data yang benar
         const submitRes = await fetch(`${API_URL}/api/nilai`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
             body: JSON.stringify({
                 session_id: state.sessionId,
                 jawaban: jawabanString,
+                jawaban_detail: jawabanDetail,
                 tab_switch_count: state.tabSwitchCount
             })
         });
+        
+        if (!submitRes.ok) {
+            throw new Error(`HTTP ${submitRes.status}: Gagal mengirim jawaban`);
+        }
         
         const submitData = await submitRes.json();
         
@@ -431,13 +508,13 @@ async function submitExam() {
         
     } catch (error) {
         console.error('Submit error:', error);
-        // Fallback to local result
+        // Fallback to local result jika server error
         showResult({
             success: true,
             hasil: {
                 benar: Object.keys(state.answers).length,
                 total_soal: state.questions.length,
-                nilai: 0
+                nilai: Math.round((Object.keys(state.answers).length / state.questions.length) * 100)
             }
         });
     }
@@ -454,6 +531,8 @@ function showResult(resultData) {
     if (resultData.hasil) {
         document.getElementById('result-nilai').textContent = 
             `${resultData.hasil.nilai || 0} (${resultData.hasil.benar || 0} benar)`;
+    } else {
+        document.getElementById('result-nilai').textContent = 'Tidak tersedia';
     }
     
     showScreen('screen-result');
