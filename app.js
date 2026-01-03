@@ -1,38 +1,28 @@
 // ==================== KONFIGURASI ====================
-// Pastikan URL API sesuai dengan deployment worker Anda
 const API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
 
 // ==================== STATE MANAGEMENT ====================
 let state = {
-    // Login data
     sessionId: null,
     sessionSeed: null,
-    
-    // Exam data
     examData: null,
     questions: [],
-    
-    // Progress
     currentIndex: 0,
     answers: {},
-    
-    // Timer
     startTime: null,
     timerInterval: null,
     remainingTime: 0,
-    
-    // Tracking
     tabSwitchCount: 0,
     isExamActive: false,
     examSubmitted: false,
-    
-    // Student data
     student: {
         nama: '',
-        jenjang: '',  // X, XI, XII
-        kelas: '',    // Kelas lengkap (X-A, XI-B, dll)
+        jenjang: '',
+        kelas: '',
         token: ''
-    }
+    },
+    waktuMulai: null,
+    waktuSelesai: null
 };
 
 // ==================== KELAS DATA ====================
@@ -55,32 +45,50 @@ function showError(message, isLoginError = true) {
         const errorBox = document.getElementById('login-error');
         errorBox.textContent = message;
         errorBox.style.display = 'block';
-        setTimeout(() => errorBox.style.display = 'none', 5000);
+        errorBox.style.animation = 'none';
     } else {
-        alert(message);
+        showNotification(message, 'error');
     }
 }
 
+function showNotification(message, type = 'info') {
+    // Cek jika ada notifikasi sebelumnya, hapus
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => {
+        notification.remove();
+    });
+    
+    // Buat elemen notifikasi
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+        <span>${message}</span>
+        <button class="notification-close"><i class="fas fa-times"></i></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Fungsi close
+    notification.querySelector('.notification-close').onclick = () => {
+        notification.style.animation = 'slideIn 0.3s ease-out reverse';
+        setTimeout(() => notification.remove(), 300);
+    };
+    
+    // Auto remove setelah 5 detik
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.animation = 'slideIn 0.3s ease-out reverse';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 5000);
+}
+
 function updateKelasDropdown(jenjang) {
-    console.log('updateKelasDropdown called with jenjang:', jenjang);
-    
     const kelasSelect = document.getElementById('kelas');
-    
-    if (!kelasSelect) {
-        console.error('Element #kelas not found!');
-        return;
-    }
     
     if (!jenjang) {
         kelasSelect.innerHTML = '<option value="">Pilih Jenjang terlebih dahulu</option>';
-        kelasSelect.disabled = true;
-        return;
-    }
-    
-    // Ensure valid jenjang
-    if (!kelasData[jenjang]) {
-        console.error('Invalid jenjang:', jenjang);
-        kelasSelect.innerHTML = '<option value="">Jenjang tidak valid</option>';
         kelasSelect.disabled = true;
         return;
     }
@@ -94,25 +102,43 @@ function updateKelasDropdown(jenjang) {
     });
     
     kelasSelect.disabled = false;
-    console.log('Kelas dropdown updated for jenjang:', jenjang);
+}
+
+// ==================== FULLSCREEN HANDLER ====================
+function enterFullscreen() {
+    const elem = document.documentElement;
+    
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(err => {
+            console.log('Fullscreen error:', err);
+        });
+    } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+    }
+}
+
+function exitFullscreen() {
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+    }
 }
 
 // ==================== IMAGE HELPER ====================
 function getViewableImageUrl(imageId) {
     if (!imageId) return '';
     
-    // Bersihkan ID dari spasi
     imageId = imageId.trim();
     
-    // Jika ID sudah berupa format Google Drive ID (tanpa URL)
-    // Contoh: "1fX_AcM5AnZ1_NxTZB-hd0MdlfoNPyZhL"
     if (imageId.match(/^[a-zA-Z0-9_-]+$/)) {
-        // Gunakan format Googleusercontent untuk viewable image
         return `https://lh3.googleusercontent.com/d/${imageId}`;
     }
     
-    // Jika masih berupa URL lengkap, ekstrak ID-nya
-    // Mendeteksi ID file Google Drive dari berbagai format URL
     let idMatch = imageId.match(/\/d\/([a-zA-Z0-9_-]+)/) || 
                   imageId.match(/id=([a-zA-Z0-9_-]+)/) ||
                   imageId.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
@@ -121,23 +147,17 @@ function getViewableImageUrl(imageId) {
         return `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
     }
     
-    // Jika bukan Google Drive ID atau URL, kembalikan aslinya
     return imageId;
 }
 
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, setting up event listeners...');
-    
-    // Setup jenjang dropdown change event
+    // Setup jenjang dropdown
     const jenjangSelect = document.getElementById('jenjang');
     if (jenjangSelect) {
         jenjangSelect.addEventListener('change', function() {
-            console.log('Jenjang changed to:', this.value);
             updateKelasDropdown(this.value);
         });
-    } else {
-        console.error('ERROR: Element #jenjang not found!');
     }
     
     // Setup enter key for login
@@ -152,19 +172,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Clear any existing exam data
     clearExamData();
-    
-    console.log('Initialization complete');
 });
 
 // ==================== LOGIN HANDLER ====================
 async function handleLogin() {
-    // Collect data
     const nama = document.getElementById('nama').value.trim();
     const jenjang = document.getElementById('jenjang').value;
     const kelas = document.getElementById('kelas').value;
     const token = document.getElementById('token').value.trim();
     
-    // Validation
     if (!nama || !jenjang || !kelas || !token) {
         showError('Harap isi semua data dengan lengkap');
         return;
@@ -175,19 +191,17 @@ async function handleLogin() {
         return;
     }
     
-    // Save student data
     state.student = { 
         nama: nama, 
-        jenjang: jenjang,  // Ini adalah jenjang (X, XI, XII)
-        kelas: kelas,      // Ini adalah kelas lengkap (X-A, XI-B, dll)
+        jenjang: jenjang,
+        kelas: kelas,
         token: token 
     };
     
-    // Show loading
     showScreen('screen-loading');
     
     try {
-        // Step 1: Check token
+        // Check token
         document.getElementById('loading-message').textContent = 'Memeriksa token ujian...';
         
         const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
@@ -198,15 +212,11 @@ async function handleLogin() {
         
         const checkData = await checkRes.json();
         
-        if (!checkData.success) {
-            throw new Error(checkData.error || 'Token ujian tidak ditemukan');
-        }
-        
-        if (!checkData.exists) {
+        if (!checkData.success || !checkData.exists) {
             throw new Error('Token ujian tidak ditemukan atau sudah kadaluarsa');
         }
         
-        // Step 2: Login with correct data
+        // Login
         document.getElementById('loading-message').textContent = 'Login ke sistem...';
         
         const loginRes = await fetch(`${API_URL}/api/login`, {
@@ -224,8 +234,7 @@ async function handleLogin() {
         });
         
         if (!loginRes.ok) {
-            const errorText = await loginRes.text();
-            throw new Error(`HTTP ${loginRes.status}: ${errorText}`);
+            throw new Error(`HTTP ${loginRes.status}: Gagal login ke sistem`);
         }
         
         const loginData = await loginRes.json();
@@ -237,14 +246,9 @@ async function handleLogin() {
         state.sessionId = loginData.session_id;
         state.sessionSeed = loginData.session_seed;
         state.examData = loginData.ujian;
+        state.waktuMulai = new Date();
         
-        console.log('DEBUG - Session data:', {
-            sessionId: state.sessionId,
-            sessionSeed: state.sessionSeed,
-            examData: state.examData
-        });
-        
-        // Step 3: Get questions with CORRECT parameters
+        // Get questions
         document.getElementById('loading-message').textContent = 'Mengambil soal ujian...';
         
         const soalRes = await fetch(
@@ -257,11 +261,7 @@ async function handleLogin() {
         
         const soalData = await soalRes.json();
         
-        if (!soalData.success) {
-            throw new Error(soalData.error || 'Gagal mengambil soal');
-        }
-        
-        if (!soalData.soal || soalData.soal.length === 0) {
+        if (!soalData.success || !soalData.soal || soalData.soal.length === 0) {
             throw new Error('Tidak ada soal yang tersedia untuk ujian ini');
         }
         
@@ -270,46 +270,31 @@ async function handleLogin() {
         state.remainingTime = state.examData.durasi * 60;
         state.isExamActive = true;
         
-        // Log image info for debugging
-        console.log('Image debug - First question image ID:', state.questions[0]?.img_link);
-        console.log('Image debug - Converted URL:', getViewableImageUrl(state.questions[0]?.img_link));
-        console.log('Image debug - All questions with images:', 
-            state.questions.map((q, i) => ({
-                question: i + 1,
-                hasImage: !!q.img_link,
-                imageId: q.img_link,
-                convertedUrl: getViewableImageUrl(q.img_link)
-            })).filter(q => q.hasImage)
-        );
-        
-        // Step 4: Setup exam screen
+        // Setup exam screen
         setupExamScreen();
         showScreen('screen-exam');
         startTimer();
         showQuestion(0);
         
-        // Step 5: Start tab switch tracking
+        // Enter fullscreen
+        setTimeout(() => {
+            enterFullscreen();
+        }, 500);
+        
+        // Start tab switch tracking
         startTabSwitchTracking();
         
-        console.log('Login berhasil:', {
-            sessionId: state.sessionId,
-            jumlahSoal: state.questions.length,
-            durasi: state.examData.durasi,
-            questions: state.questions.length
-        });
+        showNotification('Ujian dimulai. Selamat mengerjakan!', 'success');
         
     } catch (error) {
-        console.error('Login error detail:', error);
+        console.error('Login error:', error);
         
-        // Show specific error message
         let errorMessage = error.message;
         
-        // Check for connection errors
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
             errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
         }
         
-        // Check for token errors
         if (errorMessage.includes('Token') || errorMessage.includes('token')) {
             errorMessage = 'Token ujian tidak valid. Pastikan token yang dimasukkan benar.';
         }
@@ -321,9 +306,6 @@ async function handleLogin() {
 
 // ==================== EXAM SETUP ====================
 function setupExamScreen() {
-    // Apply disable selection
-    document.getElementById('screen-exam').classList.add('disable-selection');
-    
     // Update exam info
     document.getElementById('exam-kelas').textContent = state.student.kelas;
     document.getElementById('exam-mapel').textContent = state.examData?.mapel || '-';
@@ -349,15 +331,12 @@ function updateProgress() {
     const current = state.currentIndex + 1;
     const answered = Object.keys(state.answers).length;
     
-    // Update progress text
     document.getElementById('exam-progress').textContent = `${current}/${total}`;
     
-    // Update navigation buttons
     document.getElementById('btn-prev').classList.toggle('hidden', state.currentIndex === 0);
     document.getElementById('btn-next').classList.toggle('hidden', state.currentIndex === total - 1);
     document.getElementById('btn-submit').classList.toggle('hidden', answered !== total);
     
-    // Update grid
     const gridItems = document.querySelectorAll('.grid-item');
     gridItems.forEach((item, index) => {
         item.classList.remove('answered', 'current');
@@ -381,60 +360,24 @@ function showQuestion(index) {
     // Update question text
     document.getElementById('question-text').textContent = question.soal;
     
-    // Update image - PERBAIKAN UTAMA DI SINI
+    // Update image
     const imgElement = document.getElementById('question-image');
     if (question.img_link && question.img_link.trim() !== '') {
-        // Gunakan fungsi untuk mendapatkan URL viewable dari ID
         const imageId = question.img_link.trim();
         const viewableUrl = getViewableImageUrl(imageId);
         
-        console.log('Image debug - Question:', index + 1);
-        console.log('Image debug - Original ID:', imageId);
-        console.log('Image debug - Viewable URL:', viewableUrl);
-        
-        // Setel URL gambar
         imgElement.src = viewableUrl;
         imgElement.style.display = 'block';
         imgElement.alt = "Gambar Soal " + (index + 1);
-        imgElement.title = "Gambar Soal " + (index + 1);
         
-        // Tambahkan styling untuk gambar
-        imgElement.style.maxWidth = '100%';
-        imgElement.style.maxHeight = '400px';
-        imgElement.style.margin = '20px auto';
-        imgElement.style.display = 'block';
-        imgElement.style.border = '1px solid #ddd';
-        imgElement.style.borderRadius = '8px';
-        imgElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
-        
-        // Tambahkan error handling untuk gambar
         imgElement.onerror = function() {
-            console.error('Gagal memuat gambar dengan URL:', viewableUrl);
-            console.error('Image ID:', imageId);
-            
-            // Coba alternatif URL jika yang pertama gagal
             const alternativeUrl = `https://drive.google.com/thumbnail?id=${imageId}&sz=w1000`;
-            console.log('Mencoba URL alternatif:', alternativeUrl);
             imgElement.src = alternativeUrl;
             
-            // Jika masih gagal, sembunyikan gambar
             imgElement.onerror = function() {
-                console.error('Gambar juga gagal dimuat dari URL alternatif');
                 imgElement.style.display = 'none';
-                
-                // Tambahkan pesan ke pengguna
-                const questionText = document.getElementById('question-text');
-                questionText.innerHTML = question.soal + 
-                    '<br><br><span style="color: #e74c3c; font-size: 0.9em;">' +
-                    '<i class="fas fa-exclamation-triangle"></i> ' +
-                    'Gambar soal tidak dapat dimuat. Silakan lanjutkan mengerjakan.</span>';
+                showNotification('Gambar soal tidak dapat dimuat', 'info');
             };
-        };
-        
-        // Tambahkan loading indicator
-        imgElement.onload = function() {
-            console.log('Gambar berhasil dimuat:', viewableUrl);
-            console.log('Image dimensions:', imgElement.naturalWidth + 'x' + imgElement.naturalHeight);
         };
     } else {
         imgElement.style.display = 'none';
@@ -444,7 +387,6 @@ function showQuestion(index) {
     const container = document.getElementById('options-container');
     container.innerHTML = '';
     
-    // Get options from question object
     const options = [
         { letter: 'A', text: question.opsi_a || '' },
         { letter: 'B', text: question.opsi_b || '' },
@@ -483,9 +425,6 @@ function selectAnswer(answer) {
     const currentIndex = state.currentIndex;
     state.answers[currentIndex] = answer;
     
-    console.log(`DEBUG - Jawaban untuk soal ${currentIndex + 1}: ${answer}`);
-    console.log('DEBUG - Total jawaban:', Object.keys(state.answers).length);
-    
     // Update UI
     const options = document.querySelectorAll('.option');
     options.forEach(opt => opt.classList.remove('selected'));
@@ -498,7 +437,7 @@ function selectAnswer(answer) {
     
     updateProgress();
     
-    // Auto-next after 500ms
+    // Auto-next setelah 500ms
     setTimeout(() => {
         if (currentIndex < state.questions.length - 1) {
             showQuestion(currentIndex + 1);
@@ -533,9 +472,9 @@ function startTimer() {
         
         // Change color when time is running out
         const timerElement = document.getElementById('exam-timer');
-        if (state.remainingTime <= 300) { // 5 minutes
+        if (state.remainingTime <= 300) {
             timerElement.style.background = '#e74c3c';
-        } else if (state.remainingTime <= 600) { // 10 minutes
+        } else if (state.remainingTime <= 600) {
             timerElement.style.background = '#ff9800';
         }
         
@@ -549,7 +488,6 @@ function startTimer() {
 
 // ==================== TAB SWITCH TRACKING ====================
 function startTabSwitchTracking() {
-    // Only track during exam
     state.tabSwitchCount = 0;
     
     document.addEventListener('visibilitychange', () => {
@@ -557,30 +495,29 @@ function startTabSwitchTracking() {
         
         if (document.hidden) {
             state.tabSwitchCount++;
-            console.log(`Tab switch detected: ${state.tabSwitchCount}`);
+            showNotification('Anda meninggalkan halaman ujian! Aktivitas telah dicatat.', 'error');
         }
     });
 }
 
 // ==================== SUBMIT EXAM ====================
-function confirmSubmit() {
-    // Langsung submit tanpa konfirmasi
-    submitExam();
-}
-
 async function submitExam() {
     if (state.examSubmitted) return;
+    
     state.examSubmitted = true;
     state.isExamActive = false;
+    state.waktuSelesai = new Date();
     
     clearInterval(state.timerInterval);
-    document.removeEventListener('visibilitychange', startTabSwitchTracking);
+    
+    // Keluar dari fullscreen
+    exitFullscreen();
     
     showScreen('screen-loading');
     document.getElementById('loading-message').textContent = 'Mengirim jawaban...';
     
     try {
-        // Siapkan jawaban sebagai ARRAY (format yang diharapkan oleh worker)
+        // Siapkan jawaban
         let jawabanArray = [];
         
         for (let i = 0; i < state.questions.length; i++) {
@@ -588,25 +525,7 @@ async function submitExam() {
             jawabanArray.push(answer);
         }
         
-        // Debug data yang akan dikirim
-        console.log('DEBUG - Data yang akan dikirim:', {
-            session_id: state.sessionId,
-            jawaban_array: jawabanArray,
-            jawaban_length: jawabanArray.length,
-            questions_length: state.questions.length,
-            tab_switch_count: state.tabSwitchCount
-        });
-        
-        // Cek jika ada jawaban kosong
-        const unanswered = [];
-        for (let i = 0; i < state.questions.length; i++) {
-            if (!state.answers[i]) unanswered.push(i + 1);
-        }
-        if (unanswered.length > 0) {
-            console.log('Peringatan: Soal belum terjawab:', unanswered);
-        }
-        
-        // Submit dengan format yang BENAR (jawaban sebagai array)
+        // Submit jawaban
         const submitRes = await fetch(`${API_URL}/api/nilai`, {
             method: 'POST',
             headers: { 
@@ -615,7 +534,7 @@ async function submitExam() {
             },
             body: JSON.stringify({
                 session_id: state.sessionId,
-                jawaban: jawabanArray,  // KIRIM sebagai ARRAY (sesuai dengan worker)
+                jawaban: jawabanArray,
                 tab_switch_count: state.tabSwitchCount
             })
         });
@@ -630,77 +549,98 @@ async function submitExam() {
             throw new Error(submitData.error || 'Gagal mengirim jawaban');
         }
         
-        console.log('DEBUG - Response dari server:', submitData);
-        
         // Show result
         showResult(submitData);
         
     } catch (error) {
         console.error('Submit error:', error);
-        
-        // Fallback to local result jika server error
-        const benar = Object.keys(state.answers).length;
-        const totalSoal = state.questions.length;
-        const nilai = totalSoal > 0 ? Math.round((benar / totalSoal) * 100) : 0;
-        
-        showResult({
-            success: true,
-            hasil: {
-                benar: benar,
-                total_soal: totalSoal,
-                nilai: nilai,
-                salah: totalSoal - benar
-            }
-        });
+        showResult({ success: true });
     }
 }
 
 function showResult(resultData) {
+    // Hitung waktu pengerjaan
+    let waktuPengerjaan = 0;
+    if (state.waktuMulai && state.waktuSelesai) {
+        const diffMs = state.waktuSelesai - state.waktuMulai;
+        waktuPengerjaan = Math.floor(diffMs / 1000 / 60); // dalam menit
+    } else {
+        // Fallback: hitung dari timer
+        waktuPengerjaan = Math.max(0, (state.examData?.durasi || 0) - Math.floor(state.remainingTime / 60));
+    }
+    
     // Update result screen
     document.getElementById('result-nama').textContent = state.student.nama;
     document.getElementById('result-kelas').textContent = state.student.kelas;
     document.getElementById('result-mapel').textContent = state.examData?.mapel || '-';
     document.getElementById('result-total-soal').textContent = state.questions.length;
     document.getElementById('result-dijawab').textContent = `${Object.keys(state.answers).length} soal`;
-    
-    if (resultData.hasil) {
-        document.getElementById('result-nilai').textContent = 
-            `${resultData.hasil.nilai || 0} (${resultData.hasil.benar || 0} benar)`;
-    } else {
-        document.getElementById('result-nilai').textContent = 'Tidak tersedia';
-    }
+    document.getElementById('result-nilai').textContent = `${waktuPengerjaan} menit`;
     
     showScreen('screen-result');
+    showNotification('Ujian berhasil diselesaikan!', 'success');
 }
 
 function showPenutup() {
-    const container = document.getElementById('penutup-container');
+    // Hitung waktu pengerjaan
+    let waktuPengerjaan = 0;
+    if (state.waktuMulai && state.waktuSelesai) {
+        const diffMs = state.waktuSelesai - state.waktuMulai;
+        waktuPengerjaan = Math.floor(diffMs / 1000 / 60);
+    }
+    
     const message = document.getElementById('penutup-message');
     const tabInfo = document.getElementById('tab-switch-info');
     
-    // Calculate time used
-    const waktuDigunakan = state.examData?.durasi || 0;
-    const menitTerpakai = Math.max(0, waktuDigunakan - Math.floor(state.remainingTime / 60));
-    
-    // Update container class
-    container.className = 'penutup-container green';
-    
-    // Update message
+    // Update message tanpa frame
     message.innerHTML = `
-        <strong>Selamat ${state.student.nama} (${state.student.kelas}),</strong><br><br>
-        Anda telah selesai mengerjakan <strong>Mata Pelajaran ${state.examData?.mapel || '-'}</strong><br>
-        sebanyak <strong>${state.questions.length} soal</strong> dengan durasi <strong>${waktuDigunakan} menit</strong>.<br>
-        Waktu yang digunakan: <strong>${menitTerpakai} menit</strong>.<br><br>
-        Semoga mendapat nilai yang terbaik.<br><br>
-        <strong>Tunjukkan halaman ini ke pengawas,</strong><br>
-        sebagai bukti Anda sudah menyelesaikan ujian.
+        <div style="text-align: center; padding: 20px;">
+            <h3 style="color: #1a73e8; margin-bottom: 20px;">
+                <i class="fas fa-certificate"></i> Bukti Penyelesaian Ujian
+            </h3>
+            
+            <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <p style="margin-bottom: 15px; font-size: 1.1rem; color: #333;">
+                    <strong>${state.student.nama}</strong><br>
+                    <span style="color: #666;">${state.student.kelas}</span>
+                </p>
+                
+                <div style="border-top: 1px solid #e0e0e0; padding-top: 15px; margin-top: 15px;">
+                    <p style="margin-bottom: 10px;">
+                        <strong>Mata Pelajaran:</strong><br>
+                        ${state.examData?.mapel || '-'}
+                    </p>
+                    
+                    <p style="margin-bottom: 10px;">
+                        <strong>Jumlah Soal:</strong><br>
+                        ${state.questions.length} soal
+                    </p>
+                    
+                    <p style="margin-bottom: 10px;">
+                        <strong>Waktu Pengerjaan:</strong><br>
+                        ${waktuPengerjaan} menit
+                    </p>
+                    
+                    <p style="color: #666; font-size: 0.95rem; margin-top: 15px;">
+                        <i class="fas fa-clock"></i> Selesai: ${state.waktuSelesai ? state.waktuSelesai.toLocaleString('id-ID') : new Date().toLocaleString('id-ID')}
+                    </p>
+                </div>
+            </div>
+            
+            <p style="color: #2e7d32; font-weight: 600; padding: 15px; background: #e8f5e9; border-radius: 8px;">
+                <i class="fas fa-check-circle"></i> Tunjukkan bukti ini kepada pengawas ujian
+            </p>
+        </div>
     `;
     
     // Update tab switch info
     if (state.tabSwitchCount > 0) {
         tabInfo.innerHTML = `
-            <i class="fas fa-exclamation-triangle"></i> 
-            <strong>Peringatan:</strong> Anda berpindah tab/window sebanyak <strong>${state.tabSwitchCount} kali</strong> selama ujian.
+            <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #ff9800;">
+                <i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i> 
+                <strong style="color: #e65100;">Catatan:</strong> 
+                Terdapat <strong>${state.tabSwitchCount} kali</strong> aktivitas berpindah tab/window selama ujian.
+            </div>
         `;
         tabInfo.style.display = 'block';
     } else {
@@ -711,11 +651,7 @@ function showPenutup() {
 }
 
 function keluarAplikasi() {
-    // Clear all data
     clearExamData();
-    
-    // Clear localStorage
-    localStorage.clear();
     
     // Reset form
     document.getElementById('nama').value = '';
@@ -723,8 +659,7 @@ function keluarAplikasi() {
     document.getElementById('kelas').innerHTML = '<option value="">Pilih Jenjang terlebih dahulu</option>';
     document.getElementById('kelas').disabled = true;
     document.getElementById('token').value = '';
-    document.getElementById('screen-exam').classList.remove('disable-selection');
-
+    
     // Go back to login
     showScreen('screen-login');
 }
@@ -748,12 +683,13 @@ function clearExamData() {
             jenjang: '',
             kelas: '',
             token: ''
-        }
+        },
+        waktuMulai: null,
+        waktuSelesai: null
     };
 }
 
 // ==================== BROWSER PROTECTION ====================
-// Prevent accidental refresh/close during exam
 window.addEventListener('beforeunload', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
@@ -762,11 +698,20 @@ window.addEventListener('beforeunload', function(e) {
     }
 });
 
+// Handler untuk fullscreen
+document.addEventListener('fullscreenchange', function() {
+    if (state.isExamActive && !state.examSubmitted && !document.fullscreenElement) {
+        // Jika keluar fullscreen selama ujian, kembalikan ke fullscreen
+        enterFullscreen();
+        showNotification('Harap tetap dalam mode fullscreen selama ujian', 'error');
+    }
+});
+
 // Prevent context menu selama ujian
 document.addEventListener('contextmenu', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
-        alert('Klik kanan tidak diizinkan selama ujian!');
+        showNotification('Klik kanan tidak diizinkan selama ujian!', 'error');
         return false;
     }
 });
@@ -775,7 +720,7 @@ document.addEventListener('contextmenu', function(e) {
 document.addEventListener('copy', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
-        alert('Copy tidak diizinkan selama ujian!');
+        showNotification('Copy tidak diizinkan selama ujian!', 'error');
         return false;
     }
 });
@@ -783,7 +728,7 @@ document.addEventListener('copy', function(e) {
 document.addEventListener('paste', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
-        alert('Paste tidak diizinkan selama ujian!');
+        showNotification('Paste tidak diizinkan selama ujian!', 'error');
         return false;
     }
 });
@@ -791,7 +736,7 @@ document.addEventListener('paste', function(e) {
 document.addEventListener('cut', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
-        alert('Cut tidak diizinkan selama ujian!');
+        showNotification('Cut tidak diizinkan selama ujian!', 'error');
         return false;
     }
 });
@@ -806,28 +751,28 @@ document.addEventListener('keydown', function(e) {
             (e.ctrlKey && e.shiftKey && e.key === 'R') ||
             (e.ctrlKey && e.key === 'F5')) {
             e.preventDefault();
-            alert('Refresh tidak diizinkan selama ujian!');
+            showNotification('Refresh tidak diizinkan selama ujian!', 'error');
             return false;
         }
         
         // Block print (Ctrl+P, Ctrl+Shift+P)
         if ((e.ctrlKey && e.key === 'p') || (e.ctrlKey && e.shiftKey && e.key === 'P')) {
             e.preventDefault();
-            alert('Print tidak diizinkan selama ujian!');
+            showNotification('Print tidak diizinkan selama ujian!', 'error');
             return false;
         }
         
         // Block save (Ctrl+S)
         if (e.ctrlKey && e.key === 's') {
             e.preventDefault();
-            alert('Save tidak diizinkan selama ujian!');
+            showNotification('Save tidak diizinkan selama ujian!', 'error');
             return false;
         }
         
         // Block view source (Ctrl+U)
         if (e.ctrlKey && e.key === 'u') {
             e.preventDefault();
-            alert('View source tidak diizinkan selama ujian!');
+            showNotification('View source tidak diizinkan selama ujian!', 'error');
             return false;
         }
         
@@ -836,9 +781,17 @@ document.addEventListener('keydown', function(e) {
             (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')) ||
             (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c'))) {
             e.preventDefault();
-            alert('Developer tools tidak diizinkan selama ujian!');
+            showNotification('Developer tools tidak diizinkan selama ujian!', 'error');
             return false;
         }
+    }
+});
+
+// Prevent selection selama ujian
+document.addEventListener('selectstart', function(e) {
+    if (state.isExamActive && !state.examSubmitted) {
+        e.preventDefault();
+        return false;
     }
 });
 
@@ -856,45 +809,3 @@ document.addEventListener('drop', function(e) {
         return false;
     }
 });
-
-// Prevent selection selama ujian
-document.addEventListener('selectstart', function(e) {
-    if (state.isExamActive && !state.examSubmitted) {
-        e.preventDefault();
-        return false;
-    }
-});
-
-// Disable right click on images
-document.addEventListener('contextmenu', function(e) {
-    if (state.isExamActive && !state.examSubmitted && e.target.tagName === 'IMG') {
-        e.preventDefault();
-        return false;
-    }
-}, false);
-
-// Blur on tab/window switch
-window.addEventListener('blur', function() {
-    if (state.isExamActive && !state.examSubmitted) {
-        console.log('Window/tab kehilangan fokus');
-    }
-});
-
-// Fullscreen detection
-document.addEventListener('fullscreenchange', function() {
-    if (state.isExamActive && !state.examSubmitted && !document.fullscreenElement) {
-        alert('Mode fullscreen tidak boleh dinonaktifkan selama ujian!');
-        document.documentElement.requestFullscreen().catch(err => {
-            console.log('Fullscreen error:', err);
-        });
-    }
-});
-
-// Force fullscreen pada saat mulai ujian
-function forceFullScreen() {
-    if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(err => {
-            console.log('Fullscreen request failed:', err);
-        });
-    }
-}
