@@ -94,18 +94,17 @@
                 </div>
                 
                 <!-- Navigation Buttons -->
-<div class="question-nav">
-    <button class="btn btn-secondary nav-btn hidden" id="btn-prev" onclick="prevQuestion()">
-        <i class="fas fa-arrow-left"></i> Sebelum
-    </button>
-    <button class="btn btn-success nav-btn hidden" id="btn-submit" onclick="submitExam()">
-        <!-- Perhatikan: langsung submitExam(), bukan confirmSubmit() -->
-        <i class="fas fa-paper-plane"></i> Kirim Jawaban
-    </button>
-    <button class="btn btn-secondary nav-btn hidden" id="btn-next" onclick="nextQuestion()">
-        Selanjutnya <i class="fas fa-arrow-right"></i>
-    </button>
-</div>
+                <div class="question-nav">
+                    <button class="btn btn-secondary nav-btn hidden" id="btn-prev" onclick="prevQuestion()">
+                        <i class="fas fa-arrow-left"></i> Sebelum
+                    </button>
+                    <button class="btn btn-success nav-btn hidden" id="btn-submit" onclick="submitExam()">
+                        <i class="fas fa-paper-plane"></i> Kirim Jawaban
+                    </button>
+                    <button class="btn btn-secondary nav-btn hidden" id="btn-next" onclick="nextQuestion()">
+                        Selanjutnya <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
                 
                 <!-- Question Grid -->
                 <div class="question-grid-container">
@@ -145,7 +144,7 @@
                             <span class="result-value" id="result-dijawab">-</span>
                         </div>
                         <div class="result-row">
-                            <span class="result-label">Nilai:</span>
+                            <span class="result-label">Waktu Pengerjaan:</span>
                             <span class="result-value" id="result-nilai">-</span>
                         </div>
                     </div>
@@ -159,19 +158,15 @@
             <!-- SCREEN 5: PENUTUP -->
             <div class="screen" id="screen-penutup">
                 <div class="penutup-container" id="penutup-container">
-                    <h2 style="margin-bottom: 25px; color: #333;">
-                        <i class="fas fa-certificate"></i> Bukti Penyelesaian Ujian
-                    </h2>
-                    
                     <div class="penutup-message" id="penutup-message">
-                        <!-- Message will be inserted here -->
+                        <!-- Message akan dimasukkan di sini -->
                     </div>
                     
                     <div class="tab-switch-info" id="tab-switch-info">
-                        <!-- Tab switch info will be inserted here -->
+                        <!-- Tab switch info akan dimasukkan di sini -->
                     </div>
                     
-                    <div style="margin-top: 30px;">
+                    <div style="margin-top: 30px; text-align: center;">
                         <button class="btn btn-danger" onclick="keluarAplikasi()" style="width: auto; padding: 15px 40px;">
                             <i class="fas fa-sign-out-alt"></i> Keluar Aplikasi
                         </button>
@@ -192,8 +187,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
-
-
-
-
