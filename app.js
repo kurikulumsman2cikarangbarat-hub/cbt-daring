@@ -433,22 +433,8 @@ function startTabSwitchTracking() {
 
 // ==================== SUBMIT EXAM ====================
 function confirmSubmit() {
-    const total = state.questions.length;
-    const answered = Object.keys(state.answers).length;
-    const unanswered = total - answered;
-    
-    let message = `Kirim jawaban sekarang?\n\n`;
-    message += `Soal dijawab: ${answered} dari ${total}\n`;
-    
-    if (unanswered > 0) {
-        message += `\nMasih ada ${unanswered} soal yang belum dijawab.\n`;
-        message += `Yakin ingin melanjutkan?`;
-    }
-    
-    if (confirm(message)) {
-        submitExam();
-    }
-}
+    // Langsung submit tanpa konfirmasi
+    submitExam();
 
 async function submitExam() {
     if (state.examSubmitted) return;
@@ -543,24 +529,24 @@ function showPenutup() {
     const message = document.getElementById('penutup-message');
     const tabInfo = document.getElementById('tab-switch-info');
     
-    // Determine background color
-    let bgColor = 'green';
-    let tabColor = 'green';
-    let tabMessage = '';
+    // Update container class
+    container.className = 'penutup-container green';
     
-    if (state.tabSwitchCount === 0) {
-        bgColor = 'green';
-        tabColor = 'green';
-        tabMessage = 'Tidak terdeteksi berpindah tab';
-    } else if (state.tabSwitchCount < 10) {
-        bgColor = 'yellow';
-        tabColor = 'yellow';
-        tabMessage = `Terdeteksi berpindah tab ${state.tabSwitchCount} kali`;
-    } else {
-        bgColor = 'red';
-        tabColor = 'red';
-        tabMessage = `Terdeteksi berpindah tab ${state.tabSwitchCount} kali (PERINGATAN)`;
-    }
+    // Update message dengan format baru
+    message.innerHTML = `
+        <strong>Selamat ${state.student.nama},</strong><br>
+        Anda telah selesai mengerjakan <strong>Mata Pelajaran ${state.examData?.mapel || '-'}</strong><br>
+        sebanyak <strong>${state.questions.length} soal</strong> selama <strong>${state.waktuDigunakan || 'tidak tercatat'}</strong>.<br>
+        Semoga mendapatkan nilai yang terbaik.<br><br>
+        <strong>Tunjukkan halaman ini kepada Guru Pengawas</strong><br>
+        sebagai bukti Anda sudah menyelesaikan ujian.
+    `;
+    
+    // Sembunyikan tab switch info
+    tabInfo.style.display = 'none';
+    
+    showScreen('screen-penutup');
+}
     
     // Update container classes
     container.className = `penutup-container ${bgColor}`;
@@ -633,18 +619,20 @@ window.addEventListener('beforeunload', function(e) {
     }
 });
 
-// Prevent context menu during exam
+// Prevent context menu selama ujian
 document.addEventListener('contextmenu', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
+        alert('Klik kanan tidak diizinkan selama ujian!');
         return false;
     }
 });
 
-// Prevent copy-paste during exam
+// Prevent copy-paste selama ujian
 document.addEventListener('copy', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
+        alert('Copy tidak diizinkan selama ujian!');
         return false;
     }
 });
@@ -652,6 +640,15 @@ document.addEventListener('copy', function(e) {
 document.addEventListener('paste', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
+        alert('Paste tidak diizinkan selama ujian!');
+        return false;
+    }
+});
+
+document.addEventListener('cut', function(e) {
+    if (state.isExamActive && !state.examSubmitted) {
+        e.preventDefault();
+        alert('Cut tidak diizinkan selama ujian!');
         return false;
     }
 });
@@ -659,19 +656,106 @@ document.addEventListener('paste', function(e) {
 // Prevent keyboard shortcuts
 document.addEventListener('keydown', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
-        // Block F5, Ctrl+R, Ctrl+Shift+R
-        if (e.key === 'F5' || (e.ctrlKey && e.key === 'r') || (e.ctrlKey && e.shiftKey && e.key === 'R')) {
+        // Block F5, Ctrl+R, Ctrl+Shift+R, Ctrl+F5 (refresh)
+        if (e.key === 'F5' || 
+            e.key === 'F12' ||
+            (e.ctrlKey && e.key === 'r') || 
+            (e.ctrlKey && e.shiftKey && e.key === 'R') ||
+            (e.ctrlKey && e.key === 'F5')) {
             e.preventDefault();
             alert('Refresh tidak diizinkan selama ujian!');
             return false;
         }
         
-        // Block print
-        if (e.ctrlKey && e.key === 'p') {
+        // Block print (Ctrl+P, Ctrl+Shift+P)
+        if ((e.ctrlKey && e.key === 'p') || (e.ctrlKey && e.shiftKey && e.key === 'P')) {
             e.preventDefault();
+            alert('Print tidak diizinkan selama ujian!');
+            return false;
+        }
+        
+        // Block save (Ctrl+S)
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            alert('Save tidak diizinkan selama ujian!');
+            return false;
+        }
+        
+        // Block view source (Ctrl+U)
+        if (e.ctrlKey && e.key === 'u') {
+            e.preventDefault();
+            alert('View source tidak diizinkan selama ujian!');
+            return false;
+        }
+        
+        // Block inspect element (Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C)
+        if ((e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) ||
+            (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')) ||
+            (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c'))) {
+            e.preventDefault();
+            alert('Developer tools tidak diizinkan selama ujian!');
             return false;
         }
     }
 });
+
+// Prevent drag and drop
+document.addEventListener('dragstart', function(e) {
+    if (state.isExamActive && !state.examSubmitted) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+document.addEventListener('drop', function(e) {
+    if (state.isExamActive && !state.examSubmitted) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Prevent selection selama ujian
+document.addEventListener('selectstart', function(e) {
+    if (state.isExamActive && !state.examSubmitted) {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Disable right click on images
+document.addEventListener('contextmenu', function(e) {
+    if (state.isExamActive && !state.examSubmitted && e.target.tagName === 'IMG') {
+        e.preventDefault();
+        return false;
+    }
+}, false);
+
+// Blur on tab/window switch
+window.addEventListener('blur', function() {
+    if (state.isExamActive && !state.examSubmitted) {
+        // Bisa tambahkan logika penalti atau warning
+        console.log('Window/tab kehilangan fokus');
+    }
+});
+
+// Fullscreen detection
+document.addEventListener('fullscreenchange', function() {
+    if (state.isExamActive && !state.examSubmitted && !document.fullscreenElement) {
+        alert('Mode fullscreen tidak boleh dinonaktifkan selama ujian!');
+        document.documentElement.requestFullscreen().catch(err => {
+            console.log('Fullscreen error:', err);
+        });
+    }
+});
+
+// Force fullscreen pada saat mulai ujian
+function forceFullScreen() {
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.log('Fullscreen request failed:', err);
+        });
+    }
+}
+
 
 
