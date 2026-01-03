@@ -4,288 +4,169 @@
     padding: 0;
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent;
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 body {
     background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    background-attachment: fixed;
     min-height: 100vh;
     padding: 10px;
     color: #333;
-    overflow-x: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 /* CONTAINER */
 .container {
-    max-width: 100%;
+    width: 100%;
+    max-width: 800px; /* Batasi lebar maksimal agar tidak terlalu lebar di PC */
     background: white;
     border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
     overflow: hidden;
-    min-height: 95vh;
+    min-height: 90vh;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 /* HEADER */
 .header {
     background: linear-gradient(135deg, #0d47a1 0%, #1a73e8 100%);
     color: white;
-    padding: 18px 15px;
+    padding: 20px 15px;
     text-align: center;
-    box-shadow: 0 2px 10px rgba(13, 71, 161, 0.3);
+    flex-shrink: 0; /* Header tidak akan menyusut */
 }
 
 .header h1 {
     font-size: 1.4rem;
     margin-bottom: 5px;
-    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 .header p {
     font-size: 0.85rem;
-    opacity: 0.9;
+    opacity: 0.85;
 }
 
-/* CONTENT AREA */
-.content {
-    flex: 1;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-/* SCREENS */
+/* SCREENS SYSTEM */
 .screen {
     display: none;
     flex: 1;
     flex-direction: column;
-    padding: 15px;
+    padding: 20px;
+    animation: fadeIn 0.3s ease-in-out;
 }
 
 .screen.active {
     display: flex;
 }
 
-/* LOGIN SCREEN */
-.form-group {
-    margin-bottom: 20px;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #1a73e8;
-    font-size: 1rem;
-}
-
-.form-control {
-    width: 100%;
-    padding: 16px 15px;
-    border: 2px solid #e0e0e0;
-    border-radius: 10px;
-    font-size: 1rem;
-    background: white;
-    transition: all 0.3s;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: #1a73e8;
-    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
-}
-
-select.form-control {
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a73e8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    background-size: 20px;
-    padding-right: 45px;
-}
-
-/* WARNING BOX */
-.warning-box {
-    background: #fff3cd;
-    border-left: 4px solid #ff9800;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    color: #856404;
-    font-size: 0.9rem;
-}
-
-.warning-box h4 {
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* ERROR BOX */
-.error-box {
-    background: #f8d7da;
-    border-left: 4px solid #e74c3c;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    color: #721c24;
-    display: none;
-    font-size: 0.9rem;
-}
-
-/* BUTTONS */
-.btn {
-    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
-    color: white;
-    border: none;
-    padding: 18px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 1.05rem;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    touch-action: manipulation;
-    min-height: 54px;
-}
-
-.btn:active {
-    transform: scale(0.98);
-}
-
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.btn-success {
-    background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
-}
-
-.btn-danger {
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-}
-
-.btn-warning {
-    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-}
-
-.btn-secondary {
-    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-}
-
-/* EXAM HEADER */
+/* EXAM HEADER (Sticky Info) */
 .exam-header {
     background: #f8f9fa;
     padding: 12px 15px;
     border-bottom: 1px solid #e0e0e0;
-    font-size: 0.85rem;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .exam-progress {
-    font-weight: 600;
+    font-weight: 700;
     color: #1a73e8;
     background: #e3f2fd;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 20px;
-    white-space: nowrap;
-}
-
-.exam-info {
-    color: #666;
-    flex: 1;
-    min-width: 200px;
-    text-align: center;
 }
 
 .exam-timer {
     background: #e74c3c;
     color: white;
-    padding: 6px 15px;
+    padding: 6px 14px;
     border-radius: 20px;
-    font-weight: 600;
-    white-space: nowrap;
+    font-weight: 700;
     box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
 }
 
-/* QUESTION CONTAINER */
+/* QUESTION AREA */
 .question-container {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 15px;
-    background: white;
+    padding: 20px;
 }
 
 .question-text {
     font-size: 1.1rem;
-    line-height: 1.6;
+    line-height: 1.7;
     margin-bottom: 25px;
-    color: #333;
+    color: #2c3e50;
+    font-weight: 500;
 }
 
 .question-image {
     max-width: 100%;
-    max-height: 250px;
+    height: auto;
     border-radius: 8px;
-    margin-bottom: 20px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    margin: 0 auto 20px;
     display: block;
+    border: 1px solid #eee;
 }
 
 /* OPTIONS */
 .options-container {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 12px;
-    margin-bottom: 25px;
 }
 
 .option {
-    padding: 18px 15px;
-    background: white;
+    padding: 16px;
+    background: #fff;
     border: 2px solid #e0e0e0;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     gap: 15px;
-    touch-action: manipulation;
 }
 
-.option:active {
-    transform: scale(0.98);
+.option:hover {
+    border-color: #1a73e8;
+    background: #f8fbff;
 }
 
 .option.selected {
     background: #e3f2fd;
     border-color: #1a73e8;
-    color: #1a73e8;
+    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15);
 }
 
 .option-letter {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+    width: 35px;
+    height: 35px;
+    min-width: 35px;
     border-radius: 50%;
     background: #f0f0f0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    font-size: 1.1rem;
+    font-weight: 800;
+    color: #555;
 }
 
 .option.selected .option-letter {
@@ -293,294 +174,104 @@ select.form-control {
     color: white;
 }
 
-.option-text {
-    flex: 1;
-    font-size: 1rem;
-}
-
-/* NAVIGATION */
+/* NAVIGATION FOOTER */
 .question-nav {
     display: flex;
     justify-content: space-between;
-    gap: 10px;
+    gap: 12px;
     padding: 15px;
     background: white;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid #eee;
+    margin-top: auto;
 }
 
-.nav-btn {
-    flex: 1;
-    padding: 15px;
-    font-size: 0.95rem;
-    min-height: 50px;
+/* BUTTONS */
+.btn {
+    padding: 14px 20px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: 0.3s;
+    text-transform: uppercase;
+    font-size: 0.9rem;
 }
 
-/* QUESTION GRID */
+.btn-primary { background: #1a73e8; color: white; }
+.btn-primary:hover { background: #1557b0; }
+
+.btn-secondary { background: #6c757d; color: white; }
+
+.btn-success { background: #27ae60; color: white; }
+
+.btn:disabled {
+    background: #ccc !important;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* QUESTION GRID (Nomor Soal) */
 .question-grid-container {
     padding: 15px;
-    background: #f8f9fa;
+    background: #f1f3f4;
     border-top: 1px solid #e0e0e0;
 }
 
 .question-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
     gap: 8px;
+    max-height: 150px;
+    overflow-y: auto;
 }
 
 .grid-item {
-    width: 45px;
-    height: 45px;
+    aspect-ratio: 1/1;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
+    background: #fff;
+    border: 1px solid #ddd;
+    font-size: 0.9rem;
     cursor: pointer;
-    transition: all 0.3s;
-    background: #e0e0e0;
-    color: #666;
-    font-size: 1rem;
-    touch-action: manipulation;
 }
 
-.grid-item.answered {
-    background: #1a73e8;
-    color: white;
-    box-shadow: 0 2px 6px rgba(26, 115, 232, 0.3);
-}
+.grid-item.answered { background: #1a73e8; color: white; border-color: #1a73e8; }
+.grid-item.current { border: 2px solid #ff9800; color: #ff9800; transform: scale(1.1); }
 
-.grid-item.current {
-    background: #ff9800;
-    color: white;
-    transform: scale(1.05);
-    box-shadow: 0 3px 10px rgba(255, 152, 0, 0.4);
-}
-
-/* RESULT SCREEN */
-.result-container {
-    text-align: center;
-    padding: 30px 20px;
-}
-
-.result-icon {
-    font-size: 4rem;
-    color: #27ae60;
-    margin-bottom: 20px;
-}
-
-.result-title {
-    font-size: 1.8rem;
-    color: #333;
-    margin-bottom: 25px;
-}
-
-.result-details {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 25px;
-    margin: 0 auto 25px;
-    text-align: left;
-    max-width: 600px;
-}
-
-.result-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 0;
-    border-bottom: 1px solid #e0e0e0;
-    font-size: 0.95rem;
-}
-
-.result-row:last-child {
-    border-bottom: none;
-}
-
-.result-label {
-    font-weight: 600;
-    color: #666;
-}
-
-.result-value {
-    font-weight: bold;
-    color: #1a73e8;
-}
-
-/* PENUTUP SCREEN - Perbaikan jarak baris */
+/* PENUTUP / RESULT */
 .penutup-container {
-    text-align: center;
-    padding: 20px 15px;
+    background: #e8f5e9;
     border-radius: 12px;
-    margin: 20px;
-    min-height: 400px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-    border-left: 6px solid #28a745;
+    padding: 30px;
+    text-align: center;
+    border-left: 8px solid #2e7d32;
+    margin: auto 0;
 }
 
 .penutup-message {
     font-size: 1.1rem;
-    line-height: 1.4; /* Diperkecil dari 1.6 agar lebih rapat */
-    margin-bottom: 20px;
-    color: #333;
+    line-height: 1.5;
+    color: #1b5e20;
 }
 
-.penutup-message strong {
-    color: #1a73e8; /* Warna biru untuk teks penting */
-}
-
-.penutup-message br {
-    margin-bottom: 5px; /* Kurangi jarak antar baris */
-}
-
-/* Sembunyikan tab switch info */
-#tab-switch-info {
-    display: none;
-}
-.tab-switch-info.green {
-    background: #28a745;
-    color: white;
-}
-
-.tab-switch-info.yellow {
-    background: #ffc107;
-    color: #333;
-}
-
-.tab-switch-info.red {
-    background: #dc3545;
-    color: white;
-}
-
-/* LOADING */
-.loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    padding: 40px 20px;
-}
-
-.loading-spinner {
-    width: 60px;
-    height: 60px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #1a73e8;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 25px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* FOOTER */
-.footer {
-    text-align: center;
-    padding: 15px;
-    color: #666;
-    font-size: 0.8rem;
-    border-top: 1px solid #e0e0e0;
-    background: #f8f9fa;
+/* ANTI CHEAT */
+.no-select {
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 /* RESPONSIVE */
-@media (max-width: 480px) {
-    .exam-header {
-        font-size: 0.8rem;
-        padding: 10px;
-    }
-    
-    .exam-progress, .exam-timer {
-        padding: 5px 10px;
-        font-size: 0.85rem;
-    }
-    
-    .question-grid {
-        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-    }
-    
-    .grid-item {
-        width: 40px;
-        height: 40px;
-        font-size: 0.9rem;
-    }
-    
-    .option {
-        padding: 15px 12px;
-    }
-    
-    .option-letter {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
-        font-size: 1rem;
-    }
-    
-    .nav-btn {
-        padding: 12px 8px;
-        font-size: 0.9rem;
-        min-height: 45px;
-    }
-    
-    .btn {
-        padding: 16px;
-        font-size: 1rem;
-        min-height: 50px;
-    }
+@media (max-width: 600px) {
+    body { padding: 0; }
+    .container { border-radius: 0; min-height: 100vh; }
+    .header h1 { font-size: 1.2rem; }
+    .question-text { font-size: 1rem; }
+    .btn { padding: 12px; font-size: 0.85rem; }
 }
-
-@media (max-width: 360px) {
-    .exam-info {
-        min-width: 100%;
-        order: 3;
-        margin-top: 5px;
-    }
-}
-
-/* UTILITY */
-.hidden {
-    display: none !important;
-}
-
-.text-center {
-    text-align: center;
-}
-
-.mt-20 {
-    margin-top: 20px;
-}
-
-.mb-20 {
-    margin-bottom: 20px;
-}
-/* Add to style.css */
-/* Disable text selection selama ujian */
-.disable-selection {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
-/* Apply selama ujian */
-#screen-exam {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
-/* Allow selection hanya untuk options */
-.option {
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
-}
-
