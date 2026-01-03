@@ -115,6 +115,20 @@ function updateKelasDropdown(jenjang) {
         kelasSelect.disabled = true;
         return;
     }
+
+    function getViewableImageUrl(url) {
+    if (!url) return '';
+    url = url.trim();
+    
+    // Mendeteksi ID file Google Drive
+    let idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+    
+    // Mengubah menjadi link viewable
+    if (idMatch && idMatch[1]) {
+        return "https://lh3.googleusercontent.com/d/" + idMatch[1];
+    }
+    return url;
+    }
     
     kelasSelect.innerHTML = '<option value="">Pilih Kelas</option>';
     kelasData[jenjang].forEach(kelas => {
@@ -808,3 +822,4 @@ function forceFullScreen() {
         });
     }
 }
+
