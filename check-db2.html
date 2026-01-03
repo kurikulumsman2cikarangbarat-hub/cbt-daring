@@ -1,305 +1,637 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <title>Debug Worker - Solusi 2</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    button { margin: 5px; padding: 10px; background: #28a745; color: white; border: none; cursor: pointer; }
-    button:hover { opacity: 0.9; }
-    .error { color: #721c24; background: #f8d7da; padding: 15px; border: 1px solid #f5c6cb; border-radius: 5px; }
-    .info { color: #0c5460; background: #d1ecf1; padding: 15px; border: 1px solid #bee5eb; }
-    .success { color: #155724; background: #d4edda; padding: 15px; border: 1px solid #c3e6cb; }
-    code { background: #f8f9fa; padding: 2px 5px; border-radius: 3px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT - Database Health Check</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+        }
+        
+        .header h1 {
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .check-section {
+            margin-bottom: 30px;
+        }
+        
+        .check-section h2 {
+            color: #1a73e8;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .check-section h2 i {
+            font-size: 1.5rem;
+        }
+        
+        .status-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ddd;
+            transition: all 0.3s;
+        }
+        
+        .status-box.success {
+            border-left-color: #27ae60;
+            background: #e8f6ef;
+        }
+        
+        .status-box.error {
+            border-left-color: #e74c3c;
+            background: #fdedec;
+        }
+        
+        .status-box.warning {
+            border-left-color: #f39c12;
+            background: #fef5e7;
+        }
+        
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .status-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status-badge.success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .status-badge.error {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .status-badge.warning {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .status-badge.pending {
+            background: #7f8c8d;
+            color: white;
+        }
+        
+        .status-details {
+            color: #555;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .status-details pre {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            border: 1px solid #eee;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 115, 232, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn i {
+            font-size: 1.2rem;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1a73e8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .summary {
+            background: #e8f0fe;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .summary h3 {
+            color: #1a73e8;
+            margin-bottom: 10px;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1a73e8;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .summary-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .token-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .token-input:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+        
+        .token-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .info-box {
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: #856404;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <h2>🔧 Debug Worker - Solusi 2</h2>
-  
-  <div style="margin: 20px 0;">
-    <strong>API URL:</strong> <code id="apiUrl">https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev</code><br>
-    <strong>Token:</strong> <code id="token">Dwi1980</code>
-  </div>
-  
-  <button onclick="testWorkerStatus()">1. Test Koneksi Worker</button>
-  <button onclick="findActiveEndpoints()">2. Cari Endpoint Aktif</button>
-  <button onclick="testWithoutToken()">3. Test Tanpa Token</button>
-  <button onclick="testWithPost()">4. Test Method POST</button>
-  
-  <div id="result" style="margin-top: 20px;"></div>
-  
-  <script>
-    const API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
-    const ADMIN_TOKEN = "DwiW1980";
-    
-    // =============== FUNGSI 1: TEST STATUS WORKER ===============
-    async function testWorkerStatus() {
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = "<div class='info'>🔄 Testing koneksi ke Worker...</div>";
-      
-      let html = '<h3>🔍 Test Koneksi Dasar</h3>';
-      
-      // Test 1: Ping Worker tanpa path
-      try {
-        console.log("Pinging Worker...");
-        const start = Date.now();
-        const resp = await fetch(API_URL, { method: 'HEAD' });
-        const pingTime = Date.now() - start;
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-database"></i> CBT Database Health Check</h1>
+            <p>SMAN 2 Cikarang Barat - Sistem CBT</p>
+        </div>
         
-        html += `<p>✅ Worker aktif. Ping: ${pingTime}ms</p>`;
-        html += `<p>Status: ${resp.status} ${resp.statusText}</p>`;
+        <div class="content">
+            <div class="info-box">
+                <p><strong><i class="fas fa-info-circle"></i> Informasi:</strong> Tool ini untuk memeriksa koneksi database dan kesiapan sistem CBT.</p>
+            </div>
+            
+            <div class="check-section">
+                <h2><i class="fas fa-plug"></i> 1. Koneksi Worker API</h2>
+                <div id="api-status" class="status-box">
+                    <div class="status-header">
+                        <div class="status-title">API Worker CBT</div>
+                        <div class="status-badge pending">Menunggu...</div>
+                    </div>
+                    <div class="status-details">
+                        Mengecek koneksi ke: <code>https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev/</code>
+                    </div>
+                </div>
+                
+                <div id="tables-status" class="status-box" style="display: none;">
+                    <div class="status-header">
+                        <div class="status-title">Struktur Database</div>
+                        <div class="status-badge pending">Menunggu...</div>
+                    </div>
+                    <div class="status-details">
+                        Memeriksa tabel database...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="check-section">
+                <h2><i class="fas fa-table"></i> 2. Database & Tabel</h2>
+                <div id="db-status" class="status-box">
+                    <div class="status-header">
+                        <div class="status-title">Koneksi Database D1</div>
+                        <div class="status-badge pending">Menunggu...</div>
+                    </div>
+                    <div class="status-details">
+                        Mengecek koneksi database Cloudflare D1...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="check-section">
+                <h2><i class="fas fa-key"></i> 3. Admin Authentication</h2>
+                <label class="token-label">Token Admin:</label>
+                <input type="password" id="admin-token" class="token-input" placeholder="Masukkan token admin (DwiW1980)" value="DwiW1980">
+                
+                <div id="auth-status" class="status-box">
+                    <div class="status-header">
+                        <div class="status-title">Validasi Token Admin</div>
+                        <div class="status-badge pending">Menunggu...</div>
+                    </div>
+                    <div class="status-details">
+                        Token akan divalidasi sebelum mengakses endpoint admin.
+                    </div>
+                </div>
+            </div>
+            
+            <button id="check-btn" class="btn" onclick="runHealthCheck()">
+                <i class="fas fa-play-circle"></i> Jalankan Health Check
+            </button>
+            
+            <div class="summary" id="summary" style="display: none;">
+                <h3><i class="fas fa-chart-bar"></i> Ringkasan Status</h3>
+                <div class="summary-stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-total">0</div>
+                        <div class="stat-label">Total Tests</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value success-text" id="stat-success">0</div>
+                        <div class="stat-label">Berhasil</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value warning-text" id="stat-warning">0</div>
+                        <div class="stat-label">Peringatan</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value error-text" id="stat-error">0</div>
+                        <div class="stat-label">Gagal</div>
+                    </div>
+                </div>
+                <p id="final-message" style="margin-top: 15px; font-weight: 600;"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
+        let testResults = {
+            total: 0,
+            success: 0,
+            warning: 0,
+            error: 0
+        };
         
-        // Cek headers
-        html += '<p><strong>Headers yang diterima:</strong></p><ul>';
-        for (const [key, value] of resp.headers.entries()) {
-          html += `<li><code>${key}</code>: ${value}</li>`;
+        function updateStatusBox(elementId, status, title, details, data = null) {
+            const box = document.getElementById(elementId);
+            const badge = box.querySelector('.status-badge');
+            const titleEl = box.querySelector('.status-title');
+            const detailsEl = box.querySelector('.status-details');
+            
+            // Reset classes
+            box.className = 'status-box';
+            badge.className = 'status-badge';
+            
+            // Set status
+            if (status === 'success') {
+                box.classList.add('success');
+                badge.classList.add('success');
+                badge.textContent = '✅ BERHASIL';
+            } else if (status === 'error') {
+                box.classList.add('error');
+                badge.classList.add('error');
+                badge.textContent = '❌ GAGAL';
+            } else if (status === 'warning') {
+                box.classList.add('warning');
+                badge.classList.add('warning');
+                badge.textContent = '⚠️ PERINGATAN';
+            } else {
+                badge.classList.add('pending');
+                badge.textContent = '⏳ MENUNGGU...';
+            }
+            
+            // Update content
+            if (title) titleEl.textContent = title;
+            
+            let detailsHTML = details;
+            if (data) {
+                detailsHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            detailsEl.innerHTML = detailsHTML;
+            
+            // Update statistics
+            if (status !== 'pending') {
+                testResults.total++;
+                testResults[status]++;
+                updateSummary();
+            }
         }
-        html += '</ul>';
         
-      } catch (e) {
-        html += `<div class='error'>
-          <p>❌ Worker tidak dapat diakses: ${e.message}</p>
-          <p>Kemungkinan:</p>
-          <ul>
-            <li>Worker di-delete/di-nonaktifkan</li>
-            <li>Domain salah: <code>${API_URL}</code></li>
-            <li>Ada firewall/CORS issue</li>
-          </ul>
-        </div>`;
-        resultDiv.innerHTML = html;
-        return;
-      }
-      
-      // Test 2: Cek route root dengan GET
-      html += '<hr><h4>Test Route Root (GET /)</h4>';
-      try {
-        const resp = await fetch(API_URL + '/', { 
-          method: 'GET',
-          headers: { 'X-Admin-Token': ADMIN_TOKEN }
+        function updateSummary() {
+            document.getElementById('stat-total').textContent = testResults.total;
+            document.getElementById('stat-success').textContent = testResults.success;
+            document.getElementById('stat-warning').textContent = testResults.warning;
+            document.getElementById('stat-error').textContent = testResults.error;
+            
+            // Style warna
+            document.getElementById('stat-success').className = 'stat-value success-text';
+            document.getElementById('stat-warning').className = 'stat-value warning-text';
+            document.getElementById('stat-error').className = 'stat-value error-text';
+            
+            // Show summary
+            document.getElementById('summary').style.display = 'block';
+            
+            // Final message
+            const finalMsg = document.getElementById('final-message');
+            if (testResults.error > 0) {
+                finalMsg.innerHTML = '<span style="color:#e74c3c">❌ SISTEM TIDAK SIAP: Ada masalah yang perlu diperbaiki</span>';
+            } else if (testResults.warning > 0) {
+                finalMsg.innerHTML = '<span style="color:#f39c12">⚠️ SISTEM HAMPIR SIAP: Ada beberapa peringatan</span>';
+            } else if (testResults.success > 0) {
+                finalMsg.innerHTML = '<span style="color:#27ae60">✅ SISTEM SIAP: Semua komponen berfungsi dengan baik</span>';
+            }
+        }
+        
+        async function testAPI() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                
+                updateStatusBox('api-status', 'success', 
+                    'API Worker CBT', 
+                    `API merespons dengan sukses. Versi: ${data.version || 'N/A'}`,
+                    data);
+                    
+                return true;
+            } catch (error) {
+                updateStatusBox('api-status', 'error',
+                    'API Worker CBT',
+                    `Gagal terhubung ke API: ${error.message}`);
+                return false;
+            }
+        }
+        
+        async function testDatabase() {
+            try {
+                const response = await fetch(`${API_URL}/api/debug/tables`, {
+                    headers: {
+                        'X-Admin-Token': document.getElementById('admin-token').value
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        updateStatusBox('db-status', 'warning',
+                            'Koneksi Database D1',
+                            'Token admin tidak valid atau tidak ada. Database tidak dapat diakses.');
+                        return false;
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.database_info) {
+                    const tableCount = data.database_info.total_tables || 0;
+                    const tables = data.database_info.tables || [];
+                    
+                    let details = `Database terhubung dengan sukses.`;
+                    details += `<br>Jumlah tabel: <strong>${tableCount}</strong>`;
+                    
+                    if (tables.length > 0) {
+                        details += `<br>Tabel: ${tables.join(', ')}`;
+                    }
+                    
+                    updateStatusBox('db-status', 'success',
+                        'Koneksi Database D1',
+                        details);
+                        
+                    // Show tables status
+                    document.getElementById('tables-status').style.display = 'block';
+                    updateStatusBox('tables-status', 'success',
+                        'Struktur Database',
+                        `Semua tabel CBT ditemukan: ${tables.length} tabel`);
+                        
+                    return true;
+                } else {
+                    updateStatusBox('db-status', 'warning',
+                        'Koneksi Database D1',
+                        'Database terhubung tetapi struktur tidak lengkap.',
+                        data);
+                    return false;
+                }
+                
+            } catch (error) {
+                updateStatusBox('db-status', 'error',
+                    'Koneksi Database D1',
+                    `Gagal mengakses database: ${error.message}`);
+                return false;
+            }
+        }
+        
+        async function testAuth() {
+            const token = document.getElementById('admin-token').value;
+            
+            if (!token || token.trim() === '') {
+                updateStatusBox('auth-status', 'warning',
+                    'Validasi Token Admin',
+                    'Token admin kosong. Endpoint admin tidak dapat diakses.');
+                return false;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/debug/tables`, {
+                    headers: {
+                        'X-Admin-Token': token
+                    }
+                });
+                
+                if (response.status === 401) {
+                    updateStatusBox('auth-status', 'error',
+                        'Validasi Token Admin',
+                        'Token admin tidak valid. Silakan periksa token Anda.');
+                    return false;
+                }
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                updateStatusBox('auth-status', 'success',
+                    'Validasi Token Admin',
+                    'Token admin valid. Akses endpoint admin berhasil.');
+                return true;
+                
+            } catch (error) {
+                updateStatusBox('auth-status', 'error',
+                    'Validasi Token Admin',
+                    `Gagal validasi token: ${error.message}`);
+                return false;
+            }
+        }
+        
+        async function runHealthCheck() {
+            // Reset results
+            testResults = { total: 0, success: 0, warning: 0, error: 0 };
+            
+            // Disable button and show loading
+            const btn = document.getElementById('check-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading"></div> Memeriksa sistem...';
+            
+            // Reset status boxes
+            updateStatusBox('api-status', 'pending', 'API Worker CBT', 'Mengecek koneksi ke API...');
+            updateStatusBox('db-status', 'pending', 'Koneksi Database D1', 'Mengecek koneksi database...');
+            updateStatusBox('auth-status', 'pending', 'Validasi Token Admin', 'Memvalidasi token admin...');
+            document.getElementById('tables-status').style.display = 'none';
+            
+            // Run tests in sequence
+            const apiOk = await testAPI();
+            
+            if (apiOk) {
+                const authOk = await testAuth();
+                if (authOk) {
+                    await testDatabase();
+                } else {
+                    updateStatusBox('db-status', 'warning',
+                        'Koneksi Database D1',
+                        'Dilewati karena token admin tidak valid.');
+                }
+            } else {
+                updateStatusBox('auth-status', 'warning',
+                    'Validasi Token Admin',
+                    'Dilewati karena API tidak merespons.');
+                updateStatusBox('db-status', 'warning',
+                    'Koneksi Database D1',
+                    'Dilewati karena API tidak merespons.');
+            }
+            
+            // Re-enable button
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo"></i> Jalankan Ulang Health Check';
+        }
+        
+        // Run initial API test on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                testAPI();
+            }, 1000);
         });
-        const text = await resp.text();
         
-        html += `<p>Status: <code>${resp.status} ${resp.statusText}</code></p>`;
-        html += `<p>Response (100 karakter pertama):</p>
-                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace;">
-                  ${escapeHtml(text.substring(0, 100))}
-                </div>`;
-        
-        if (resp.status === 404) {
-          html += `<div class='error'>
-            <p>⚠️ Route root (/) mengembalikan 404.</p>
-            <p>Ini berarti Worker TIDAK memiliki handler default.</p>
-            <p>Worker hanya menangani route tertentu saja.</p>
-          </div>`;
-        }
-        
-      } catch (e) {
-        html += `<p>Error: ${e.message}</p>`;
-      }
-      
-      resultDiv.innerHTML = html;
-    }
-    
-    // =============== FUNGSI 2: CARI ENDPOINT AKTIF ===============
-    async function findActiveEndpoints() {
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = "<div class='info'>🔍 Mencari endpoint aktif...</div>";
-      
-      // Endpoint yang umum di ABK (Asesmen Berbasis Komputer)
-      const possibleEndpoints = [
-        '/api/soal', '/api/questions', '/soal', '/questions',
-        '/api/ujian', '/exam', '/ujian',
-        '/api/siswa', '/api/student', '/siswa',
-        '/api/auth', '/auth/login', '/login',
-        '/api/submit', '/submit',
-        '/api/hasil', '/results',
-        '/api/admin', '/admin/login',
-        '/api/export', '/export',
-        '/api/import', '/import',
-        '/api/report', '/laporan',
-        '/api/settings', '/settings',
-        '/api/status', '/status',
-        '/health', '/ping'
-      ];
-      
-      let html = '<h3>🔎 Mencari Endpoint ABK yang Aktif</h3>';
-      html += '<p>Mencoba endpoint umum untuk sistem ujian/asesmen...</p>';
-      html += '<table style="width: 100%; border-collapse: collapse; margin: 10px 0;">';
-      html += '<tr style="background: #f2f2f2;"><th>Endpoint</th><th>Method</th><th>Status</th><th>Response</th></tr>';
-      
-      let foundActive = false;
-      
-      for (const endpoint of possibleEndpoints) {
-        // Coba GET dulu
-        try {
-          const resp = await fetch(API_URL + endpoint, {
-            method: 'GET',
-            headers: { 'X-Admin-Token': ADMIN_TOKEN }
-          });
-          
-          const status = resp.status;
-          const text = await resp.text().then(t => t.substring(0, 80));
-          
-          const statusColor = status === 200 ? 'green' : 
-                             status === 404 ? 'gray' : 
-                             status === 401 || status === 403 ? 'orange' : 'red';
-          
-          html += `<tr>
-            <td><code>${endpoint}</code></td>
-            <td>GET</td>
-            <td style="color: ${statusColor}"><strong>${status}</strong></td>
-            <td><small>${escapeHtml(text) || '(empty)'}</small></td>
-          </tr>`;
-          
-          if (status !== 404) {
-            foundActive = true;
-            console.log(`🎯 Found active endpoint: ${endpoint} (${status})`);
-          }
-          
-        } catch (e) {
-          html += `<tr>
-            <td><code>${endpoint}</code></td>
-            <td>GET</td>
-            <td style="color: red">ERROR</td>
-            <td>${e.message}</td>
-          </tr>`;
-        }
-        
-        // Coba POST juga untuk API endpoints
-        try {
-          const resp = await fetch(API_URL + endpoint, {
-            method: 'POST',
-            headers: { 
-              'X-Admin-Token': ADMIN_TOKEN,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ test: true })
-          });
-          
-          const status = resp.status;
-          if (status !== 404 && status !== 405) {
-            html += `<tr style="background: #f0fff0;">
-              <td><code>${endpoint}</code></td>
-              <td>POST</td>
-              <td style="color: green"><strong>${status} ✓</strong></td>
-              <td><small>POST method works!</small></td>
-            </tr>`;
-            foundActive = true;
-          }
-          
-        } catch (e) {
-          // Ignore POST errors
-        }
-      }
-      
-      html += '</table>';
-      
-      if (!foundActive) {
-        html += `<div class='error'>
-          <h4>⚠️ Tidak ada endpoint aktif yang ditemukan!</h4>
-          <p>Kemungkinan:</p>
-          <ol>
-            <li><strong>Worker tidak memiliki handler sama sekali</strong> - Perlu setup ulang Worker</li>
-            <li><strong>Semua endpoint membutuhkan method khusus</strong> - Coba tombol "Test Method POST"</li>
-            <li><strong>Token salah atau tidak diperlukan</strong> - Coba tombol "Test Tanpa Token"</li>
-            <li><strong>Worker menggunakan path yang sangat spesifik</strong> - Cek kode sumber Worker</li>
-          </ol>
-        </div>`;
-      } else {
-        html += `<div class='success'>
-          <p>✅ Ditemukan endpoint aktif! Lihat yang statusnya bukan 404.</p>
-          <p>Sekarang coba akses endpoint tersebut langsung di browser.</p>
-        </div>`;
-      }
-      
-      resultDiv.innerHTML = html;
-    }
-    
-    // =============== FUNGSI 3: TEST TANPA TOKEN ===============
-    async function testWithoutToken() {
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = "<div class='info'>🔓 Testing tanpa header token...</div>";
-      
-      const testEndpoints = ['/', '/api/soal', '/api/status', '/health'];
-      
-      let html = '<h3>🔓 Test Tanpa Authentication</h3>';
-      html += '<p>Mencoba akses tanpa header <code>X-Admin-Token</code>:</p>';
-      html += '<ul>';
-      
-      for (const endpoint of testEndpoints) {
-        try {
-          const resp = await fetch(API_URL + endpoint);
-          html += `<li><code>${endpoint}</code>: ${resp.status} ${resp.statusText}</li>`;
-          if (resp.status === 200) {
-            html += ` <span style="color: green">✓ Public access!</span>`;
-          } else if (resp.status === 401) {
-            html += ` <span style="color: orange">✓ Butuh auth</span>`;
-          }
-        } catch (e) {
-          html += `<li><code>${endpoint}</code>: ERROR - ${e.message}</li>`;
-        }
-      }
-      
-      html += '</ul>';
-      html += `<div class='info'>
-        <p><strong>Kesimpulan:</strong> Jika tanpa token bisa akses, berarti endpoint public.</p>
-        <p>Jika dapat 401, berarti butuh token tapi mungkin header berbeda.</p>
-      </div>`;
-      
-      resultDiv.innerHTML = html;
-    }
-    
-    // =============== FUNGSI 4: TEST METHOD POST ===============
-    async function testWithPost() {
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = "<div class='info'>📤 Testing dengan method POST...</div>";
-      
-      const endpoints = ['/', '/api/debug/tables', '/api/tables', '/api/admin'];
-      
-      let html = '<h3>📤 Test Method POST</h3>';
-      html += '<p>Mungkin Worker hanya menerima POST request:</p>';
-      html += '<table style="width: 100%;"><tr><th>Endpoint</th><th>Status</th><th>Info</th></tr>';
-      
-      for (const endpoint of endpoints) {
-        try {
-          const resp = await fetch(API_URL + endpoint, {
-            method: 'POST',
-            headers: { 
-              'X-Admin-Token': ADMIN_TOKEN,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              action: 'get_tables',
-              debug: true,
-              timestamp: new Date().toISOString()
-            })
-          });
-          
-          const text = await resp.text();
-          html += `<tr>
-            <td><code>POST ${endpoint}</code></td>
-            <td>${resp.status}</td>
-            <td><small>${escapeHtml(text.substring(0, 60))}</small></td>
-          </tr>`;
-          
-        } catch (e) {
-          html += `<tr>
-            <td><code>POST ${endpoint}</code></td>
-            <td style="color: red">ERROR</td>
-            <td>${e.message}</td>
-          </tr>`;
-        }
-      }
-      
-      html += '</table>';
-      resultDiv.innerHTML = html;
-    }
-    
-    // Helper function
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-  </script>
+        // Add CSS for colored text
+        const style = document.createElement('style');
+        style.textContent = `
+            .success-text { color: #27ae60 !important; }
+            .warning-text { color: #f39c12 !important; }
+            .error-text { color: #e74c3c !important; }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html>
