@@ -250,6 +250,17 @@ function setupExamScreen() {
     document.getElementById('exam-mapel').textContent = state.examData?.mapel || '-';
     document.getElementById('exam-guru').textContent = state.examData?.nama_guru || '-';
     
+    function setupExamScreen() {
+    // Apply disable selection
+    document.getElementById('screen-exam').classList.add('disable-selection');
+    
+    // Update exam info
+    document.getElementById('exam-kelas').textContent = state.student.kelas;
+    document.getElementById('exam-mapel').textContent = state.examData?.mapel || '-';
+    document.getElementById('exam-guru').textContent = state.examData?.nama_guru || '-';
+    
+    // ... rest of the code ...
+}
     // Setup question grid
     const grid = document.getElementById('question-grid');
     grid.innerHTML = '';
@@ -581,7 +592,8 @@ function keluarAplikasi() {
     document.getElementById('kelas').innerHTML = '<option value="">Pilih Jenjang terlebih dahulu</option>';
     document.getElementById('kelas').disabled = true;
     document.getElementById('token').value = '';
-    
+    document.getElementById('screen-exam').classList.remove('disable-selection');
+
     // Go back to login
     showScreen('screen-login');
 }
@@ -756,6 +768,7 @@ function forceFullScreen() {
         });
     }
 }
+
 
 
 
