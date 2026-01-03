@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -153,10 +154,6 @@
         
         .btn-warning {
             background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
         }
         
         .info-box {
@@ -395,120 +392,17 @@
         .copy-btn:hover {
             background: #5a6268;
         }
-        
-        .admin-login-container {
-            text-align: center;
-            padding: 40px;
-        }
-        
-        .admin-icon {
-            font-size: 4rem;
-            color: #1a73e8;
-            margin-bottom: 20px;
-        }
-        
-        .admin-form {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        
-        .lock-overlay {
-            filter: blur(5px);
-            pointer-events: none;
-            user-select: none;
-            position: relative;
-        }
-        
-        .lock-overlay::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255,255,255,0.7);
-        }
-        
-        .admin-info {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: #1a73e8;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 100;
-        }
-        
-        .logout-btn {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        .action-buttons button {
-            flex: 1;
-        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Admin Login Modal -->
-    <div id="admin-login-modal" class="modal" style="display: flex;">
-        <div class="modal-content">
-            <div class="admin-login-container">
-                <div class="admin-icon">
-                    <i class="fas fa-lock"></i>
-                </div>
-                <h2 class="modal-title">Verifikasi Admin</h2>
-                <p>Masukkan token admin untuk melanjutkan</p>
-                
-                <div class="admin-form">
-                    <div class="input-group">
-                        <label for="admin-token"><i class="fas fa-key"></i> Token Admin</label>
-                        <input type="password" id="admin-token" placeholder="Masukkan token admin">
-                    </div>
-                    
-                    <div id="admin-login-error" class="error-box" style="display: none;"></div>
-                    
-                    <button id="btn-login-admin" class="btn btn-success" onclick="loginAdmin()">
-                        <i class="fas fa-sign-in-alt"></i> Masuk sebagai Admin
-                    </button>
-                    
-                    <div class="info-box" style="margin-top: 20px;">
-                        <p><small>Token admin diperlukan untuk mengakses sistem upload soal. Hubungi administrator sistem untuk mendapatkan token.</small></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="container" id="main-container" style="display: none;">
+    <div class="container">
         <div class="header">
-            <div class="admin-info" id="admin-info">
-                <i class="fas fa-user-shield"></i>
-                <span id="admin-name">Administrator</span>
-                <button class="logout-btn" onclick="logoutAdmin()">
-                    <i class="fas fa-sign-out-alt"></i> Keluar
-                </button>
-            </div>
             <h1><i class="fas fa-upload"></i> CBT - Upload Soal ke Database</h1>
             <p>SMAN 2 Cikarang Barat - Sistem Computer Based Test</p>
         </div>
         
-        <div class="content" id="main-content">
+        <div class="content">
             <!-- Left Column: Ujian & Token -->
             <div class="section">
                 <div class="section-title">
@@ -518,7 +412,6 @@
                 <div class="info-box">
                     <p><strong>Database:</strong> cbt-sman2-database (67bb1232-fcd2-4369-aa7c-e6acce011640)</p>
                     <p><strong>API Endpoint:</strong> worker-abk.kurikulum-sman2cikarangbarat.workers.dev</p>
-                    <p><strong>Status Admin:</strong> <span id="admin-status">Terverifikasi</span></p>
                 </div>
                 
                 <div class="input-group">
@@ -550,19 +443,13 @@
                     </select>
                 </div>
                 
-                <div class="action-buttons">
-                    <button id="btn-check-token" class="btn btn-secondary" onclick="checkTokenUjian()">
-                        <i class="fas fa-search"></i> Cek Token Ujian
-                    </button>
-                    
-                    <button id="btn-verify-token" class="btn btn-success" onclick="verifyToken()" disabled>
-                        <i class="fas fa-check-circle"></i> Gunakan Token
-                    </button>
-                </div>
+                <button id="btn-verify-token" class="btn btn-secondary" onclick="verifyToken()">
+                    <i class="fas fa-check-circle"></i> Verifikasi Token
+                </button>
             </div>
             
             <!-- Right Column: Soal Upload -->
-            <div class="section" id="soal-section" style="display: none;">
+            <div class="section">
                 <div class="section-title">
                     <i class="fas fa-question-circle"></i> Upload Soal
                 </div>
@@ -596,7 +483,7 @@
                     <div class="progress-text" id="progress-text">Menyiapkan upload...</div>
                 </div>
                 
-                <button id="btn-upload" class="btn btn-success" onclick="uploadData()">
+                <button id="btn-upload" class="btn btn-success" onclick="uploadData()" disabled>
                     <i class="fas fa-cloud-upload-alt"></i> Upload Soal ke Database
                 </button>
                 
@@ -607,7 +494,7 @@
         </div>
         
         <!-- Results Section -->
-        <div class="content" style="grid-template-columns: 1fr; display: none;" id="results-section">
+        <div class="content" style="grid-template-columns: 1fr;" id="results-section" style="display: none;">
             <div class="section">
                 <div class="section-title">
                     <i class="fas fa-chart-bar"></i> Hasil Upload
@@ -619,15 +506,6 @@
                 
                 <div class="stats" id="stats-container">
                     <!-- Stats will appear here -->
-                </div>
-                
-                <div class="action-buttons">
-                    <button class="btn btn-secondary" onclick="backToUpload()">
-                        <i class="fas fa-arrow-left"></i> Upload Soal Lagi
-                    </button>
-                    <button class="btn btn-success" onclick="openNewUjian()">
-                        <i class="fas fa-plus"></i> Buat Ujian Baru
-                    </button>
                 </div>
             </div>
         </div>
@@ -644,175 +522,40 @@
         </div>
     </div>
     
-    <!-- Token Exists Modal -->
-    <div id="token-exists-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Token Sudah Ada</h3>
-            </div>
-            
-            <div class="warning-box">
-                <p>Token ujian <strong id="existing-token-name"></strong> sudah terdaftar di database!</p>
-                <p><strong>Detail ujian yang ada:</strong></p>
-                <ul style="padding-left: 20px; margin: 10px 0;">
-                    <li>Mata Pelajaran: <span id="existing-mapel"></span></li>
-                    <li>Guru: <span id="existing-guru"></span></li>
-                    <li>Durasi: <span id="existing-durasi"></span> menit</li>
-                    <li>Status: <span id="existing-status"></span></li>
-                    <li>Jumlah Soal: <span id="existing-soal-count"></span></li>
-                </ul>
-            </div>
-            
-            <div class="input-group">
-                <label>Pilih aksi:</label>
-                <div class="radio-group">
-                    <label>
-                        <input type="radio" name="token-action" value="update" checked>
-                        Update data ujian (gunakan token yang sama)
-                    </label>
-                    <label>
-                        <input type="radio" name="token-action" value="new">
-                        Buat token baru
-                    </label>
-                </div>
-            </div>
-            
-            <div id="new-token-section" style="display: none;">
-                <div class="input-group">
-                    <label for="new-token"><i class="fas fa-key"></i> Token Baru</label>
-                    <input type="text" id="new-token" placeholder="Contoh: MATEMATIKA-2024-B">
-                    <small>Token harus unik dan belum terdaftar</small>
-                </div>
-            </div>
-            
-            <div class="action-buttons">
-                <button class="btn btn-danger" onclick="closeTokenExistsModal()">
-                    <i class="fas fa-times"></i> Batal
-                </button>
-                <button id="btn-confirm-token" class="btn btn-success" onclick="confirmTokenAction()">
-                    <i class="fas fa-check"></i> Konfirmasi
-                </button>
-            </div>
-        </div>
-    </div>
-    
     <script>
         // Configuration
         const API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
-        let adminToken = '';
-        let isAdminLoggedIn = false;
+        let isTokenValid = false;
         let currentToken = '';
-        let existingUjianData = null;
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if admin is already logged in from localStorage
-            const savedAdminToken = localStorage.getItem('cbt-admin-token');
-            const savedAdminName = localStorage.getItem('cbt-admin-name');
+            // Load saved data if exists
+            loadSavedData();
             
-            if (savedAdminToken && savedAdminName) {
-                // Auto-login with saved token
-                adminToken = savedAdminToken;
-                isAdminLoggedIn = true;
-                showMainInterface(savedAdminName);
-            }
-            
-            // Auto-check new token when typing
-            document.getElementById('new-token').addEventListener('input', function() {
-                checkTokenAvailability(this.value);
-            });
-            
-            // Show/hide new token section based on radio selection
-            document.querySelectorAll('input[name="token-action"]').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    document.getElementById('new-token-section').style.display = 
-                        this.value === 'new' ? 'block' : 'none';
-                });
+            // Auto-check token when typing
+            document.getElementById('input-token').addEventListener('input', function() {
+                currentToken = this.value.trim();
+                if (currentToken.length >= 3) {
+                    document.getElementById('token-status').style.display = 'none';
+                }
             });
             
             // Auto-preview soal
             document.getElementById('input-soal').addEventListener('input', previewSoal);
         });
         
-        // Admin login function
-        async function loginAdmin() {
-            const token = document.getElementById('admin-token').value.trim();
-            const errorBox = document.getElementById('admin-login-error');
-            
-            if (!token) {
-                errorBox.textContent = 'Masukkan token admin terlebih dahulu';
-                errorBox.style.display = 'block';
-                return;
-            }
-            
-            // Show loading
-            const btn = document.getElementById('btn-login-admin');
-            btn.innerHTML = '<div class="loading"></div> Memverifikasi...';
-            btn.disabled = true;
-            
-            try {
-                // Send verification request to server
-                const response = await fetch(`${API_URL}/api/admin/verify`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Admin-Token': token
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok && data.valid) {
-                    // Admin token is valid
-                    adminToken = token;
-                    isAdminLoggedIn = true;
-                    
-                    // Save to localStorage
-                    localStorage.setItem('cbt-admin-token', token);
-                    localStorage.setItem('cbt-admin-name', data.name || 'Administrator');
-                    
-                    // Show main interface
-                    showMainInterface(data.name || 'Administrator');
-                    
-                    // Close login modal
-                    document.getElementById('admin-login-modal').style.display = 'none';
-                } else {
-                    throw new Error(data.error || 'Token admin tidak valid');
-                }
-                
-            } catch (error) {
-                errorBox.textContent = error.message;
-                errorBox.style.display = 'block';
-            } finally {
-                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk sebagai Admin';
-                btn.disabled = false;
-            }
-        }
-        
-        function logoutAdmin() {
-            if (confirm('Anda yakin ingin keluar dari mode admin?')) {
-                adminToken = '';
-                isAdminLoggedIn = false;
-                localStorage.removeItem('cbt-admin-token');
-                localStorage.removeItem('cbt-admin-name');
-                localStorage.removeItem('cbt-upload-data');
-                
-                // Show login modal
-                document.getElementById('admin-login-modal').style.display = 'flex';
-                document.getElementById('main-container').style.display = 'none';
-                
-                // Clear form
-                document.getElementById('admin-token').value = '';
-                document.getElementById('admin-login-error').style.display = 'none';
-            }
-        }
-        
-        function showMainInterface(adminName) {
-            document.getElementById('main-container').style.display = 'block';
-            document.getElementById('admin-name').textContent = adminName;
-            
-            // Load saved data if exists
-            loadSavedData();
+        // Save data to localStorage
+        function saveData() {
+            const data = {
+                token: document.getElementById('input-token').value,
+                mapel: document.getElementById('input-mapel').value,
+                guru: document.getElementById('input-guru').value,
+                durasi: document.getElementById('input-durasi').value,
+                aktif: document.getElementById('input-aktif').value,
+                soal: document.getElementById('input-soal').value
+            };
+            localStorage.setItem('cbt-upload-data', JSON.stringify(data));
         }
         
         function loadSavedData() {
@@ -832,168 +575,6 @@
             }
         }
         
-        async function checkTokenUjian() {
-            const token = document.getElementById('input-token').value.trim();
-            const tokenStatus = document.getElementById('token-status');
-            
-            if (!token) {
-                showMessage(tokenStatus, 'Masukkan token ujian terlebih dahulu', 'invalid');
-                return;
-            }
-            
-            if (token.length < 3 || token.length > 50) {
-                showMessage(tokenStatus, 'Token harus 3-50 karakter', 'invalid');
-                return;
-            }
-            
-            // Show checking
-            const btn = document.getElementById('btn-check-token');
-            btn.innerHTML = '<div class="loading"></div> Mencari...';
-            btn.disabled = true;
-            
-            try {
-                // Check if token exists
-                const response = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
-                const data = await response.json();
-                
-                if (data.exists) {
-                    // Token exists, get details
-                    const ujianResponse = await fetch(`${API_URL}/api/ujian?token=${encodeURIComponent(token)}`);
-                    const ujianData = await ujianResponse.json();
-                    
-                    if (ujianData.success) {
-                        existingUjianData = ujianData.data;
-                        
-                        // Show token exists modal
-                        showTokenExistsModal(ujianData.data, token);
-                        
-                        showMessage(tokenStatus, `⚠ Token sudah terdaftar`, 'invalid');
-                    } else {
-                        showMessage(tokenStatus, 'Token ditemukan tetapi tidak aktif', 'invalid');
-                    }
-                } else {
-                    // Token doesn't exist
-                    showMessage(tokenStatus, '✅ Token tersedia (belum terdaftar)', 'valid');
-                    document.getElementById('btn-verify-token').disabled = false;
-                    currentToken = token;
-                    saveData();
-                }
-                
-            } catch (error) {
-                console.error('Token check error:', error);
-                showMessage(tokenStatus, '❌ Gagal memeriksa token. Periksa koneksi.', 'invalid');
-            } finally {
-                btn.innerHTML = '<i class="fas fa-search"></i> Cek Token Ujian';
-                btn.disabled = false;
-            }
-        }
-        
-        function showTokenExistsModal(ujianData, token) {
-            document.getElementById('existing-token-name').textContent = token;
-            document.getElementById('existing-mapel').textContent = ujianData.mapel || '-';
-            document.getElementById('existing-guru').textContent = ujianData.nama_guru || '-';
-            document.getElementById('existing-durasi').textContent = ujianData.durasi || '-';
-            document.getElementById('existing-status').textContent = ujianData.aktif ? 'Aktif' : 'Nonaktif';
-            document.getElementById('existing-soal-count').textContent = ujianData.jumlah_soal || 0;
-            
-            document.getElementById('token-exists-modal').style.display = 'flex';
-        }
-        
-        function closeTokenExistsModal() {
-            document.getElementById('token-exists-modal').style.display = 'none';
-            document.getElementById('new-token-section').style.display = 'none';
-            document.querySelector('input[name="token-action"][value="update"]').checked = true;
-            document.getElementById('new-token').value = '';
-        }
-        
-        async function checkTokenAvailability(token) {
-            if (!token || token.length < 3) return;
-            
-            try {
-                const response = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
-                const data = await response.json();
-                
-                const btn = document.getElementById('btn-confirm-token');
-                if (data.exists) {
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-times"></i> Token sudah digunakan';
-                } else {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-check"></i> Gunakan Token Baru';
-                }
-            } catch (error) {
-                console.error('Token availability check error:', error);
-            }
-        }
-        
-        async function confirmTokenAction() {
-            const action = document.querySelector('input[name="token-action"]:checked').value;
-            
-            if (action === 'update') {
-                // Use existing token
-                currentToken = document.getElementById('input-token').value;
-                document.getElementById('btn-verify-token').disabled = false;
-                closeTokenExistsModal();
-            } else {
-                // Use new token
-                const newToken = document.getElementById('new-token').value.trim();
-                
-                if (!newToken) {
-                    alert('Masukkan token baru terlebih dahulu');
-                    return;
-                }
-                
-                // Check if new token is available
-                try {
-                    const response = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(newToken)}`);
-                    const data = await response.json();
-                    
-                    if (data.exists) {
-                        alert('Token baru sudah digunakan. Silahkan gunakan token lain.');
-                        return;
-                    }
-                    
-                    currentToken = newToken;
-                    document.getElementById('input-token').value = newToken;
-                    document.getElementById('btn-verify-token').disabled = false;
-                    closeTokenExistsModal();
-                    saveData();
-                    
-                } catch (error) {
-                    alert('Gagal memeriksa token baru: ' + error.message);
-                }
-            }
-        }
-        
-        function verifyToken() {
-            if (!currentToken) {
-                alert('Token ujian belum ditentukan');
-                return;
-            }
-            
-            // Show soal section
-            document.getElementById('soal-section').style.display = 'block';
-            
-            // Fill form with existing data if available
-            if (existingUjianData) {
-                document.getElementById('input-mapel').value = existingUjianData.mapel || '';
-                document.getElementById('input-guru').value = existingUjianData.nama_guru || '';
-                document.getElementById('input-durasi').value = existingUjianData.durasi || '60';
-                document.getElementById('input-aktif').value = existingUjianData.aktif ? '1' : '0';
-            }
-            
-            saveData();
-            
-            // Scroll to soal section
-            document.getElementById('soal-section').scrollIntoView({ behavior: 'smooth' });
-        }
-        
-        function showMessage(element, message, type) {
-            element.textContent = message;
-            element.className = `token-status token-${type}`;
-            element.style.display = 'block';
-        }
-        
         // Copy example format
         function copyExample() {
             const example = `Apa ibukota Indonesia?${String.fromCharCode(9)}Jakarta${String.fromCharCode(9)}Bandung${String.fromCharCode(9)}Surabaya${String.fromCharCode(9)}Medan${String.fromCharCode(9)}Makassar${String.fromCharCode(9)}A${String.fromCharCode(9)}https://example.com/jakarta.jpg
@@ -1007,6 +588,80 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
                 .catch(err => {
                     console.error('Failed to copy:', err);
                 });
+        }
+        
+        // Verify token with server
+        async function verifyToken() {
+            const token = document.getElementById('input-token').value.trim();
+            const tokenStatus = document.getElementById('token-status');
+            
+            if (!token) {
+                showMessage(tokenStatus, 'Masukkan token terlebih dahulu', 'invalid');
+                return;
+            }
+            
+            if (token.length < 3 || token.length > 50) {
+                showMessage(tokenStatus, 'Token harus 3-50 karakter', 'invalid');
+                return;
+            }
+            
+            // Show checking
+            document.getElementById('btn-verify-token').innerHTML = '<div class="loading"></div> Memeriksa...';
+            document.getElementById('btn-verify-token').disabled = true;
+            
+            try {
+                // First, check if token exists
+                const response = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
+                const data = await response.json();
+                
+                if (data.exists) {
+                    // Token exists, get details
+                    const ujianResponse = await fetch(`${API_URL}/api/ujian?token=${encodeURIComponent(token)}`);
+                    const ujianData = await ujianResponse.json();
+                    
+                    if (ujianData.success) {
+                        // Auto-fill form with existing data
+                        document.getElementById('input-mapel').value = ujianData.data.mapel || '';
+                        document.getElementById('input-guru').value = ujianData.data.nama_guru || '';
+                        document.getElementById('input-durasi').value = ujianData.data.durasi || '60';
+                        document.getElementById('input-aktif').value = ujianData.data.aktif || '1';
+                        
+                        showMessage(tokenStatus, `✅ Token valid: ${ujianData.data.mapel} (Aktif: ${ujianData.data.aktif ? 'Ya' : 'Tidak'})`, 'valid');
+                        isTokenValid = true;
+                        currentToken = token;
+                        
+                        // Enable upload button
+                        document.getElementById('btn-upload').disabled = false;
+                        saveData();
+                    } else {
+                        showMessage(tokenStatus, 'Token ditemukan tetapi tidak aktif', 'invalid');
+                        isTokenValid = false;
+                    }
+                } else {
+                    // Token doesn't exist, allow creation
+                    showMessage(tokenStatus, '✅ Token baru bisa dibuat. Isi detail ujian di bawah.', 'valid');
+                    isTokenValid = true;
+                    currentToken = token;
+                    
+                    // Enable upload button
+                    document.getElementById('btn-upload').disabled = false;
+                    saveData();
+                }
+                
+            } catch (error) {
+                console.error('Token verification error:', error);
+                showMessage(tokenStatus, '❌ Gagal memverifikasi token. Periksa koneksi.', 'invalid');
+                isTokenValid = false;
+            } finally {
+                document.getElementById('btn-verify-token').innerHTML = '<i class="fas fa-check-circle"></i> Verifikasi Token';
+                document.getElementById('btn-verify-token').disabled = false;
+            }
+        }
+        
+        function showMessage(element, message, type) {
+            element.textContent = message;
+            element.className = `token-status token-${type}`;
+            element.style.display = 'block';
         }
         
         // Preview soal before upload
@@ -1040,18 +695,6 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
             saveData();
         }
         
-        function saveData() {
-            const data = {
-                token: document.getElementById('input-token').value,
-                mapel: document.getElementById('input-mapel').value,
-                guru: document.getElementById('input-guru').value,
-                durasi: document.getElementById('input-durasi').value,
-                aktif: document.getElementById('input-aktif').value,
-                soal: document.getElementById('input-soal').value
-            };
-            localStorage.setItem('cbt-upload-data', JSON.stringify(data));
-        }
-        
         // Parse soal from Excel format
         function parseSoalData(soalText) {
             const lines = soalText.split('\n').filter(line => line.trim());
@@ -1073,7 +716,7 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
                     opsi_b: parts[2].trim(),
                     opsi_c: parts[3].trim(),
                     opsi_d: parts[4].trim(),
-                    opsi_e: parts[5] ? parts[5].trim() : '',
+                    opsi_e: parts[5] ? parts[5].trim() : '', // Optional
                     kunci: parts[6].trim().toUpperCase(),
                     img_link: parts[7] ? parts[7].trim() : null,
                     aktif: document.getElementById('input-aktif-soal').value,
@@ -1103,7 +746,7 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
         // Upload data to server
         async function uploadData() {
             // Validation
-            const token = currentToken;
+            const token = document.getElementById('input-token').value.trim();
             const mapel = document.getElementById('input-mapel').value.trim();
             const guru = document.getElementById('input-guru').value.trim();
             const durasi = document.getElementById('input-durasi').value.trim();
@@ -1116,12 +759,6 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
             
             if (!soalText) {
                 alert('Harap masukkan soal yang akan diupload');
-                return;
-            }
-            
-            if (!isAdminLoggedIn) {
-                alert('Sesi admin telah berakhir. Silahkan login kembali.');
-                logoutAdmin();
                 return;
             }
             
@@ -1171,9 +808,9 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
                 // Step 3: Show results
                 showResults(ujianResult, uploadResults);
                 
-                // Clear soal input
+                // Clear form
                 document.getElementById('input-soal').value = '';
-                saveData();
+                localStorage.removeItem('cbt-upload-data');
                 
             } catch (error) {
                 console.error('Upload error:', error);
@@ -1188,7 +825,7 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Admin-Token': adminToken
+                        'X-Admin-Token': 'DwiW1980'
                     },
                     body: JSON.stringify(ujianData)
                 });
@@ -1196,9 +833,9 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
                 const data = await response.json();
                 
                 if (!response.ok) {
-                    if (response.status === 401) {
-                        logoutAdmin();
-                        throw new Error('Token admin tidak valid. Silahkan login kembali.');
+                    // If token already exists, try to update
+                    if (response.status === 409) {
+                        return { success: true, message: 'Token sudah ada, menggunakan data yang ada' };
                     }
                     throw new Error(data.error || 'Gagal membuat ujian');
                 }
@@ -1211,7 +848,7 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
         }
         
         async function uploadSoalBatch(soalList) {
-            const batchSize = 10;
+            const batchSize = 10; // Upload 10 soal at a time
             const results = {
                 total: soalList.length,
                 success: 0,
@@ -1232,7 +869,7 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-Admin-Token': adminToken
+                                'X-Admin-Token': 'DwiW1980'
                             },
                             body: JSON.stringify(soal)
                         });
@@ -1247,10 +884,6 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
                                 id: data.id
                             });
                         } else {
-                            if (response.status === 401) {
-                                logoutAdmin();
-                                throw new Error('Token admin tidak valid');
-                            }
                             results.failed++;
                             results.details.push({
                                 soal: soal.soal.substring(0, 50),
@@ -1295,8 +928,7 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
         function showResults(ujianResult, soalResults) {
             hideLoading();
             
-            // Hide main content, show results section
-            document.getElementById('main-content').style.display = 'none';
+            // Show results section
             document.getElementById('results-section').style.display = 'grid';
             
             // Scroll to results
@@ -1309,7 +941,7 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
                 resultsHTML += `
                     <div class="success-box">
                         <h4><i class="fas fa-check-circle"></i> Data Ujian Berhasil Disimpan</h4>
-                        <p>Token: <strong>${currentToken}</strong></p>
+                        <p>Token: <strong>${document.getElementById('input-token').value}</strong></p>
                         <p>Mata Pelajaran: <strong>${document.getElementById('input-mapel').value}</strong></p>
                         <p>Guru: <strong>${document.getElementById('input-guru').value}</strong></p>
                         <p>Durasi: <strong>${document.getElementById('input-durasi').value} menit</strong></p>
@@ -1378,37 +1010,13 @@ Berapa 2 + 2?${String.fromCharCode(9)}3${String.fromCharCode(9)}4${String.fromCh
             }, 2000);
         }
         
-        function backToUpload() {
-            document.getElementById('results-section').style.display = 'none';
-            document.getElementById('main-content').style.display = 'grid';
-            document.getElementById('soal-section').scrollIntoView({ behavior: 'smooth' });
-        }
+        // Auto-save on input
+        ['input-token', 'input-mapel', 'input-guru', 'input-durasi'].forEach(id => {
+            document.getElementById(id).addEventListener('input', saveData);
+        });
         
-        function openNewUjian() {
-            // Clear all form data
-            document.getElementById('input-token').value = '';
-            document.getElementById('input-mapel').value = '';
-            document.getElementById('input-guru').value = '';
-            document.getElementById('input-durasi').value = '60';
-            document.getElementById('input-soal').value = '';
-            document.getElementById('token-status').style.display = 'none';
-            
-            // Hide sections
-            document.getElementById('results-section').style.display = 'none';
-            document.getElementById('soal-section').style.display = 'none';
-            document.getElementById('main-content').style.display = 'grid';
-            
-            // Reset states
-            currentToken = '';
-            existingUjianData = null;
-            document.getElementById('btn-verify-token').disabled = true;
-            
-            // Clear localStorage
-            localStorage.removeItem('cbt-upload-data');
-            
-            // Scroll to top
-            document.getElementById('input-token').focus();
-        }
+        document.getElementById('input-aktif').addEventListener('change', saveData);
+        document.getElementById('input-aktif-soal').addEventListener('change', saveData);
     </script>
 </body>
 </html>
