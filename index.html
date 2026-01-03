@@ -94,17 +94,18 @@
                 </div>
                 
                 <!-- Navigation Buttons -->
-                <div class="question-nav">
-                    <button class="btn btn-secondary nav-btn hidden" id="btn-prev" onclick="prevQuestion()">
-                        <i class="fas fa-arrow-left"></i> Soal Sebelum
-                    </button>
-                    <button class="btn btn-success nav-btn hidden" id="btn-submit" onclick="confirmSubmit()">
-                        <i class="fas fa-paper-plane"></i> Kirim Jawaban
-                    </button>
-                    <button class="btn btn-secondary nav-btn hidden" id="btn-next" onclick="nextQuestion()">
-                        Soal Selanjutnya <i class="fas fa-arrow-right"></i>
-                    </button>
-                </div>
+<div class="question-nav">
+    <button class="btn btn-secondary nav-btn hidden" id="btn-prev" onclick="prevQuestion()">
+        <i class="fas fa-arrow-left"></i> Soal Sebelum
+    </button>
+    <button class="btn btn-success nav-btn hidden" id="btn-submit" onclick="submitExam()">
+        <!-- HAPUS onclick="confirmSubmit()" GANTI DENGAN onclick="submitExam()" -->
+        <i class="fas fa-paper-plane"></i> Kirim Jawaban
+    </button>
+    <button class="btn btn-secondary nav-btn hidden" id="btn-next" onclick="nextQuestion()">
+        Soal Selanjutnya <i class="fas fa-arrow-right"></i>
+    </button>
+</div>
                 
                 <!-- Question Grid -->
                 <div class="question-grid-container">
@@ -191,4 +192,5 @@
     <script src="app.js"></script>
 </body>
 </html>
+
 
