@@ -98,18 +98,31 @@ function updateKelasDropdown(jenjang) {
 }
 
 // ==================== IMAGE HELPER ====================
-function getViewableImageUrl(url) {
-    if (!url) return '';
-    url = url.trim();
+function getViewableImageUrl(imageId) {
+    if (!imageId) return '';
     
-    // Mendeteksi ID file Google Drive
-    let idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+    // Bersihkan ID dari spasi
+    imageId = imageId.trim();
     
-    // Mengubah menjadi link viewable
-    if (idMatch && idMatch[1]) {
-        return "https://lh3.googleusercontent.com/d/" + idMatch[1];
+    // Jika ID sudah berupa format Google Drive ID (tanpa URL)
+    // Contoh: "1fX_AcM5AnZ1_NxTZB-hd0MdlfoNPyZhL"
+    if (imageId.match(/^[a-zA-Z0-9_-]+$/)) {
+        // Gunakan format Googleusercontent untuk viewable image
+        return `https://lh3.googleusercontent.com/d/${imageId}`;
     }
-    return url;
+    
+    // Jika masih berupa URL lengkap, ekstrak ID-nya
+    // Mendeteksi ID file Google Drive dari berbagai format URL
+    let idMatch = imageId.match(/\/d\/([a-zA-Z0-9_-]+)/) || 
+                  imageId.match(/id=([a-zA-Z0-9_-]+)/) ||
+                  imageId.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    
+    if (idMatch && idMatch[1]) {
+        return `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
+    }
+    
+    // Jika bukan Google Drive ID atau URL, kembalikan aslinya
+    return imageId;
 }
 
 // ==================== INITIALIZATION ====================
@@ -258,12 +271,14 @@ async function handleLogin() {
         state.isExamActive = true;
         
         // Log image info for debugging
-        console.log('Image debug - First question image:', state.questions[0]?.img_link);
+        console.log('Image debug - First question image ID:', state.questions[0]?.img_link);
+        console.log('Image debug - Converted URL:', getViewableImageUrl(state.questions[0]?.img_link));
         console.log('Image debug - All questions with images:', 
             state.questions.map((q, i) => ({
                 question: i + 1,
                 hasImage: !!q.img_link,
-                imageUrl: q.img_link
+                imageId: q.img_link,
+                convertedUrl: getViewableImageUrl(q.img_link)
             })).filter(q => q.hasImage)
         );
         
@@ -369,52 +384,57 @@ function showQuestion(index) {
     // Update image - PERBAIKAN UTAMA DI SINI
     const imgElement = document.getElementById('question-image');
     if (question.img_link && question.img_link.trim() !== '') {
-        // Gunakan fungsi untuk mendapatkan URL viewable
-        const originalUrl = question.img_link.trim();
-        const viewableUrl = getViewableImageUrl(originalUrl);
+        // Gunakan fungsi untuk mendapatkan URL viewable dari ID
+        const imageId = question.img_link.trim();
+        const viewableUrl = getViewableImageUrl(imageId);
         
-        console.log('Image debug - Original URL:', originalUrl);
+        console.log('Image debug - Question:', index + 1);
+        console.log('Image debug - Original ID:', imageId);
         console.log('Image debug - Viewable URL:', viewableUrl);
         
         // Setel URL gambar
         imgElement.src = viewableUrl;
         imgElement.style.display = 'block';
         imgElement.alt = "Gambar Soal " + (index + 1);
+        imgElement.title = "Gambar Soal " + (index + 1);
+        
+        // Tambahkan styling untuk gambar
+        imgElement.style.maxWidth = '100%';
+        imgElement.style.maxHeight = '400px';
+        imgElement.style.margin = '20px auto';
+        imgElement.style.display = 'block';
+        imgElement.style.border = '1px solid #ddd';
+        imgElement.style.borderRadius = '8px';
+        imgElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
         
         // Tambahkan error handling untuk gambar
         imgElement.onerror = function() {
-            console.error('Gagal memuat gambar dengan URL viewable:', viewableUrl);
+            console.error('Gagal memuat gambar dengan URL:', viewableUrl);
+            console.error('Image ID:', imageId);
             
-            // Coba URL asli jika viewable URL gagal
-            if (viewableUrl !== originalUrl) {
-                console.log('Mencoba URL asli sebagai fallback:', originalUrl);
-                imgElement.src = originalUrl;
-                
-                // Coba lagi dengan onerror kedua
-                imgElement.onerror = function() {
-                    console.error('Gambar juga gagal dimuat dari URL asli');
-                    imgElement.style.display = 'none';
-                    // Tambahkan pesan ke pengguna
-                    const questionText = document.getElementById('question-text');
-                    questionText.innerHTML = question.soal + 
-                        '<br><br><span style="color: #e74c3c; font-size: 0.9em;">' +
-                        '<i class="fas fa-exclamation-triangle"></i> ' +
-                        'Gambar soal tidak dapat dimuat. Silakan lanjutkan mengerjakan.</span>';
-                };
-            } else {
+            // Coba alternatif URL jika yang pertama gagal
+            const alternativeUrl = `https://drive.google.com/thumbnail?id=${imageId}&sz=w1000`;
+            console.log('Mencoba URL alternatif:', alternativeUrl);
+            imgElement.src = alternativeUrl;
+            
+            // Jika masih gagal, sembunyikan gambar
+            imgElement.onerror = function() {
+                console.error('Gambar juga gagal dimuat dari URL alternatif');
                 imgElement.style.display = 'none';
+                
                 // Tambahkan pesan ke pengguna
                 const questionText = document.getElementById('question-text');
                 questionText.innerHTML = question.soal + 
                     '<br><br><span style="color: #e74c3c; font-size: 0.9em;">' +
                     '<i class="fas fa-exclamation-triangle"></i> ' +
                     'Gambar soal tidak dapat dimuat. Silakan lanjutkan mengerjakan.</span>';
-            }
+            };
         };
         
         // Tambahkan loading indicator
         imgElement.onload = function() {
             console.log('Gambar berhasil dimuat:', viewableUrl);
+            console.log('Image dimensions:', imgElement.naturalWidth + 'x' + imgElement.naturalHeight);
         };
     } else {
         imgElement.style.display = 'none';
