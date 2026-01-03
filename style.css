@@ -559,4 +559,28 @@ select.form-control {
 .mb-20 {
     margin-bottom: 20px;
 }
+/* Add to style.css */
+/* Disable text selection selama ujian */
+.disable-selection {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Apply selama ujian */
+#screen-exam {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Allow selection hanya untuk options */
+.option {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
 
