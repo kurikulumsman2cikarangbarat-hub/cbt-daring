@@ -160,8 +160,8 @@ async function handleLogin() {
             },
             body: JSON.stringify({
                 nama: nama,
-                kelas: jenjang,  // Send jenjang as kelas (sesuai worker)
-                rombel: kelas,   // Send kelas as rombel (sesuai worker)
+                kelas: jenjang,
+                rombel: kelas,
                 token: token
             })
         });
@@ -569,7 +569,7 @@ function showPenutup() {
     message.innerHTML = `
         <strong>Selamat ${state.student.nama} (${state.student.kelas}),</strong><br><br>
         Anda telah selesai mengerjakan <strong>Mata Pelajaran ${state.examData?.mapel || '-'}</strong><br>
-        sebanyak <strong>${state.questions.length} soal</strong> dengan durasi <strong>${state.examData?.wkt_digunakan || 0} menit</strong>.<br><br>
+        sebanyak <strong>${state.questions.length} soal</strong> dengan durasi <strong>${state.examData?.durasi || 0} menit</strong>.<br><br>
         Semoga mendapat nilai yang terbaik.<br><br>
         <strong>Tunjukkan halaman ini ke pengawas,</strong><br>
         sebagai bukti Anda sudah menyelesaikan ujian.
@@ -673,4 +673,5 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
 
