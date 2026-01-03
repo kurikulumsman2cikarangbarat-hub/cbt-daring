@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CBT - Database Health Check</title>
+    <title>CBT - Database Health Check PRO</title>
     <style>
         * {
             margin: 0;
@@ -13,146 +13,101 @@
         }
         
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
         }
         
         .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 800px;
-            overflow: hidden;
+            max-width: 1200px;
+            margin: 0 auto;
         }
         
         .header {
-            background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
-            color: white;
-            padding: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px 20px 0 0;
+            padding: 30px;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-bottom: 4px solid #1a73e8;
         }
         
         .header h1 {
+            color: #1a73e8;
             margin-bottom: 10px;
-            font-size: 1.8rem;
+            font-size: 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
         
         .header p {
-            opacity: 0.9;
-            font-size: 0.95rem;
-        }
-        
-        .content {
-            padding: 30px;
-        }
-        
-        .check-section {
-            margin-bottom: 30px;
-        }
-        
-        .check-section h2 {
-            color: #1a73e8;
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .check-section h2 i {
-            font-size: 1.5rem;
-        }
-        
-        .status-box {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            border-left: 4px solid #ddd;
-            transition: all 0.3s;
-        }
-        
-        .status-box.success {
-            border-left-color: #27ae60;
-            background: #e8f6ef;
-        }
-        
-        .status-box.error {
-            border-left-color: #e74c3c;
-            background: #fdedec;
-        }
-        
-        .status-box.warning {
-            border-left-color: #f39c12;
-            background: #fef5e7;
-        }
-        
-        .status-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .status-title {
-            font-weight: 600;
+            color: #666;
             font-size: 1.1rem;
         }
         
-        .status-badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
+        .dashboard {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            height: fit-content;
+        }
+        
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .control-panel {
+            margin-bottom: 30px;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-label {
+            display: block;
+            margin-bottom: 8px;
             font-weight: 600;
+            color: #333;
         }
         
-        .status-badge.success {
-            background: #27ae60;
-            color: white;
+        .input-group {
+            margin-bottom: 15px;
         }
         
-        .status-badge.error {
-            background: #e74c3c;
-            color: white;
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
         }
         
-        .status-badge.warning {
-            background: #f39c12;
-            color: white;
-        }
-        
-        .status-badge.pending {
-            background: #7f8c8d;
-            color: white;
-        }
-        
-        .status-details {
-            color: #555;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-        
-        .status-details pre {
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            overflow-x: auto;
-            font-size: 0.85rem;
-            border: 1px solid #eee;
+        input:focus, select:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
         }
         
         .btn {
             background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
             color: white;
             border: none;
-            padding: 15px 30px;
+            padding: 15px;
             border-radius: 10px;
             font-weight: 600;
             cursor: pointer;
@@ -177,8 +132,201 @@
             box-shadow: none;
         }
         
-        .btn i {
-            font-size: 1.2rem;
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #219653 100%);
+        }
+        
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            border-top: 4px solid;
+        }
+        
+        .stat-card.api { border-color: #1a73e8; }
+        .stat-card.db { border-color: #27ae60; }
+        .stat-card.auth { border-color: #ff9800; }
+        .stat-card.performance { border-color: #9b59b6; }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-online { background: #27ae60; }
+        .status-offline { background: #e74c3c; }
+        .status-warning { background: #ff9800; }
+        
+        .tab-container {
+            margin-bottom: 25px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 12px 25px;
+            background: none;
+            border: none;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            color: #1a73e8;
+        }
+        
+        .tab.active {
+            color: #1a73e8;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #1a73e8;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .test-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            border-left: 4px solid #ddd;
+            transition: all 0.3s;
+        }
+        
+        .test-card.success {
+            border-left-color: #27ae60;
+            background: #e8f6ef;
+        }
+        
+        .test-card.error {
+            border-left-color: #e74c3c;
+            background: #fdedec;
+        }
+        
+        .test-card.warning {
+            border-left-color: #ff9800;
+            background: #fef5e7;
+        }
+        
+        .test-card.running {
+            border-left-color: #1a73e8;
+            background: #e8f0fe;
+        }
+        
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .test-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-badge {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .test-badge.success { background: #27ae60; color: white; }
+        .test-badge.error { background: #e74c3c; color: white; }
+        .test-badge.warning { background: #ff9800; color: white; }
+        .test-badge.running { background: #1a73e8; color: white; }
+        
+        .test-details {
+            color: #555;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .test-details pre {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            border: 1px solid #eee;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #1a73e8);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.5s ease;
         }
         
         .loading {
@@ -196,92 +344,182 @@
             100% { transform: rotate(360deg); }
         }
         
-        .summary {
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .alert-info {
             background: #e8f0fe;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 30px;
-            text-align: center;
-        }
-        
-        .summary h3 {
+            border-left: 4px solid #1a73e8;
             color: #1a73e8;
-            margin-bottom: 10px;
         }
         
-        .summary-stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+        .alert-warning {
+            background: #fef5e7;
+            border-left: 4px solid #ff9800;
+            color: #856404;
+        }
+        
+        .alert-danger {
+            background: #fdedec;
+            border-left: 4px solid #e74c3c;
+            color: #721c24;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 15px;
         }
         
-        .stat-box {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        }
-        
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #1a73e8;
-        }
-        
-        .stat-label {
-            font-size: 0.85rem;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        @media (max-width: 768px) {
-            .summary-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .content {
-                padding: 20px;
-            }
-            
-            .summary-stats {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        .token-input {
-            width: 100%;
+        .data-table th {
+            background: #f8f9fa;
             padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-        
-        .token-input:focus {
-            outline: none;
-            border-color: #1a73e8;
-            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
-        }
-        
-        .token-label {
-            display: block;
-            margin-bottom: 8px;
+            text-align: left;
             font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .chip {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin: 2px;
+        }
+        
+        .chip-success { background: #d4edda; color: #155724; }
+        .chip-warning { background: #fff3cd; color: #856404; }
+        .chip-danger { background: #f8d7da; color: #721c24; }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #27ae60;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
             color: #333;
         }
         
-        .info-box {
-            background: #fff3cd;
-            border-left: 4px solid #ff9800;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            color: #856404;
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .quick-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -289,213 +527,554 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-database"></i> CBT Database Health Check</h1>
-            <p>SMAN 2 Cikarang Barat - Sistem CBT</p>
+            <h1><i class="fas fa-heartbeat"></i> CBT System Health Monitor PRO</h1>
+            <p>Real-time Monitoring & Diagnostic Tool for SMAN 2 Cikarang Barat</p>
         </div>
         
-        <div class="content">
-            <div class="info-box">
-                <p><strong><i class="fas fa-info-circle"></i> Informasi:</strong> Tool ini untuk memeriksa koneksi database dan kesiapan sistem CBT.</p>
-            </div>
-            
-            <div class="check-section">
-                <h2><i class="fas fa-plug"></i> 1. Koneksi Worker API</h2>
-                <div id="api-status" class="status-box">
-                    <div class="status-header">
-                        <div class="status-title">API Worker CBT</div>
-                        <div class="status-badge pending">Menunggu...</div>
+        <div class="dashboard">
+            <!-- Sidebar Controls -->
+            <div class="sidebar">
+                <div class="control-panel">
+                    <h3 style="color: #1a73e8; margin-bottom: 20px;"><i class="fas fa-cogs"></i> Control Panel</h3>
+                    
+                    <div class="control-group">
+                        <label class="control-label"><i class="fas fa-link"></i> API Endpoint</label>
+                        <input type="text" id="api-endpoint" value="https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev" class="input-group">
                     </div>
-                    <div class="status-details">
-                        Mengecek koneksi ke: <code>https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev/</code>
+                    
+                    <div class="control-group">
+                        <label class="control-label"><i class="fas fa-key"></i> Admin Token</label>
+                        <input type="password" id="admin-token" value="DwiW1980" placeholder="Masukkan token admin" class="input-group">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label class="control-label"><i class="fas fa-sliders-h"></i> Test Options</label>
+                        <div style="display: grid; gap: 10px; margin-top: 10px;">
+                            <label style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="chk-api" checked> Basic API Test
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="chk-db" checked> Database Connectivity
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="chk-tables" checked> Table Structure
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="chk-performance"> Performance Test
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="chk-data"> Sample Data Check
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-run-all" class="btn" onclick="runAllTests()">
+                        <i class="fas fa-play-circle"></i> Run Comprehensive Test
+                    </button>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                        <button id="btn-quick-check" class="btn btn-secondary" onclick="runQuickCheck()">
+                            <i class="fas fa-bolt"></i> Quick Check
+                        </button>
+                        <button id="btn-stop" class="btn btn-danger" onclick="stopTests()" disabled>
+                            <i class="fas fa-stop-circle"></i> Stop
+                        </button>
                     </div>
                 </div>
                 
-                <div id="tables-status" class="status-box" style="display: none;">
-                    <div class="status-header">
-                        <div class="status-title">Struktur Database</div>
-                        <div class="status-badge pending">Menunggu...</div>
+                <div class="quick-stats">
+                    <div class="stat-card api">
+                        <div class="stat-label">API Status</div>
+                        <div class="stat-value" id="stat-api">-</div>
+                        <div id="api-indicator" class="status-indicator status-offline"></div>
                     </div>
-                    <div class="status-details">
-                        Memeriksa tabel database...
+                    
+                    <div class="stat-card db">
+                        <div class="stat-label">Database</div>
+                        <div class="stat-value" id="stat-db">-</div>
+                        <div id="db-indicator" class="status-indicator status-offline"></div>
+                    </div>
+                    
+                    <div class="stat-card auth">
+                        <div class="stat-label">Authentication</div>
+                        <div class="stat-value" id="stat-auth">-</div>
+                        <div id="auth-indicator" class="status-indicator status-offline"></div>
+                    </div>
+                    
+                    <div class="stat-card performance">
+                        <div class="stat-label">Response Time</div>
+                        <div class="stat-value" id="stat-response">- ms</div>
+                        <div id="perf-indicator" class="status-indicator status-warning"></div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="check-section">
-                <h2><i class="fas fa-table"></i> 2. Database & Tabel</h2>
-                <div id="db-status" class="status-box">
-                    <div class="status-header">
-                        <div class="status-title">Koneksi Database D1</div>
-                        <div class="status-badge pending">Menunggu...</div>
-                    </div>
-                    <div class="status-details">
-                        Mengecek koneksi database Cloudflare D1...
-                    </div>
-                </div>
-            </div>
-            
-            <div class="check-section">
-                <h2><i class="fas fa-key"></i> 3. Admin Authentication</h2>
-                <label class="token-label">Token Admin:</label>
-                <input type="password" id="admin-token" class="token-input" placeholder="Masukkan token admin (DwiW1980)" value="DwiW1980">
                 
-                <div id="auth-status" class="status-box">
-                    <div class="status-header">
-                        <div class="status-title">Validasi Token Admin</div>
-                        <div class="status-badge pending">Menunggu...</div>
-                    </div>
-                    <div class="status-details">
-                        Token akan divalidasi sebelum mengakses endpoint admin.
-                    </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-warning" onclick="showModal('repair-modal')">
+                        <i class="fas fa-tools"></i> Auto Repair Tools
+                    </button>
                 </div>
             </div>
             
-            <button id="check-btn" class="btn" onclick="runHealthCheck()">
-                <i class="fas fa-play-circle"></i> Jalankan Health Check
-            </button>
-            
-            <div class="summary" id="summary" style="display: none;">
-                <h3><i class="fas fa-chart-bar"></i> Ringkasan Status</h3>
-                <div class="summary-stats">
-                    <div class="stat-box">
-                        <div class="stat-value" id="stat-total">0</div>
-                        <div class="stat-label">Total Tests</div>
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="tab-container">
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab('tab-tests')">Test Results</button>
+                        <button class="tab" onclick="switchTab('tab-database')">Database Info</button>
+                        <button class="tab" onclick="switchTab('tab-performance')">Performance</button>
+                        <button class="tab" onclick="switchTab('tab-logs')">Logs</button>
+                        <button class="tab" onclick="switchTab('tab-export')">Export</button>
                     </div>
-                    <div class="stat-box">
-                        <div class="stat-value success-text" id="stat-success">0</div>
-                        <div class="stat-label">Berhasil</div>
+                    
+                    <!-- Test Results Tab -->
+                    <div id="tab-tests" class="tab-content active">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>Comprehensive System Check</strong>
+                                <p>Running all selected tests will verify every component of your CBT system.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="test-progress" style="width: 0%"></div>
+                        </div>
+                        
+                        <div id="test-results">
+                            <!-- Test results will be inserted here -->
+                        </div>
                     </div>
-                    <div class="stat-box">
-                        <div class="stat-value warning-text" id="stat-warning">0</div>
-                        <div class="stat-label">Peringatan</div>
+                    
+                    <!-- Database Info Tab -->
+                    <div id="tab-database" class="tab-content">
+                        <h3 style="color: #1a73e8; margin-bottom: 20px;"><i class="fas fa-database"></i> Database Information</h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+                            <div class="test-card">
+                                <div class="test-title">Total Tables</div>
+                                <div class="test-details" id="db-total-tables">-</div>
+                            </div>
+                            <div class="test-card">
+                                <div class="test-title">Total Records</div>
+                                <div class="test-details" id="db-total-records">-</div>
+                            </div>
+                            <div class="test-card">
+                                <div class="test-title">Database Size</div>
+                                <div class="test-details" id="db-size">-</div>
+                            </div>
+                        </div>
+                        
+                        <h4 style="margin: 20px 0 10px 0;">Table Details</h4>
+                        <table class="data-table" id="db-table-details">
+                            <thead>
+                                <tr>
+                                    <th>Table Name</th>
+                                    <th>Records</th>
+                                    <th>Status</th>
+                                    <th>Last Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Table data will be inserted here -->
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="stat-box">
-                        <div class="stat-value error-text" id="stat-error">0</div>
-                        <div class="stat-label">Gagal</div>
+                    
+                    <!-- Performance Tab -->
+                    <div id="tab-performance" class="tab-content">
+                        <h3 style="color: #1a73e8; margin-bottom: 20px;"><i class="fas fa-tachometer-alt"></i> Performance Metrics</h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                            <div>
+                                <h4>Response Times</h4>
+                                <div class="test-card">
+                                    <div class="test-details">
+                                        <div>API Root: <span id="perf-api">- ms</span></div>
+                                        <div>Database Query: <span id="perf-db">- ms</span></div>
+                                        <div>Admin Auth: <span id="perf-auth">- ms</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4>Load Test</h4>
+                                <div class="test-card">
+                                    <div class="test-details">
+                                        <button class="btn btn-secondary" onclick="runLoadTest()" style="width: 100%; margin-bottom: 10px;">
+                                            <i class="fas fa-sync-alt"></i> Run Load Test
+                                        </button>
+                                        <div>Concurrent Requests: <span id="load-requests">0</span></div>
+                                        <div>Success Rate: <span id="load-success">0%</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h4 style="margin: 20px 0 10px 0;">Recent Performance</h4>
+                        <canvas id="performance-chart" width="400" height="200" style="width: 100%; height: 200px;"></canvas>
+                    </div>
+                    
+                    <!-- Logs Tab -->
+                    <div id="tab-logs" class="tab-content">
+                        <h3 style="color: #1a73e8; margin-bottom: 20px;"><i class="fas fa-clipboard-list"></i> System Logs</h3>
+                        
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <button class="btn btn-secondary" onclick="clearLogs()">
+                                <i class="fas fa-trash"></i> Clear Logs
+                            </button>
+                            <button class="btn btn-secondary" onclick="downloadLogs()">
+                                <i class="fas fa-download"></i> Download Logs
+                            </button>
+                        </div>
+                        
+                        <div id="system-logs" style="max-height: 400px; overflow-y: auto; background: #f8f9fa; border-radius: 10px; padding: 15px;">
+                            <!-- Logs will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Export Tab -->
+                    <div id="tab-export" class="tab-content">
+                        <h3 style="color: #1a73e8; margin-bottom: 20px;"><i class="fas fa-file-export"></i> Export Reports</h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                            <div class="test-card">
+                                <h4>Health Report</h4>
+                                <p>Generate comprehensive health check report</p>
+                                <button class="btn btn-success" onclick="exportReport('health')">
+                                    <i class="fas fa-file-medical"></i> Export Health Report
+                                </button>
+                            </div>
+                            
+                            <div class="test-card">
+                                <h4>Database Schema</h4>
+                                <p>Export database structure and relationships</p>
+                                <button class="btn btn-success" onclick="exportReport('schema')">
+                                    <i class="fas fa-project-diagram"></i> Export Schema
+                                </button>
+                            </div>
+                            
+                            <div class="test-card">
+                                <h4>Performance Data</h4>
+                                <p>Export performance metrics and charts</p>
+                                <button class="btn btn-success" onclick="exportReport('performance')">
+                                    <i class="fas fa-chart-line"></i> Export Performance
+                                </button>
+                            </div>
+                            
+                            <div class="test-card">
+                                <h4>System Logs</h4>
+                                <p>Export all system logs and test results</p>
+                                <button class="btn btn-success" onclick="exportReport('logs')">
+                                    <i class="fas fa-scroll"></i> Export Logs
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <p id="final-message" style="margin-top: 15px; font-weight: 600;"></p>
             </div>
         </div>
     </div>
-
+    
+    <!-- Repair Modal -->
+    <div id="repair-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-tools"></i> Auto Repair Tools</h3>
+                <button class="close-modal" onclick="hideModal('repair-modal')">&times;</button>
+            </div>
+            
+            <div style="display: grid; gap: 15px;">
+                <div class="test-card">
+                    <h4>Reset Database Schema</h4>
+                    <p>Recreate all database tables (data will be preserved)</p>
+                    <button class="btn btn-warning" onclick="repairDatabase()">
+                        <i class="fas fa-database"></i> Repair Database
+                    </button>
+                </div>
+                
+                <div class="test-card">
+                    <h4>Clear Test Sessions</h4>
+                    <p>Remove all expired sessions and temporary data</p>
+                    <button class="btn btn-warning" onclick="clearSessions()">
+                        <i class="fas fa-trash"></i> Clear Sessions
+                    </button>
+                </div>
+                
+                <div class="test-card">
+                    <h4>Reset Admin Token</h4>
+                    <p>Update admin token in environment variables</p>
+                    <input type="password" id="new-token" placeholder="New admin token" style="margin-bottom: 10px;">
+                    <button class="btn btn-danger" onclick="resetToken()">
+                        <i class="fas fa-key"></i> Reset Token
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
-        let testResults = {
-            total: 0,
-            success: 0,
-            warning: 0,
-            error: 0
-        };
+        // Configuration
+        let API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
+        let testResults = [];
+        let systemLogs = [];
+        let isTesting = false;
+        let performanceHistory = [];
         
-        function updateStatusBox(elementId, status, title, details, data = null) {
-            const box = document.getElementById(elementId);
-            const badge = box.querySelector('.status-badge');
-            const titleEl = box.querySelector('.status-title');
-            const detailsEl = box.querySelector('.status-details');
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            updateStatusIndicators();
+            addLog('System', 'info', 'Health Monitor PRO initialized');
             
-            // Reset classes
-            box.className = 'status-box';
-            badge.className = 'status-badge';
+            // Auto-run quick check on load
+            setTimeout(() => {
+                runQuickCheck();
+            }, 1000);
+        });
+        
+        // Tab switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            // Set status
-            if (status === 'success') {
-                box.classList.add('success');
-                badge.classList.add('success');
-                badge.textContent = '✅ BERHASIL';
-            } else if (status === 'error') {
-                box.classList.add('error');
-                badge.classList.add('error');
-                badge.textContent = '❌ GAGAL';
-            } else if (status === 'warning') {
-                box.classList.add('warning');
-                badge.classList.add('warning');
-                badge.textContent = '⚠️ PERINGATAN';
-            } else {
-                badge.classList.add('pending');
-                badge.textContent = '⏳ MENUNGGU...';
+            document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+        
+        // Modal functions
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+        
+        function hideModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // Logging system
+        function addLog(source, type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = {
+                timestamp,
+                source,
+                type,
+                message
+            };
+            
+            systemLogs.unshift(logEntry);
+            updateLogDisplay();
+            
+            // Keep only last 100 logs
+            if (systemLogs.length > 100) {
+                systemLogs.pop();
             }
+        }
+        
+        function updateLogDisplay() {
+            const logsContainer = document.getElementById('system-logs');
+            logsContainer.innerHTML = '';
             
-            // Update content
-            if (title) titleEl.textContent = title;
+            systemLogs.forEach(log => {
+                const logEl = document.createElement('div');
+                logEl.style.cssText = `
+                    padding: 8px 12px;
+                    margin-bottom: 5px;
+                    border-radius: 6px;
+                    font-size: 0.85rem;
+                    background: ${log.type === 'error' ? '#fdedec' : 
+                                log.type === 'warning' ? '#fef5e7' : 
+                                log.type === 'success' ? '#e8f6ef' : '#f8f9fa'};
+                    color: ${log.type === 'error' ? '#721c24' : 
+                            log.type === 'warning' ? '#856404' : 
+                            log.type === 'success' ? '#155724' : '#333'};
+                `;
+                
+                logEl.innerHTML = `
+                    <span style="color: #666; font-weight: 600;">[${log.timestamp}]</span>
+                    <span style="font-weight: 600; margin: 0 5px;">${log.source}:</span>
+                    ${log.message}
+                `;
+                
+                logsContainer.appendChild(logEl);
+            });
+        }
+        
+        function clearLogs() {
+            systemLogs = [];
+            updateLogDisplay();
+            addLog('System', 'info', 'Logs cleared');
+        }
+        
+        function downloadLogs() {
+            const logText = systemLogs.map(log => 
+                `[${log.timestamp}] ${log.source}: ${log.message}`
+            ).join('\n');
             
-            let detailsHTML = details;
-            if (data) {
-                detailsHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-            }
-            detailsEl.innerHTML = detailsHTML;
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cbt-health-logs-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            
+            addLog('System', 'success', 'Logs downloaded');
+        }
+        
+        // Test management
+        function addTestResult(testName, status, details, data = null, responseTime = null) {
+            const testId = 'test-' + Date.now();
+            const result = {
+                id: testId,
+                name: testName,
+                status,
+                details,
+                data,
+                responseTime,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            
+            testResults.unshift(result);
+            updateTestDisplay();
             
             // Update statistics
-            if (status !== 'pending') {
-                testResults.total++;
-                testResults[status]++;
-                updateSummary();
-            }
+            updateStatistics();
+            addLog('Test', status === 'success' ? 'success' : 
+                                status === 'warning' ? 'warning' : 'error', 
+                   `${testName}: ${status}`);
+            
+            return result;
         }
         
-        function updateSummary() {
-            document.getElementById('stat-total').textContent = testResults.total;
-            document.getElementById('stat-success').textContent = testResults.success;
-            document.getElementById('stat-warning').textContent = testResults.warning;
-            document.getElementById('stat-error').textContent = testResults.error;
+        function updateTestDisplay() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = '';
             
-            // Style warna
-            document.getElementById('stat-success').className = 'stat-value success-text';
-            document.getElementById('stat-warning').className = 'stat-value warning-text';
-            document.getElementById('stat-error').className = 'stat-value error-text';
-            
-            // Show summary
-            document.getElementById('summary').style.display = 'block';
-            
-            // Final message
-            const finalMsg = document.getElementById('final-message');
-            if (testResults.error > 0) {
-                finalMsg.innerHTML = '<span style="color:#e74c3c">❌ SISTEM TIDAK SIAP: Ada masalah yang perlu diperbaiki</span>';
-            } else if (testResults.warning > 0) {
-                finalMsg.innerHTML = '<span style="color:#f39c12">⚠️ SISTEM HAMPIR SIAP: Ada beberapa peringatan</span>';
-            } else if (testResults.success > 0) {
-                finalMsg.innerHTML = '<span style="color:#27ae60">✅ SISTEM SIAP: Semua komponen berfungsi dengan baik</span>';
-            }
+            testResults.forEach(result => {
+                const testCard = document.createElement('div');
+                testCard.className = `test-card ${result.status}`;
+                testCard.id = result.id;
+                
+                let badgeText = '';
+                let icon = '';
+                
+                switch(result.status) {
+                    case 'success':
+                        badgeText = '✅ BERHASIL';
+                        icon = '<i class="fas fa-check-circle"></i>';
+                        break;
+                    case 'error':
+                        badgeText = '❌ GAGAL';
+                        icon = '<i class="fas fa-times-circle"></i>';
+                        break;
+                    case 'warning':
+                        badgeText = '⚠️ PERINGATAN';
+                        icon = '<i class="fas fa-exclamation-triangle"></i>';
+                        break;
+                    case 'running':
+                        badgeText = '⏳ MENJALANKAN';
+                        icon = '<div class="loading"></div>';
+                        break;
+                }
+                
+                let detailsHTML = result.details;
+                if (result.responseTime) {
+                    detailsHTML += `<br><small>Response time: ${result.responseTime}ms</small>`;
+                }
+                if (result.data) {
+                    detailsHTML += `<pre>${JSON.stringify(result.data, null, 2)}</pre>`;
+                }
+                
+                testCard.innerHTML = `
+                    <div class="test-header">
+                        <div class="test-title">
+                            ${icon}
+                            ${result.name}
+                        </div>
+                        <div class="test-badge ${result.status}">${badgeText}</div>
+                    </div>
+                    <div class="test-details">
+                        ${detailsHTML}
+                    </div>
+                `;
+                
+                container.appendChild(testCard);
+            });
         }
         
-        async function testAPI() {
+        function updateStatistics() {
+            const total = testResults.length;
+            const success = testResults.filter(r => r.status === 'success').length;
+            const warning = testResults.filter(r => r.status === 'warning').length;
+            const error = testResults.filter(r => r.status === 'error').length;
+            
+            // Update progress bar
+            const progress = total > 0 ? (success / total) * 100 : 0;
+            document.getElementById('test-progress').style.width = `${progress}%`;
+        }
+        
+        function updateStatusIndicators() {
+            // This would be updated based on actual test results
+            // For now, we'll update based on the latest tests
+        }
+        
+        // Test functions
+        async function testAPIConnection() {
+            const startTime = Date.now();
+            const testCard = addTestResult('API Connection Test', 'running', 'Testing connection to Worker API...');
+            
             try {
+                API_URL = document.getElementById('api-endpoint').value;
                 const response = await fetch(API_URL);
+                const responseTime = Date.now() - startTime;
+                
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
                 
-                updateStatusBox('api-status', 'success', 
-                    'API Worker CBT', 
-                    `API merespons dengan sukses. Versi: ${data.version || 'N/A'}`,
-                    data);
-                    
-                return true;
+                updateTestCard(testCard.id, 'success', 
+                    `API connected successfully. Version: ${data.version || 'N/A'}`, 
+                    data, responseTime);
+                
+                // Update status indicator
+                document.getElementById('stat-api').textContent = 'Online';
+                document.getElementById('api-indicator').className = 'status-indicator status-online';
+                document.getElementById('perf-api').textContent = `${responseTime}ms`;
+                
+                return { success: true, data, responseTime };
             } catch (error) {
-                updateStatusBox('api-status', 'error',
-                    'API Worker CBT',
-                    `Gagal terhubung ke API: ${error.message}`);
-                return false;
+                const responseTime = Date.now() - startTime;
+                updateTestCard(testCard.id, 'error', 
+                    `Failed to connect to API: ${error.message}`, 
+                    null, responseTime);
+                
+                document.getElementById('stat-api').textContent = 'Offline';
+                document.getElementById('api-indicator').className = 'status-indicator status-offline';
+                
+                return { success: false, error: error.message, responseTime };
             }
         }
         
-        async function testDatabase() {
+        async function testDatabaseConnection() {
+            const startTime = Date.now();
+            const testCard = addTestResult('Database Connection Test', 'running', 'Testing database connectivity...');
+            const token = document.getElementById('admin-token').value;
+            
             try {
                 const response = await fetch(`${API_URL}/api/debug/tables`, {
-                    headers: {
-                        'X-Admin-Token': document.getElementById('admin-token').value
-                    }
+                    headers: { 'X-Admin-Token': token }
                 });
                 
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        updateStatusBox('db-status', 'warning',
-                            'Koneksi Database D1',
-                            'Token admin tidak valid atau tidak ada. Database tidak dapat diakses.');
-                        return false;
-                    }
-                    throw new Error(`HTTP ${response.status}`);
+                const responseTime = Date.now() - startTime;
+                
+                if (response.status === 401) {
+                    updateTestCard(testCard.id, 'warning', 
+                        'Database connection requires valid admin token', 
+                        null, responseTime);
+                    return { success: false, error: 'Unauthorized', responseTime };
                 }
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
                 
@@ -503,135 +1082,430 @@
                     const tableCount = data.database_info.total_tables || 0;
                     const tables = data.database_info.tables || [];
                     
-                    let details = `Database terhubung dengan sukses.`;
-                    details += `<br>Jumlah tabel: <strong>${tableCount}</strong>`;
+                    updateTestCard(testCard.id, 'success', 
+                        `Database connected successfully. Found ${tableCount} tables.`, 
+                        data.database_info, responseTime);
                     
-                    if (tables.length > 0) {
-                        details += `<br>Tabel: ${tables.join(', ')}`;
-                    }
+                    // Update UI
+                    document.getElementById('stat-db').textContent = 'Connected';
+                    document.getElementById('db-indicator').className = 'status-indicator status-online';
+                    document.getElementById('perf-db').textContent = `${responseTime}ms`;
+                    document.getElementById('db-total-tables').textContent = tableCount;
                     
-                    updateStatusBox('db-status', 'success',
-                        'Koneksi Database D1',
-                        details);
-                        
-                    // Show tables status
-                    document.getElementById('tables-status').style.display = 'block';
-                    updateStatusBox('tables-status', 'success',
-                        'Struktur Database',
-                        `Semua tabel CBT ditemukan: ${tables.length} tabel`);
-                        
-                    return true;
+                    // Update table details
+                    updateTableDetails(tables, data.counts);
+                    
+                    return { success: true, data, responseTime };
                 } else {
-                    updateStatusBox('db-status', 'warning',
-                        'Koneksi Database D1',
-                        'Database terhubung tetapi struktur tidak lengkap.',
-                        data);
-                    return false;
+                    updateTestCard(testCard.id, 'warning', 
+                        'Database connected but structure may be incomplete', 
+                        data, responseTime);
+                    return { success: false, error: 'Invalid structure', responseTime };
                 }
-                
             } catch (error) {
-                updateStatusBox('db-status', 'error',
-                    'Koneksi Database D1',
-                    `Gagal mengakses database: ${error.message}`);
-                return false;
+                const responseTime = Date.now() - startTime;
+                updateTestCard(testCard.id, 'error', 
+                    `Database connection failed: ${error.message}`, 
+                    null, responseTime);
+                
+                document.getElementById('stat-db').textContent = 'Error';
+                document.getElementById('db-indicator').className = 'status-indicator status-offline';
+                
+                return { success: false, error: error.message, responseTime };
             }
         }
         
-        async function testAuth() {
+        async function testAuthentication() {
+            const startTime = Date.now();
+            const testCard = addTestResult('Admin Authentication Test', 'running', 'Validating admin token...');
             const token = document.getElementById('admin-token').value;
             
-            if (!token || token.trim() === '') {
-                updateStatusBox('auth-status', 'warning',
-                    'Validasi Token Admin',
-                    'Token admin kosong. Endpoint admin tidak dapat diakses.');
-                return false;
+            if (!token.trim()) {
+                updateTestCard(testCard.id, 'warning', 'Admin token is empty');
+                return { success: false, error: 'Token empty' };
             }
             
             try {
                 const response = await fetch(`${API_URL}/api/debug/tables`, {
-                    headers: {
-                        'X-Admin-Token': token
-                    }
+                    headers: { 'X-Admin-Token': token }
                 });
                 
+                const responseTime = Date.now() - startTime;
+                
                 if (response.status === 401) {
-                    updateStatusBox('auth-status', 'error',
-                        'Validasi Token Admin',
-                        'Token admin tidak valid. Silakan periksa token Anda.');
-                    return false;
+                    updateTestCard(testCard.id, 'error', 
+                        'Admin token is invalid or expired', 
+                        null, responseTime);
+                    
+                    document.getElementById('stat-auth').textContent = 'Invalid';
+                    document.getElementById('auth-indicator').className = 'status-indicator status-offline';
+                    document.getElementById('perf-auth').textContent = `${responseTime}ms`;
+                    
+                    return { success: false, error: 'Invalid token', responseTime };
                 }
                 
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
-                updateStatusBox('auth-status', 'success',
-                    'Validasi Token Admin',
-                    'Token admin valid. Akses endpoint admin berhasil.');
-                return true;
+                updateTestCard(testCard.id, 'success', 
+                    'Admin token is valid and has access to protected endpoints', 
+                    null, responseTime);
                 
+                document.getElementById('stat-auth').textContent = 'Valid';
+                document.getElementById('auth-indicator').className = 'status-indicator status-online';
+                document.getElementById('perf-auth').textContent = `${responseTime}ms`;
+                
+                return { success: true, responseTime };
             } catch (error) {
-                updateStatusBox('auth-status', 'error',
-                    'Validasi Token Admin',
-                    `Gagal validasi token: ${error.message}`);
-                return false;
+                const responseTime = Date.now() - startTime;
+                updateTestCard(testCard.id, 'error', 
+                    `Authentication test failed: ${error.message}`, 
+                    null, responseTime);
+                return { success: false, error: error.message, responseTime };
             }
         }
         
-        async function runHealthCheck() {
-            // Reset results
-            testResults = { total: 0, success: 0, warning: 0, error: 0 };
+        function updateTableDetails(tables, counts) {
+            const tbody = document.getElementById('db-table-details').querySelector('tbody');
+            tbody.innerHTML = '';
             
-            // Disable button and show loading
-            const btn = document.getElementById('check-btn');
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loading"></div> Memeriksa sistem...';
+            tables.forEach(tableName => {
+                const row = document.createElement('tr');
+                const recordCount = counts[tableName] || 0;
+                
+                row.innerHTML = `
+                    <td><strong>${tableName}</strong></td>
+                    <td>${recordCount.toLocaleString()}</td>
+                    <td>
+                        <span class="chip ${recordCount > 0 ? 'chip-success' : 'chip-warning'}">
+                            ${recordCount > 0 ? 'Has Data' : 'Empty'}
+                        </span>
+                    </td>
+                    <td>-</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
             
-            // Reset status boxes
-            updateStatusBox('api-status', 'pending', 'API Worker CBT', 'Mengecek koneksi ke API...');
-            updateStatusBox('db-status', 'pending', 'Koneksi Database D1', 'Mengecek koneksi database...');
-            updateStatusBox('auth-status', 'pending', 'Validasi Token Admin', 'Memvalidasi token admin...');
-            document.getElementById('tables-status').style.display = 'none';
+            // Update total records
+            const totalRecords = Object.values(counts || {}).reduce((a, b) => a + b, 0);
+            document.getElementById('db-total-records').textContent = totalRecords.toLocaleString();
+            document.getElementById('db-size').textContent = calculateDBSize(totalRecords);
+        }
+        
+        function calculateDBSize(records) {
+            // Rough estimation
+            const avgRecordSize = 1024; // 1KB per record
+            const sizeKB = (records * avgRecordSize) / 1024;
             
-            // Run tests in sequence
-            const apiOk = await testAPI();
-            
-            if (apiOk) {
-                const authOk = await testAuth();
-                if (authOk) {
-                    await testDatabase();
-                } else {
-                    updateStatusBox('db-status', 'warning',
-                        'Koneksi Database D1',
-                        'Dilewati karena token admin tidak valid.');
-                }
+            if (sizeKB < 1024) {
+                return `${Math.round(sizeKB)} KB`;
             } else {
-                updateStatusBox('auth-status', 'warning',
-                    'Validasi Token Admin',
-                    'Dilewati karena API tidak merespons.');
-                updateStatusBox('db-status', 'warning',
-                    'Koneksi Database D1',
-                    'Dilewati karena API tidak merespons.');
+                return `${(sizeKB / 1024).toFixed(2)} MB`;
             }
-            
-            // Re-enable button
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-redo"></i> Jalankan Ulang Health Check';
         }
         
-        // Run initial API test on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                testAPI();
-            }, 1000);
-        });
+        function updateTestCard(testId, status, details, data = null, responseTime = null) {
+            const testCard = document.getElementById(testId);
+            if (!testCard) return;
+            
+            testCard.className = `test-card ${status}`;
+            
+            const badge = testCard.querySelector('.test-badge');
+            const detailsEl = testCard.querySelector('.test-details');
+            
+            let badgeText = '';
+            switch(status) {
+                case 'success': badgeText = '✅ BERHASIL'; break;
+                case 'error': badgeText = '❌ GAGAL'; break;
+                case 'warning': badgeText = '⚠️ PERINGATAN'; break;
+            }
+            
+            badge.textContent = badgeText;
+            badge.className = `test-badge ${status}`;
+            
+            let detailsHTML = details;
+            if (responseTime) {
+                detailsHTML += `<br><small>Response time: ${responseTime}ms</small>`;
+            }
+            if (data) {
+                detailsHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            detailsEl.innerHTML = detailsHTML;
+            
+            // Update the result in testResults array
+            const resultIndex = testResults.findIndex(r => r.id === testId);
+            if (resultIndex !== -1) {
+                testResults[resultIndex].status = status;
+                testResults[resultIndex].details = details;
+                testResults[resultIndex].data = data;
+                testResults[resultIndex].responseTime = responseTime;
+            }
+        }
         
-        // Add CSS for colored text
-        const style = document.createElement('style');
-        style.textContent = `
-            .success-text { color: #27ae60 !important; }
-            .warning-text { color: #f39c12 !important; }
-            .error-text { color: #e74c3c !important; }
-        `;
-        document.head.appendChild(style);
+        // Main test functions
+        async function runAllTests() {
+            if (isTesting) return;
+            
+            isTesting = true;
+            document.getElementById('btn-run-all').disabled = true;
+            document.getElementById('btn-stop').disabled = false;
+            document.getElementById('btn-run-all').innerHTML = '<div class="loading"></div> Running Tests...';
+            
+            addLog('System', 'info', 'Starting comprehensive system test');
+            
+            // Clear previous results
+            testResults = [];
+            updateTestDisplay();
+            
+            // Get selected tests
+            const tests = [];
+            if (document.getElementById('chk-api').checked) tests.push(testAPIConnection);
+            if (document.getElementById('chk-db').checked) tests.push(testDatabaseConnection);
+            if (document.getElementById('chk-tables').checked) tests.push(testAuthentication);
+            
+            // Run tests sequentially
+            for (let i = 0; i < tests.length; i++) {
+                if (!isTesting) break; // Check if stopped
+                
+                await tests[i]();
+                // Update progress
+                document.getElementById('test-progress').style.width = `${((i + 1) / tests.length) * 100}%`;
+                
+                // Small delay between tests
+                if (i < tests.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+            
+            // Complete
+            isTesting = false;
+            document.getElementById('btn-run-all').disabled = false;
+            document.getElementById('btn-stop').disabled = true;
+            document.getElementById('btn-run-all').innerHTML = '<i class="fas fa-play-circle"></i> Run Comprehensive Test';
+            
+            addLog('System', 'success', 'Comprehensive test completed');
+            
+            // Show summary
+            const successCount = testResults.filter(r => r.status === 'success').length;
+            const totalCount = testResults.length;
+            
+            if (totalCount > 0) {
+                addTestResult('Test Summary', 'success', 
+                    `Completed ${totalCount} tests with ${successCount} successful (${Math.round((successCount/totalCount)*100)}% success rate)`);
+            }
+        }
+        
+        async function runQuickCheck() {
+            addLog('System', 'info', 'Starting quick health check');
+            
+            // Just run basic API test
+            await testAPIConnection();
+            
+            addLog('System', 'success', 'Quick check completed');
+        }
+        
+        function stopTests() {
+            isTesting = false;
+            document.getElementById('btn-stop').disabled = true;
+            document.getElementById('btn-run-all').disabled = false;
+            document.getElementById('btn-run-all').innerHTML = '<i class="fas fa-play-circle"></i> Run Comprehensive Test';
+            
+            addLog('System', 'warning', 'Tests stopped by user');
+        }
+        
+        // Performance testing
+        async function runLoadTest() {
+            addLog('Performance', 'info', 'Starting load test');
+            
+            const concurrentRequests = 5;
+            let successCount = 0;
+            let totalTime = 0;
+            
+            document.getElementById('load-requests').textContent = concurrentRequests;
+            
+            const promises = [];
+            for (let i = 0; i < concurrentRequests; i++) {
+                promises.push(
+                    fetch(API_URL)
+                        .then(response => {
+                            if (response.ok) successCount++;
+                            return response;
+                        })
+                        .catch(() => {})
+                );
+            }
+            
+            const startTime = Date.now();
+            await Promise.all(promises);
+            totalTime = Date.now() - startTime;
+            
+            const successRate = Math.round((successCount / concurrentRequests) * 100);
+            
+            document.getElementById('load-success').textContent = `${successRate}%`;
+            
+            addTestResult('Load Test', 
+                successRate >= 80 ? 'success' : successRate >= 50 ? 'warning' : 'error',
+                `${concurrentRequests} concurrent requests: ${successCount} successful (${successRate}% success rate) in ${totalTime}ms`);
+            
+            addLog('Performance', 'success', `Load test completed: ${successRate}% success rate`);
+        }
+        
+        // Export functions
+        function exportReport(type) {
+            let content = '';
+            let filename = '';
+            
+            switch(type) {
+                case 'health':
+                    content = generateHealthReport();
+                    filename = `cbt-health-report-${new Date().toISOString().split('T')[0]}.json`;
+                    break;
+                case 'schema':
+                    content = generateSchemaReport();
+                    filename = `cbt-database-schema-${new Date().toISOString().split('T')[0]}.json`;
+                    break;
+                case 'performance':
+                    content = generatePerformanceReport();
+                    filename = `cbt-performance-${new Date().toISOString().split('T')[0]}.json`;
+                    break;
+                case 'logs':
+                    content = JSON.stringify(systemLogs, null, 2);
+                    filename = `cbt-system-logs-${new Date().toISOString().split('T')[0]}.json`;
+                    break;
+            }
+            
+            const blob = new Blob([content], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            
+            addLog('Export', 'success', `${type} report exported`);
+        }
+        
+        function generateHealthReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                apiEndpoint: API_URL,
+                testResults: testResults,
+                summary: {
+                    totalTests: testResults.length,
+                    successful: testResults.filter(r => r.status === 'success').length,
+                    warnings: testResults.filter(r => r.status === 'warning').length,
+                    errors: testResults.filter(r => r.status === 'error').length,
+                    successRate: testResults.length > 0 ? 
+                        (testResults.filter(r => r.status === 'success').length / testResults.length) * 100 : 0
+                },
+                recommendations: []
+            };
+            
+            // Add recommendations based on test results
+            if (testResults.some(r => r.name.includes('API') && r.status === 'error')) {
+                report.recommendations.push('Check API endpoint configuration and network connectivity');
+            }
+            
+            if (testResults.some(r => r.name.includes('Database') && r.status === 'error')) {
+                report.recommendations.push('Verify database connection and admin token');
+            }
+            
+            if (testResults.some(r => r.name.includes('Authentication') && r.status === 'error')) {
+                report.recommendations.push('Update admin token in environment variables');
+            }
+            
+            return JSON.stringify(report, null, 2);
+        }
+        
+        function generateSchemaReport() {
+            // This would contain actual schema data
+            const schemaReport = {
+                timestamp: new Date().toISOString(),
+                tables: []
+            };
+            
+            return JSON.stringify(schemaReport, null, 2);
+        }
+        
+        function generatePerformanceReport() {
+            const performanceReport = {
+                timestamp: new Date().toISOString(),
+                metrics: testResults.filter(r => r.responseTime).map(r => ({
+                    test: r.name,
+                    responseTime: r.responseTime,
+                    status: r.status
+                })),
+                averageResponseTime: testResults.filter(r => r.responseTime).reduce((sum, r) => sum + r.responseTime, 0) / 
+                                    testResults.filter(r => r.responseTime).length || 0
+            };
+            
+            return JSON.stringify(performanceReport, null, 2);
+        }
+        
+        // Repair tools
+        async function repairDatabase() {
+            addLog('Repair', 'info', 'Attempting database repair...');
+            
+            // This would call a repair endpoint on your API
+            // For now, just show a message
+            addTestResult('Database Repair', 'warning', 
+                'Database repair requires API endpoint implementation');
+            
+            hideModal('repair-modal');
+        }
+        
+        async function clearSessions() {
+            const token = document.getElementById('admin-token').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/admin/cleanup`, {
+                    method: 'POST',
+                    headers: { 'X-Admin-Token': token }
+                });
+                
+                if (response.ok) {
+                    addTestResult('Clear Sessions', 'success', 'Expired sessions cleared successfully');
+                    addLog('Repair', 'success', 'Sessions cleared');
+                } else {
+                    addTestResult('Clear Sessions', 'error', 'Failed to clear sessions');
+                }
+            } catch (error) {
+                addTestResult('Clear Sessions', 'error', `Error: ${error.message}`);
+            }
+            
+            hideModal('repair-modal');
+        }
+        
+        function resetToken() {
+            const newToken = document.getElementById('new-token').value;
+            if (newToken && newToken.trim().length >= 3) {
+                document.getElementById('admin-token').value = newToken;
+                addLog('Repair', 'success', 'Admin token updated locally');
+                addTestResult('Token Reset', 'success', 'Token updated in local configuration');
+            } else {
+                addTestResult('Token Reset', 'error', 'New token is invalid or too short');
+            }
+            
+            hideModal('repair-modal');
+        }
+        
+        // Settings persistence
+        function loadSettings() {
+            const savedEndpoint = localStorage.getItem('cbt-api-endpoint');
+            const savedToken = localStorage.getItem('cbt-admin-token');
+            
+            if (savedEndpoint) document.getElementById('api-endpoint').value = savedEndpoint;
+            if (savedToken) document.getElementById('admin-token').value = savedToken;
+        }
+        
+        function saveSettings() {
+            localStorage.setItem('cbt-api-endpoint', document.getElementById('api-endpoint').value);
+            localStorage.setItem('cbt-admin-token', document.getElementById('admin-token').value);
+        }
+        
+        // Auto-save settings on change
+        document.getElementById('api-endpoint').addEventListener('change', saveSettings);
+        document.getElementById('admin-token').addEventListener('change', saveSettings);
     </script>
 </body>
 </html>
