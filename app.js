@@ -443,9 +443,11 @@ function startTabSwitchTracking() {
 }
 
 // ==================== SUBMIT EXAM ====================
+// ==================== SUBMIT EXAM ====================
 function confirmSubmit() {
     // Langsung submit tanpa konfirmasi
     submitExam();
+}
 
 async function submitExam() {
     if (state.examSubmitted) return;
@@ -768,6 +770,7 @@ function forceFullScreen() {
         });
     }
 }
+
 
 
 
