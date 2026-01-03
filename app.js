@@ -42,37 +42,6 @@ const kelasData = {
     'XII': ['XII-A', 'XII-B', 'XII-C', 'XII-D', 'XII-E', 'XII-F', 'XII-G']
 };
 
-// ==================== INITIALIZATION ====================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, setting up event listeners...');
-    
-    // Setup jenjang dropdown change event
-    const jenjangSelect = document.getElementById('jenjang');
-    if (jenjangSelect) {
-        jenjangSelect.addEventListener('change', function() {
-            console.log('Jenjang changed to:', this.value);
-            updateKelasDropdown(this.value);
-        });
-    } else {
-        console.error('ERROR: Element #jenjang not found!');
-    }
-    
-    // Setup enter key for login
-    const tokenInput = document.getElementById('token');
-    if (tokenInput) {
-        tokenInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                handleLogin();
-            }
-        });
-    }
-    
-    // Clear any existing exam data
-    clearExamData();
-    
-    console.log('Initialization complete');
-});
-
 // ==================== HELPER FUNCTIONS ====================
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(screen => {
@@ -115,20 +84,6 @@ function updateKelasDropdown(jenjang) {
         kelasSelect.disabled = true;
         return;
     }
-
-    function getViewableImageUrl(url) {
-    if (!url) return '';
-    url = url.trim();
-    
-    // Mendeteksi ID file Google Drive
-    let idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-    
-    // Mengubah menjadi link viewable
-    if (idMatch && idMatch[1]) {
-        return "https://lh3.googleusercontent.com/d/" + idMatch[1];
-    }
-    return url;
-    }
     
     kelasSelect.innerHTML = '<option value="">Pilih Kelas</option>';
     kelasData[jenjang].forEach(kelas => {
@@ -141,6 +96,52 @@ function updateKelasDropdown(jenjang) {
     kelasSelect.disabled = false;
     console.log('Kelas dropdown updated for jenjang:', jenjang);
 }
+
+// ==================== IMAGE HELPER ====================
+function getViewableImageUrl(url) {
+    if (!url) return '';
+    url = url.trim();
+    
+    // Mendeteksi ID file Google Drive
+    let idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+    
+    // Mengubah menjadi link viewable
+    if (idMatch && idMatch[1]) {
+        return "https://lh3.googleusercontent.com/d/" + idMatch[1];
+    }
+    return url;
+}
+
+// ==================== INITIALIZATION ====================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up event listeners...');
+    
+    // Setup jenjang dropdown change event
+    const jenjangSelect = document.getElementById('jenjang');
+    if (jenjangSelect) {
+        jenjangSelect.addEventListener('change', function() {
+            console.log('Jenjang changed to:', this.value);
+            updateKelasDropdown(this.value);
+        });
+    } else {
+        console.error('ERROR: Element #jenjang not found!');
+    }
+    
+    // Setup enter key for login
+    const tokenInput = document.getElementById('token');
+    if (tokenInput) {
+        tokenInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+    }
+    
+    // Clear any existing exam data
+    clearExamData();
+    
+    console.log('Initialization complete');
+});
 
 // ==================== LOGIN HANDLER ====================
 async function handleLogin() {
@@ -256,6 +257,16 @@ async function handleLogin() {
         state.remainingTime = state.examData.durasi * 60;
         state.isExamActive = true;
         
+        // Log image info for debugging
+        console.log('Image debug - First question image:', state.questions[0]?.img_link);
+        console.log('Image debug - All questions with images:', 
+            state.questions.map((q, i) => ({
+                question: i + 1,
+                hasImage: !!q.img_link,
+                imageUrl: q.img_link
+            })).filter(q => q.hasImage)
+        );
+        
         // Step 4: Setup exam screen
         setupExamScreen();
         showScreen('screen-exam');
@@ -355,11 +366,56 @@ function showQuestion(index) {
     // Update question text
     document.getElementById('question-text').textContent = question.soal;
     
-    // Update image
+    // Update image - PERBAIKAN UTAMA DI SINI
     const imgElement = document.getElementById('question-image');
     if (question.img_link && question.img_link.trim() !== '') {
-        imgElement.src = question.img_link;
+        // Gunakan fungsi untuk mendapatkan URL viewable
+        const originalUrl = question.img_link.trim();
+        const viewableUrl = getViewableImageUrl(originalUrl);
+        
+        console.log('Image debug - Original URL:', originalUrl);
+        console.log('Image debug - Viewable URL:', viewableUrl);
+        
+        // Setel URL gambar
+        imgElement.src = viewableUrl;
         imgElement.style.display = 'block';
+        imgElement.alt = "Gambar Soal " + (index + 1);
+        
+        // Tambahkan error handling untuk gambar
+        imgElement.onerror = function() {
+            console.error('Gagal memuat gambar dengan URL viewable:', viewableUrl);
+            
+            // Coba URL asli jika viewable URL gagal
+            if (viewableUrl !== originalUrl) {
+                console.log('Mencoba URL asli sebagai fallback:', originalUrl);
+                imgElement.src = originalUrl;
+                
+                // Coba lagi dengan onerror kedua
+                imgElement.onerror = function() {
+                    console.error('Gambar juga gagal dimuat dari URL asli');
+                    imgElement.style.display = 'none';
+                    // Tambahkan pesan ke pengguna
+                    const questionText = document.getElementById('question-text');
+                    questionText.innerHTML = question.soal + 
+                        '<br><br><span style="color: #e74c3c; font-size: 0.9em;">' +
+                        '<i class="fas fa-exclamation-triangle"></i> ' +
+                        'Gambar soal tidak dapat dimuat. Silakan lanjutkan mengerjakan.</span>';
+                };
+            } else {
+                imgElement.style.display = 'none';
+                // Tambahkan pesan ke pengguna
+                const questionText = document.getElementById('question-text');
+                questionText.innerHTML = question.soal + 
+                    '<br><br><span style="color: #e74c3c; font-size: 0.9em;">' +
+                    '<i class="fas fa-exclamation-triangle"></i> ' +
+                    'Gambar soal tidak dapat dimuat. Silakan lanjutkan mengerjakan.</span>';
+            }
+        };
+        
+        // Tambahkan loading indicator
+        imgElement.onload = function() {
+            console.log('Gambar berhasil dimuat:', viewableUrl);
+        };
     } else {
         imgElement.style.display = 'none';
     }
@@ -822,4 +878,3 @@ function forceFullScreen() {
         });
     }
 }
-
