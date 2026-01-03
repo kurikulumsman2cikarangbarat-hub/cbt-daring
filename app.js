@@ -44,20 +44,33 @@ const kelasData = {
 
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up event listeners...');
+    
     // Setup jenjang dropdown change event
-    document.getElementById('jenjang').addEventListener('change', function() {
-        updateKelasDropdown(this.value);
-    });
+    const jenjangSelect = document.getElementById('jenjang');
+    if (jenjangSelect) {
+        jenjangSelect.addEventListener('change', function() {
+            console.log('Jenjang changed to:', this.value);
+            updateKelasDropdown(this.value);
+        });
+    } else {
+        console.error('ERROR: Element #jenjang not found!');
+    }
     
     // Setup enter key for login
-    document.getElementById('token').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            handleLogin();
-        }
-    });
+    const tokenInput = document.getElementById('token');
+    if (tokenInput) {
+        tokenInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+    }
     
     // Clear any existing exam data
     clearExamData();
+    
+    console.log('Initialization complete');
 });
 
 // ==================== HELPER FUNCTIONS ====================
@@ -80,10 +93,25 @@ function showError(message, isLoginError = true) {
 }
 
 function updateKelasDropdown(jenjang) {
+    console.log('updateKelasDropdown called with jenjang:', jenjang);
+    
     const kelasSelect = document.getElementById('kelas');
+    
+    if (!kelasSelect) {
+        console.error('Element #kelas not found!');
+        return;
+    }
     
     if (!jenjang) {
         kelasSelect.innerHTML = '<option value="">Pilih Jenjang terlebih dahulu</option>';
+        kelasSelect.disabled = true;
+        return;
+    }
+    
+    // Ensure valid jenjang
+    if (!kelasData[jenjang]) {
+        console.error('Invalid jenjang:', jenjang);
+        kelasSelect.innerHTML = '<option value="">Jenjang tidak valid</option>';
         kelasSelect.disabled = true;
         return;
     }
@@ -97,6 +125,7 @@ function updateKelasDropdown(jenjang) {
     });
     
     kelasSelect.disabled = false;
+    console.log('Kelas dropdown updated for jenjang:', jenjang);
 }
 
 // ==================== LOGIN HANDLER ====================
@@ -130,7 +159,7 @@ async function handleLogin() {
     showScreen('screen-loading');
     
     try {
-        // PERBAIKAN 1: Check token - ubah endpoint sesuai worker
+        // Step 1: Check token
         document.getElementById('loading-message').textContent = 'Memeriksa token ujian...';
         
         const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
@@ -149,7 +178,7 @@ async function handleLogin() {
             throw new Error('Token ujian tidak ditemukan atau sudah kadaluarsa');
         }
         
-        // PERBAIKAN 2: Login dengan data yang sesuai
+        // Step 2: Login with correct data
         document.getElementById('loading-message').textContent = 'Login ke sistem...';
         
         const loginRes = await fetch(`${API_URL}/api/login`, {
@@ -225,15 +254,15 @@ async function handleLogin() {
     } catch (error) {
         console.error('Login error detail:', error);
         
-        // Tampilkan pesan error yang lebih spesifik
+        // Show specific error message
         let errorMessage = error.message;
         
-        // Periksa jika error terkait koneksi
+        // Check for connection errors
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
             errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
         }
         
-        // Periksa jika token tidak valid
+        // Check for token errors
         if (errorMessage.includes('Token') || errorMessage.includes('token')) {
             errorMessage = 'Token ujian tidak valid. Pastikan token yang dimasukkan benar.';
         }
@@ -245,12 +274,6 @@ async function handleLogin() {
 
 // ==================== EXAM SETUP ====================
 function setupExamScreen() {
-    // Update exam info
-    document.getElementById('exam-kelas').textContent = state.student.kelas;
-    document.getElementById('exam-mapel').textContent = state.examData?.mapel || '-';
-    document.getElementById('exam-guru').textContent = state.examData?.nama_guru || '-';
-    
-    function setupExamScreen() {
     // Apply disable selection
     document.getElementById('screen-exam').classList.add('disable-selection');
     
@@ -259,8 +282,6 @@ function setupExamScreen() {
     document.getElementById('exam-mapel').textContent = state.examData?.mapel || '-';
     document.getElementById('exam-guru').textContent = state.examData?.nama_guru || '-';
     
-    // ... rest of the code ...
-}
     // Setup question grid
     const grid = document.getElementById('question-grid');
     grid.innerHTML = '';
@@ -326,8 +347,7 @@ function showQuestion(index) {
     const container = document.getElementById('options-container');
     container.innerHTML = '';
     
-    // PERBAIKAN 3: Ambil opsi dari object soal
-    // Worker mengembalikan opsi_a, opsi_b, opsi_c, opsi_d, opsi_e
+    // Get options from question object
     const options = [
         { letter: 'A', text: question.opsi_a || '' },
         { letter: 'B', text: question.opsi_b || '' },
@@ -443,7 +463,6 @@ function startTabSwitchTracking() {
 }
 
 // ==================== SUBMIT EXAM ====================
-// ==================== SUBMIT EXAM ====================
 function confirmSubmit() {
     // Langsung submit tanpa konfirmasi
     submitExam();
@@ -477,7 +496,7 @@ async function submitExam() {
             };
         }
         
-        // PERBAIKAN 4: Submit to server dengan data yang benar
+        // Submit to server dengan data yang benar
         const submitRes = await fetch(`${API_URL}/api/nilai`, {
             method: 'POST',
             headers: { 
@@ -542,41 +561,34 @@ function showPenutup() {
     const message = document.getElementById('penutup-message');
     const tabInfo = document.getElementById('tab-switch-info');
     
+    // Calculate time used
+    const waktuDigunakan = state.examData?.durasi || 0;
+    const menitTerpakai = Math.max(0, waktuDigunakan - Math.floor(state.remainingTime / 60));
+    
     // Update container class
     container.className = 'penutup-container green';
-    
-    // Update message dengan format baru
-    message.innerHTML = `
-        <strong>Selamat ${state.student.nama},</strong><br>
-        Anda telah selesai mengerjakan <strong>Mata Pelajaran ${state.examData?.mapel || '-'}</strong><br>
-        sebanyak <strong>${state.questions.length} soal</strong> selama <strong>${state.waktuDigunakan || 'tidak tercatat'}</strong>.<br>
-        Semoga mendapatkan nilai yang terbaik.<br><br>
-        <strong>Tunjukkan halaman ini kepada Guru Pengawas</strong><br>
-        sebagai bukti Anda sudah menyelesaikan ujian.
-    `;
-    
-    // Sembunyikan tab switch info
-    tabInfo.style.display = 'none';
-    
-    showScreen('screen-penutup');
-}
-    
-    // Update container classes
-    container.className = `penutup-container ${bgColor}`;
     
     // Update message
     message.innerHTML = `
         <strong>Selamat ${state.student.nama} (${state.student.kelas}),</strong><br><br>
         Anda telah selesai mengerjakan <strong>Mata Pelajaran ${state.examData?.mapel || '-'}</strong><br>
-        sebanyak <strong>${state.questions.length} soal</strong> dengan durasi <strong>${state.examData?.durasi || 0} menit</strong>.<br><br>
+        sebanyak <strong>${state.questions.length} soal</strong> dengan durasi <strong>${waktuDigunakan} menit</strong>.<br>
+        Waktu yang digunakan: <strong>${menitTerpakai} menit</strong>.<br><br>
         Semoga mendapat nilai yang terbaik.<br><br>
         <strong>Tunjukkan halaman ini ke pengawas,</strong><br>
         sebagai bukti Anda sudah menyelesaikan ujian.
     `;
     
     // Update tab switch info
-    tabInfo.className = `tab-switch-info ${tabColor}`;
-    tabInfo.textContent = tabMessage;
+    if (state.tabSwitchCount > 0) {
+        tabInfo.innerHTML = `
+            <i class="fas fa-exclamation-triangle"></i> 
+            <strong>Peringatan:</strong> Anda berpindah tab/window sebanyak <strong>${state.tabSwitchCount} kali</strong> selama ujian.
+        `;
+        tabInfo.style.display = 'block';
+    } else {
+        tabInfo.style.display = 'none';
+    }
     
     showScreen('screen-penutup');
 }
@@ -747,7 +759,6 @@ document.addEventListener('contextmenu', function(e) {
 // Blur on tab/window switch
 window.addEventListener('blur', function() {
     if (state.isExamActive && !state.examSubmitted) {
-        // Bisa tambahkan logika penalti atau warning
         console.log('Window/tab kehilangan fokus');
     }
 });
@@ -770,9 +781,3 @@ function forceFullScreen() {
         });
     }
 }
-
-
-
-
-
-
