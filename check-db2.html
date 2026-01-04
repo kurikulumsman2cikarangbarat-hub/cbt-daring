@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CBT - Database Health Check PRO</title>
     <style>
+        /* CSS tetap sama seperti sebelumnya */
         * {
             margin: 0;
             padding: 0;
@@ -573,13 +574,9 @@
         </div>
         
         <div class="form-group">
-            <label class="form-label">ID Admin</label>
-            <input type="text" id="admin-id" class="form-control" placeholder="Masukkan ID Admin">
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" id="admin-pwd" class="form-control" placeholder="Masukkan password">
+            <label class="form-label">Admin Token</label>
+            <input type="text" id="admin-token" class="form-control" placeholder="Masukkan Admin Token">
+            <small style="color: #666; display: block; margin-top: 5px;">Token admin dari environment variable ADMIN_TOKEN</small>
         </div>
         
         <div class="form-group">
@@ -602,7 +599,7 @@
             
             <!-- User Info Panel -->
             <div class="user-info">
-                <span id="welcome-msg"></span>
+                <span id="welcome-msg">Admin Dashboard</span>
                 <button class="logout-btn" onclick="logout()">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
@@ -858,18 +855,18 @@
             
             <div style="display: grid; gap: 15px;">
                 <div class="test-card">
-                    <h4>Reset Database Schema</h4>
-                    <p>Recreate all database tables (data will be preserved)</p>
-                    <button class="btn btn-warning" onclick="repairDatabase()">
-                        <i class="fas fa-database"></i> Repair Database
+                    <h4>Cleanup Expired Sessions</h4>
+                    <p>Remove all expired sessions and old audit logs</p>
+                    <button class="btn btn-warning" onclick="cleanupSystem()">
+                        <i class="fas fa-broom"></i> Run Cleanup
                     </button>
                 </div>
                 
                 <div class="test-card">
-                    <h4>Clear Test Sessions</h4>
-                    <p>Remove all expired sessions and temporary data</p>
-                    <button class="btn btn-warning" onclick="clearSessions()">
-                        <i class="fas fa-trash"></i> Clear Sessions
+                    <h4>Validate Database</h4>
+                    <p>Validate all database tables and relationships</p>
+                    <button class="btn btn-warning" onclick="validateDatabase()">
+                        <i class="fas fa-check-circle"></i> Validate Database
                     </button>
                 </div>
             </div>
@@ -881,7 +878,7 @@
     <script>
         // Application State
         let API_URL = "https://worker-abk.kurikulum-sman2cikarangbarat.workers.dev";
-        let currentAdmin = null;
+        let ADMIN_TOKEN = null;
         let testResults = [];
         let systemLogs = [];
         let isTesting = false;
@@ -894,10 +891,9 @@
             addLog('System', 'info', 'Health Monitor PRO initialized');
         });
         
-        // Login Function
+        // Login Function - Updated for worker.js admin authentication
         async function loginAdmin() {
-            const adminId = document.getElementById('admin-id').value.trim();
-            const adminPwd = document.getElementById('admin-pwd').value;
+            ADMIN_TOKEN = document.getElementById('admin-token').value.trim();
             API_URL = document.getElementById('api-endpoint').value;
             
             const messageEl = document.getElementById('login-message');
@@ -906,43 +902,38 @@
             // Reset message
             messageEl.style.display = 'none';
             
-            if (!adminId || !adminPwd) {
+            if (!ADMIN_TOKEN) {
                 messageEl.className = 'alert alert-danger';
-                messageText.innerHTML = '<strong>Error:</strong> ID Admin dan Password harus diisi!';
+                messageText.innerHTML = '<strong>Error:</strong> Admin Token harus diisi!';
                 messageEl.style.display = 'flex';
                 return;
             }
             
             try {
-                // Fetch data_guru from API
-                const response = await fetch(`${API_URL}/api/data`);
-                const data = await response.json();
-                const userList = data.list || data;
+                // Test admin endpoint with token
+                const response = await fetch(`${API_URL}/api/admin/stats`, {
+                    headers: {
+                        'X-Admin-Token': ADMIN_TOKEN
+                    }
+                });
                 
-                // Find admin user
-                const adminUser = userList.find(u => 
-                    String(u.id_guru) === String(adminId) && 
-                    String(u.pwd) === String(adminPwd)
-                );
-                
-                if (adminUser && adminUser.role === "Admin") {
-                    // Success - save session
-                    currentAdmin = adminUser;
+                if (response.ok) {
+                    // Success
                     saveSession();
                     
                     // Show success message
                     messageEl.className = 'alert alert-success';
-                    messageText.innerHTML = `<strong>Success:</strong> Welcome, ${adminUser.nama_guru}! Login berhasil.`;
+                    messageText.innerHTML = '<strong>Success:</strong> Login berhasil!';
                     messageEl.style.display = 'flex';
                     
                     // Switch to dashboard after delay
                     setTimeout(() => {
                         document.getElementById('login-screen').style.display = 'none';
                         document.getElementById('dashboard-screen').style.display = 'block';
-                        document.getElementById('welcome-msg').textContent = `Welcome, ${adminUser.nama_guru} (Admin)`;
+                        document.getElementById('welcome-msg').textContent = 'Admin Dashboard';
                         document.getElementById('dashboard-api-endpoint').value = API_URL;
                         
-                        addLog('Auth', 'success', `Admin login: ${adminUser.nama_guru}`);
+                        addLog('Auth', 'success', 'Admin login successful');
                         
                         // Auto-run quick check
                         setTimeout(() => {
@@ -953,15 +944,9 @@
                 } else {
                     // Failed
                     messageEl.className = 'alert alert-danger';
-                    
-                    if (!adminUser) {
-                        messageText.innerHTML = '<strong>Error:</strong> ID Admin atau Password salah!';
-                    } else if (adminUser.role !== "Admin") {
-                        messageText.innerHTML = `<strong>Error:</strong> User "${adminUser.nama_guru}" bukan Admin!`;
-                    }
-                    
+                    messageText.innerHTML = '<strong>Error:</strong> Admin Token tidak valid!';
                     messageEl.style.display = 'flex';
-                    addLog('Auth', 'error', `Failed login attempt for ID: ${adminId}`);
+                    addLog('Auth', 'error', 'Admin token invalid');
                 }
                 
             } catch (error) {
@@ -975,34 +960,27 @@
         
         // Session Management
         function saveSession() {
-            if (currentAdmin) {
-                sessionStorage.setItem('cbt-admin-id', currentAdmin.id_guru);
-                sessionStorage.setItem('cbt-admin-name', currentAdmin.nama_guru);
-                sessionStorage.setItem('cbt-api-endpoint', API_URL);
-                localStorage.setItem('cbt-api-endpoint', API_URL);
-            }
+            sessionStorage.setItem('cbt-admin-token', ADMIN_TOKEN);
+            sessionStorage.setItem('cbt-api-endpoint', API_URL);
+            localStorage.setItem('cbt-api-endpoint', API_URL);
         }
         
         function checkSession() {
-            const savedId = sessionStorage.getItem('cbt-admin-id');
-            const savedName = sessionStorage.getItem('cbt-admin-name');
+            const savedToken = sessionStorage.getItem('cbt-admin-token');
             const savedEndpoint = sessionStorage.getItem('cbt-api-endpoint');
             
-            if (savedId && savedName && savedEndpoint) {
+            if (savedToken && savedEndpoint) {
                 // Auto-login with saved session
-                currentAdmin = {
-                    id_guru: savedId,
-                    nama_guru: savedName
-                };
-                
+                ADMIN_TOKEN = savedToken;
                 API_URL = savedEndpoint;
                 
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('dashboard-screen').style.display = 'block';
-                document.getElementById('welcome-msg').textContent = `Welcome, ${savedName} (Admin)`;
+                document.getElementById('welcome-msg').textContent = 'Admin Dashboard';
                 document.getElementById('dashboard-api-endpoint').value = API_URL;
+                document.getElementById('admin-token').value = ADMIN_TOKEN;
                 
-                addLog('Auth', 'success', `Session restored for: ${savedName}`);
+                addLog('Auth', 'success', 'Session restored');
                 
                 // Auto-run quick check
                 setTimeout(() => {
@@ -1013,20 +991,19 @@
         
         function logout() {
             // Clear session
-            sessionStorage.removeItem('cbt-admin-id');
-            sessionStorage.removeItem('cbt-admin-name');
+            sessionStorage.removeItem('cbt-admin-token');
             sessionStorage.removeItem('cbt-api-endpoint');
             
             // Reset state
-            currentAdmin = null;
+            ADMIN_TOKEN = null;
             testResults = [];
             
             // Switch to login screen
             document.getElementById('login-screen').style.display = 'block';
             document.getElementById('dashboard-screen').style.display = 'none';
             
-            // Clear login form
-            document.getElementById('admin-pwd').value = '';
+            // Clear token field
+            document.getElementById('admin-token').value = '';
             
             addLog('Auth', 'info', 'User logged out');
         }
@@ -1217,7 +1194,7 @@
             }
         }
         
-        // Test functions
+        // Test functions - Updated for worker.js endpoints
         async function testAPIConnection() {
             const startTime = Date.now();
             const testCard = addTestResult('API Connection Test', 'running', 'Testing connection to Worker API...');
@@ -1239,6 +1216,7 @@
                 document.getElementById('stat-api').textContent = 'Online';
                 document.getElementById('api-indicator').className = 'status-indicator status-online';
                 document.getElementById('perf-api').textContent = `${responseTime}ms`;
+                document.getElementById('stat-response').textContent = `${responseTime}ms`;
                 
                 return { success: true, data, responseTime };
             } catch (error) {
@@ -1259,26 +1237,22 @@
             const testCard = addTestResult('Database Connection Test', 'running', 'Testing database connectivity...');
             
             try {
-                // Using existing data endpoint (no token needed)
-                const response = await fetch(`${API_URL}/api/data?limit=1`);
-                
+                // Test with a simple public endpoint
+                const response = await fetch(`${API_URL}/api/check-token?token=test`);
                 const responseTime = Date.now() - startTime;
                 
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
                 
-                const tableCount = Object.keys(data).length;
-                
                 updateTestCard(testCard.id, 'success', 
-                    `Database connected successfully. Sample data retrieved.`, 
+                    `Database connected successfully via API.`, 
                     data, responseTime);
                 
                 // Update UI
                 document.getElementById('stat-db').textContent = 'Connected';
                 document.getElementById('db-indicator').className = 'status-indicator status-online';
                 document.getElementById('perf-db').textContent = `${responseTime}ms`;
-                document.getElementById('db-total-tables').textContent = tableCount;
                 
                 return { success: true, data, responseTime };
             } catch (error) {
@@ -1298,29 +1272,35 @@
             const startTime = Date.now();
             const testCard = addTestResult('Admin Authentication Test', 'running', 'Validating admin credentials...');
             
-            if (!currentAdmin) {
-                updateTestCard(testCard.id, 'error', 'No active admin session');
+            if (!ADMIN_TOKEN) {
+                updateTestCard(testCard.id, 'error', 'No admin token available');
                 document.getElementById('stat-auth').textContent = 'Invalid';
                 document.getElementById('auth-indicator').className = 'status-indicator status-offline';
-                return { success: false, error: 'No session' };
+                return { success: false, error: 'No token' };
             }
             
             try {
-                // Test with actual API call
-                const response = await fetch(`${API_URL}/api/data`);
+                // Test with admin stats endpoint
+                const response = await fetch(`${API_URL}/api/admin/stats`, {
+                    headers: {
+                        'X-Admin-Token': ADMIN_TOKEN
+                    }
+                });
                 const responseTime = Date.now() - startTime;
                 
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
+                const data = await response.json();
+                
                 updateTestCard(testCard.id, 'success', 
-                    `Admin session active: ${currentAdmin.nama_guru}`, 
-                    null, responseTime);
+                    `Admin authentication successful.`, 
+                    data, responseTime);
                 
                 document.getElementById('stat-auth').textContent = 'Valid';
                 document.getElementById('auth-indicator').className = 'status-indicator status-online';
                 document.getElementById('perf-auth').textContent = `${responseTime}ms`;
                 
-                return { success: true, responseTime };
+                return { success: true, data, responseTime };
             } catch (error) {
                 const responseTime = Date.now() - startTime;
                 updateTestCard(testCard.id, 'error', 
@@ -1330,6 +1310,137 @@
                 document.getElementById('stat-auth').textContent = 'Error';
                 document.getElementById('auth-indicator').className = 'status-indicator status-offline';
                 
+                return { success: false, error: error.message, responseTime };
+            }
+        }
+        
+        async function testTableStructure() {
+            const startTime = Date.now();
+            const testCard = addTestResult('Table Structure Test', 'running', 'Checking database table structure...');
+            
+            if (!ADMIN_TOKEN) {
+                updateTestCard(testCard.id, 'warning', 'Admin token required for detailed table structure');
+                return { success: false, error: 'No token' };
+            }
+            
+            try {
+                // Use debug endpoint to check tables
+                const response = await fetch(`${API_URL}/api/debug/tables`, {
+                    headers: {
+                        'X-Admin-Token': ADMIN_TOKEN
+                    }
+                });
+                const responseTime = Date.now() - startTime;
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                
+                // Update database info tab
+                updateDatabaseInfo(data);
+                
+                updateTestCard(testCard.id, 'success', 
+                    `Table structure retrieved successfully. Found ${data.tables ? data.tables.length : 0} tables.`, 
+                    data, responseTime);
+                
+                return { success: true, data, responseTime };
+            } catch (error) {
+                const responseTime = Date.now() - startTime;
+                updateTestCard(testCard.id, 'warning', 
+                    `Could not retrieve table structure: ${error.message}. Using fallback method.`, 
+                    null, responseTime);
+                
+                // Try fallback method with public endpoint
+                await fallbackTableTest();
+                
+                return { success: false, error: error.message, responseTime };
+            }
+        }
+        
+        async function fallbackTableTest() {
+            try {
+                // Try to get ujian list as fallback
+                const response = await fetch(`${API_URL}/api/ujian?token=test`);
+                const data = await response.json();
+                
+                if (data && !data.error) {
+                    addTestResult('Fallback Table Test', 'success', 
+                        'Basic database connectivity confirmed via fallback endpoint');
+                }
+            } catch (error) {
+                addTestResult('Fallback Table Test', 'error', 
+                    `Fallback also failed: ${error.message}`);
+            }
+        }
+        
+        function updateDatabaseInfo(data) {
+            if (!data || !data.tables) return;
+            
+            // Update quick stats
+            document.getElementById('db-total-tables').textContent = data.tables.length;
+            
+            // Count total records
+            let totalRecords = 0;
+            data.tables.forEach(table => {
+                if (table.record_count) totalRecords += table.record_count;
+            });
+            document.getElementById('db-total-records').textContent = totalRecords;
+            
+            // Update table details
+            const tableBody = document.querySelector('#db-table-details tbody');
+            tableBody.innerHTML = '';
+            
+            data.tables.forEach(table => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${table.name}</strong></td>
+                    <td>${table.record_count || 'N/A'}</td>
+                    <td><span class="chip chip-success">OK</span></td>
+                    <td>${new Date().toLocaleDateString()}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        async function testSampleData() {
+            const startTime = Date.now();
+            const testCard = addTestResult('Sample Data Test', 'running', 'Checking sample data in tables...');
+            
+            try {
+                // Test multiple endpoints
+                const endpoints = [
+                    `${API_URL}/api/admin/ujian?limit=1`,
+                    `${API_URL}/api/admin/soal?limit=1`,
+                    `${API_URL}/api/admin/nilai?limit=1`
+                ];
+                
+                const requests = endpoints.map(endpoint => 
+                    fetch(endpoint, {
+                        headers: ADMIN_TOKEN ? { 'X-Admin-Token': ADMIN_TOKEN } : {}
+                    }).then(res => res.ok ? res.json() : null)
+                );
+                
+                const results = await Promise.all(requests.map(p => p.catch(e => null)));
+                const responseTime = Date.now() - startTime;
+                
+                const validResults = results.filter(r => r !== null);
+                
+                if (validResults.length > 0) {
+                    updateTestCard(testCard.id, 'success', 
+                        `Sample data retrieved from ${validResults.length} endpoints.`, 
+                        results, responseTime);
+                    return { success: true, results, responseTime };
+                } else {
+                    updateTestCard(testCard.id, 'warning', 
+                        'Could not retrieve sample data from admin endpoints.', 
+                        null, responseTime);
+                    return { success: false, error: 'No data', responseTime };
+                }
+            } catch (error) {
+                const responseTime = Date.now() - startTime;
+                updateTestCard(testCard.id, 'error', 
+                    `Sample data test failed: ${error.message}`, 
+                    null, responseTime);
                 return { success: false, error: error.message, responseTime };
             }
         }
@@ -1392,7 +1503,9 @@
             const tests = [];
             if (document.getElementById('chk-api').checked) tests.push(testAPIConnection);
             if (document.getElementById('chk-db').checked) tests.push(testDatabaseConnection);
-            if (document.getElementById('chk-tables').checked) tests.push(testAuthentication);
+            if (document.getElementById('chk-tables').checked) tests.push(testTableStructure);
+            if (document.getElementById('chk-data').checked) tests.push(testSampleData);
+            if (document.getElementById('chk-performance').checked) tests.push(testAuthentication);
             
             // Run tests sequentially
             for (let i = 0; i < tests.length; i++) {
@@ -1432,8 +1545,9 @@
         async function runQuickCheck() {
             addLog('System', 'info', 'Starting quick health check');
             
-            // Just run basic API test
+            // Run basic tests
             await testAPIConnection();
+            await testDatabaseConnection();
             
             addLog('System', 'success', 'Quick check completed');
         }
@@ -1522,7 +1636,7 @@
             const report = {
                 timestamp: new Date().toISOString(),
                 apiEndpoint: API_URL,
-                admin: currentAdmin ? currentAdmin.nama_guru : 'Not logged in',
+                admin: ADMIN_TOKEN ? 'Authenticated' : 'Not authenticated',
                 testResults: testResults,
                 summary: {
                     totalTests: testResults.length,
@@ -1544,14 +1658,26 @@
                 report.recommendations.push('Verify database connection');
             }
             
+            if (testResults.some(r => r.name.includes('Authentication') && r.status === 'error')) {
+                report.recommendations.push('Check ADMIN_TOKEN configuration');
+            }
+            
             return JSON.stringify(report, null, 2);
         }
         
         function generateSchemaReport() {
             const schemaReport = {
                 timestamp: new Date().toISOString(),
-                admin: currentAdmin ? currentAdmin.nama_guru : 'Not logged in',
-                tables: []
+                admin: ADMIN_TOKEN ? 'Authenticated' : 'Not authenticated',
+                tables: [],
+                endpoints: [
+                    '/api/ujian',
+                    '/api/soal',
+                    '/api/login',
+                    '/api/nilai',
+                    '/api/admin/*',
+                    '/api/debug/*'
+                ]
             };
             
             return JSON.stringify(schemaReport, null, 2);
@@ -1560,7 +1686,7 @@
         function generatePerformanceReport() {
             const performanceReport = {
                 timestamp: new Date().toISOString(),
-                admin: currentAdmin ? currentAdmin.nama_guru : 'Not logged in',
+                admin: ADMIN_TOKEN ? 'Authenticated' : 'Not authenticated',
                 metrics: testResults.filter(r => r.responseTime).map(r => ({
                     test: r.name,
                     responseTime: r.responseTime,
@@ -1573,25 +1699,73 @@
             return JSON.stringify(performanceReport, null, 2);
         }
         
-        // Repair tools
-        async function repairDatabase() {
-            addLog('Repair', 'info', 'Attempting database repair...');
+        // Repair tools - Updated for worker.js endpoints
+        async function cleanupSystem() {
+            addLog('Repair', 'info', 'Attempting system cleanup...');
             
-            addTestResult('Database Repair', 'warning', 
-                'Database repair requires API endpoint implementation');
+            if (!ADMIN_TOKEN) {
+                addTestResult('System Cleanup', 'error', 'Admin token required for cleanup');
+                hideModal('repair-modal');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/admin/cleanup`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Admin-Token': ADMIN_TOKEN
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addTestResult('System Cleanup', 'success', 
+                        `Cleanup completed: ${data.cleanup.expired_sessions} sessions, ${data.cleanup.old_audit_logs} audit logs`, 
+                        data);
+                    addLog('Repair', 'success', 'System cleanup completed');
+                } else {
+                    addTestResult('System Cleanup', 'error', `Cleanup failed: HTTP ${response.status}`);
+                }
+            } catch (error) {
+                addTestResult('System Cleanup', 'error', `Cleanup error: ${error.message}`);
+            }
             
             hideModal('repair-modal');
         }
         
-        async function clearSessions() {
-            addLog('Repair', 'info', 'Clearing sessions...');
+        async function validateDatabase() {
+            addLog('Repair', 'info', 'Validating database...');
+            
+            if (!ADMIN_TOKEN) {
+                addTestResult('Database Validation', 'error', 'Admin token required for validation');
+                hideModal('repair-modal');
+                return;
+            }
             
             try {
-                // This would call a cleanup endpoint
-                addTestResult('Clear Sessions', 'success', 'Sessions cleared successfully');
-                addLog('Repair', 'success', 'Sessions cleared');
+                const response = await fetch(`${API_URL}/api/admin/validate`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Admin-Token': ADMIN_TOKEN,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ujian: [],
+                        soal: []
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addTestResult('Database Validation', 'success', 
+                        `Validation completed. Check details for results.`, 
+                        data);
+                    addLog('Repair', 'success', 'Database validation completed');
+                } else {
+                    addTestResult('Database Validation', 'error', `Validation failed: HTTP ${response.status}`);
+                }
             } catch (error) {
-                addTestResult('Clear Sessions', 'error', `Error: ${error.message}`);
+                addTestResult('Database Validation', 'error', `Validation error: ${error.message}`);
             }
             
             hideModal('repair-modal');
@@ -1611,6 +1785,10 @@
         
         // Auto-save settings on change
         document.getElementById('api-endpoint').addEventListener('change', saveSettings);
+        document.getElementById('dashboard-api-endpoint').addEventListener('change', function() {
+            API_URL = this.value;
+            localStorage.setItem('cbt-api-endpoint', API_URL);
+        });
     </script>
 </body>
 </html>
