@@ -195,12 +195,17 @@ function enterFullscreen() {
 }
 
 function exitFullscreen() {
-    if (document.exitFullscreen) {
-        document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-    } else if (document.msExitFullscreen) {
-        document.msExitFullscreen();
+    // Hanya exit jika dalam mode fullscreen
+    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+        if (document.exitFullscreen) {
+            document.exitFullscreen().catch(err => {
+                console.log('Exit fullscreen error:', err);
+            });
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
     }
 }
 
@@ -447,27 +452,15 @@ function setupExamScreen() {
         }
     };
     
+    // Update exam info
     setTextSafe('exam-kelas', state.student?.kelas);
     setTextSafe('exam-mapel', state.examData?.mapel);
     setTextSafe('exam-guru', state.examData?.nama_guru);
     
-    const limitInfo = document.getElementById('limit-info');
-    if (limitInfo) {
-        if (state.limitSoal < state.totalSoalDiBank) {
-            limitInfo.innerHTML = `
-                <span style="background: #e3f2fd; padding: 3px 8px; border-radius: 4px; font-size: 0.8em;">
-                    <i class="fas fa-info-circle"></i> 
-                    ${state.limitSoal} soal dari ${state.totalSoalDiBank} soal di bank
-                </span>
-            `;
-            limitInfo.style.display = 'inline';
-        } else {
-            limitInfo.style.display = 'none';
-        }
-    } else {
-        console.warn('limit-info element not found');
-    }
+    // HAPUS bagian limit-info karena tidak ada di HTML
+    // limit-info element tidak ada, jadi hapus kode yang mencoba mengaksesnya
     
+    // Setup question grid
     const grid = document.getElementById('question-grid');
     if (grid) {
         grid.innerHTML = '';
@@ -709,24 +702,10 @@ function startTabSwitchTracking() {
             state.tabSwitchCount++;
             showNotification(`Anda meninggalkan halaman ujian! (${state.tabSwitchCount}x). Aktivitas telah dicatat.`, 'error');
             
-            logTabSwitch();
+            // Catat di console saja, tidak perlu API call
+            console.log(`Tab switched ${state.tabSwitchCount} times`);
         }
     });
-}
-
-async function logTabSwitch() {
-    try {
-        await fetch(`${API_URL}/api/log-tab-switch`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                session_id: state.sessionId,
-                tab_switch_count: state.tabSwitchCount
-            })
-        });
-    } catch (error) {
-        console.error('Log tab switch error:', error);
-    }
 }
 
 // ==================== SUBMIT EXAM ====================
@@ -743,6 +722,7 @@ async function submitExam() {
     
     clearInterval(state.timerInterval);
     
+    // Keluar dari fullscreen hanya jika masih dalam fullscreen
     exitFullscreen();
     
     showScreen('screen-loading');
@@ -776,7 +756,14 @@ async function submitExam() {
         });
         
         if (!submitRes.ok) {
-            throw new Error(`HTTP ${submitRes.status}: Gagal mengirim jawaban`);
+            let errorDetail = `HTTP ${submitRes.status}: Gagal mengirim jawaban`;
+            try {
+                const errorData = await submitRes.json();
+                errorDetail = errorData.error || errorData.message || errorDetail;
+            } catch (e) {
+                // Tetap gunakan error default
+            }
+            throw new Error(errorDetail);
         }
         
         const submitData = await submitRes.json();
@@ -791,12 +778,19 @@ async function submitExam() {
         
     } catch (error) {
         console.error('Submit error:', error);
-        if (confirm('Gagal mengirim jawaban ke server. Coba lagi?')) {
-            state.examSubmitted = false;
-            state.isExamActive = true;
-            submitExam();
+        
+        // Jika error 500, tampilkan hasil lokal saja tanpa konfirmasi
+        if (error.message.includes('500') || error.message.includes('404')) {
+            console.log('Server error, showing local result...');
+            showResult({ success: false, serverError: true, message: 'Tampilan hasil lokal (server error)' });
         } else {
-            showResult({ success: false, error: error.message });
+            if (confirm(`Gagal mengirim jawaban ke server: ${error.message}\n\nCoba lagi?`)) {
+                state.examSubmitted = false;
+                state.isExamActive = true;
+                submitExam();
+            } else {
+                showResult({ success: false, error: error.message });
+            }
         }
     }
 }
@@ -822,27 +816,62 @@ function showResult(resultData) {
     setTextSafe('result-nama', state.student.nama);
     setTextSafe('result-kelas', state.student.kelas);
     setTextSafe('result-mapel', state.examData?.mapel || '-');
-    setTextSafe('result-total-soal', `${state.questions.length} soal (dari ${state.totalSoalDiBank} soal di bank)`);
+    setTextSafe('result-total-soal', `${state.questions.length} soal`);
     setTextSafe('result-dijawab', `${Object.keys(state.answers).length} soal`);
+    setTextSafe('result-waktu', `${waktuPengerjaan} menit`);
     
-    const waktuElement = document.getElementById('result-waktu') || document.getElementById('result-nilai');
-    if (waktuElement) {
-        waktuElement.textContent = `${waktuPengerjaan} menit`;
+    // Update result-limit-info jika ada
+    const limitInfoElement = document.getElementById('result-limit-info');
+    if (limitInfoElement && state.limitSoal < state.totalSoalDiBank) {
+        limitInfoElement.innerHTML = `
+            <div style="background: #e3f2fd; padding: 10px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #2196f3;">
+                <i class="fas fa-info-circle"></i> 
+                Anda mengerjakan ${state.limitSoal} soal acak dari total ${state.totalSoalDiBank} soal di bank.
+            </div>
+        `;
+        limitInfoElement.style.display = 'block';
+    } else if (limitInfoElement) {
+        limitInfoElement.style.display = 'none';
     }
     
-    const limitInfoElement = document.getElementById('result-limit-info');
-    if (limitInfoElement) {
-        if (state.limitSoal < state.totalSoalDiBank) {
-            limitInfoElement.innerHTML = `
-                <div style="background: #e3f2fd; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #2196f3;">
-                    <i class="fas fa-info-circle"></i> 
-                    Anda mengerjakan ${state.limitSoal} soal acak dari total ${state.totalSoalDiBank} soal di bank.
-                </div>
-            `;
-            limitInfoElement.style.display = 'block';
-        } else {
-            limitInfoElement.style.display = 'none';
+    // Tambahkan status server ke tampilan
+    const serverStatusDiv = document.createElement('div');
+    serverStatusDiv.className = 'result-row';
+    serverStatusDiv.style.marginTop = '10px';
+    serverStatusDiv.style.paddingTop = '10px';
+    serverStatusDiv.style.borderTop = '1px dashed #ccc';
+    
+    if (resultData.serverError) {
+        serverStatusDiv.innerHTML = `
+            <span class="result-label">Status Server:</span>
+            <span class="result-value" style="color: #ff9800;">
+                <i class="fas fa-exclamation-triangle"></i> Tampilan Hasil Lokal
+            </span>
+        `;
+    } else if (resultData.success) {
+        serverStatusDiv.innerHTML = `
+            <span class="result-label">Status Server:</span>
+            <span class="result-value" style="color: #27ae60;">
+                <i class="fas fa-check-circle"></i> Terhubung ke Server
+            </span>
+        `;
+    } else {
+        serverStatusDiv.innerHTML = `
+            <span class="result-label">Status Server:</span>
+            <span class="result-value" style="color: #e74c3c;">
+                <i class="fas fa-times-circle"></i> Gagal Terhubung
+            </span>
+        `;
+    }
+    
+    const resultDetails = document.querySelector('.result-details');
+    if (resultDetails) {
+        // Cek apakah sudah ada status server
+        const existingStatus = resultDetails.querySelector('.result-row:last-child');
+        if (existingStatus && existingStatus.textContent.includes('Status Server')) {
+            existingStatus.remove();
         }
+        resultDetails.appendChild(serverStatusDiv);
     }
     
     showScreen('screen-result');
@@ -880,7 +909,7 @@ function showPenutup() {
                         
                         <p style="margin-bottom: 10px;">
                             <strong>Jumlah Soal:</strong><br>
-                            ${state.questions.length} soal (dari ${state.totalSoalDiBank} soal di bank)
+                            ${state.questions.length} soal
                         </p>
                         
                         <p style="margin-bottom: 10px;">
