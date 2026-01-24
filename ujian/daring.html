@@ -72,15 +72,23 @@
             
             <!-- SCREEN 3: EXAM -->
             <div class="screen" id="screen-exam">
-                <!-- Exam Header -->
+                <!-- Exam Header dengan Progress Bar -->
                 <div class="exam-header">
-                    <div class="exam-progress" id="exam-progress">1/20</div>
-                    <div class="exam-info" id="exam-info">
-                        Kelas : <span id="exam-kelas">-</span> | 
-                        Mata Pelajaran : <span id="exam-mapel">-</span> | 
-                        Pengajar : <span id="exam-guru">-</span>
+                    <!-- Progress Bar -->
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-bg"></div>
+                        <div class="progress-bar-fill" id="exam-progress-bar"></div>
+                        <div class="progress-text" id="exam-progress-text">0/20</div>
                     </div>
+                    
                     <div class="exam-timer" id="exam-timer">60:00</div>
+                </div>
+                
+                <!-- Exam Info -->
+                <div class="exam-info" id="exam-info">
+                    Kelas : <span id="exam-kelas">-</span> | 
+                    Mata Pelajaran : <span id="exam-mapel">-</span> | 
+                    Pengajar : <span id="exam-guru">-</span>
                 </div>
                 
                 <!-- Question Content -->
