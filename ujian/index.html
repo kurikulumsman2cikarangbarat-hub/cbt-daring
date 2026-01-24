@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CBT SMAN 2 Cikarang Barat</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1><i class="fas fa-graduation-cap"></i> CBT SMAN 2 Cikarang Barat</h1>
+            <p>Sistem Ujian Berbasis Komputer</p>
+        </div>
+        
+        <!-- CONTENT -->
+        <div class="content">
+            <!-- SCREEN 1: LOGIN -->
+            <div class="screen active" id="screen-login">
+                <div class="warning-box">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Perhatian!</h4>
+                    <p>• Pastikan data yang dimasukkan benar</p>
+                    <p>• Segala bentuk kecurangan akan terekam</p>
+                    <p>• Soal akan diacak untuk setiap peserta</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="jenjang"><i class="fas fa-graduation-cap"></i> Jenjang *</label>
+                    <select id="jenjang" class="form-control" required>
+                        <option value="">Pilih Jenjang</option>
+                        <option value="X">Kelas X</option>
+                        <option value="XI">Kelas XI</option>
+                        <option value="XII">Kelas XII</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="kelas"><i class="fas fa-school"></i> Kelas *</label>
+                    <select id="kelas" class="form-control" required disabled>
+                        <option value="">Pilih Jenjang terlebih dahulu</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="nama"><i class="fas fa-user"></i> Nama Lengkap *</label>
+                    <input type="text" id="nama" class="form-control" placeholder="Masukkan nama lengkap" required maxlength="100">
+                </div>
+                
+                <div class="form-group">
+                    <label for="token"><i class="fas fa-key"></i> Token Ujian *</label>
+                    <input type="text" id="token" class="form-control" placeholder="Masukkan token dari guru" required maxlength="50">
+                    <small style="display: block; margin-top: 5px; color: #666;">Contoh: MATEMATIKA-2024, BING-UTS</small>
+                </div>
+                
+                <div class="error-box" id="login-error"></div>
+                
+                <button class="btn btn-success" onclick="handleLogin()">
+                    <i class="fas fa-play-circle"></i> Mulai Ujian
+                </button>
+            </div>
+            
+            <!-- SCREEN 2: LOADING -->
+            <div class="screen" id="screen-loading">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <h2>Memuat Soal...</h2>
+                    <p id="loading-message">Menyiapkan ujian untuk Anda</p>
+                </div>
+            </div>
+            
+            <!-- SCREEN 3: EXAM -->
+            <div class="screen" id="screen-exam">
+                <!-- Exam Header -->
+                <div class="exam-header">
+                    <div class="exam-progress" id="exam-progress">1/20</div>
+                    <div class="exam-info" id="exam-info">
+                        Kelas : <span id="exam-kelas">-</span> | 
+                        Mata Pelajaran : <span id="exam-mapel">-</span> | 
+                        Pengajar : <span id="exam-guru">-</span>
+                    </div>
+                    <div class="exam-timer" id="exam-timer">60:00</div>
+                </div>
+                
+                <!-- Question Content -->
+                <div class="question-container" id="question-container">
+                    <div class="question-text" id="question-text">Memuat soal...</div>
+                    <img class="question-image" id="question-image" style="display: none;" alt="Gambar soal">
+                    
+                    <div class="options-container" id="options-container">
+                        <!-- Options will be inserted here -->
+                    </div>
+                </div>
+                
+                <!-- Navigation Buttons -->
+                <div class="question-nav">
+                    <button class="btn btn-secondary nav-btn hidden" id="btn-prev" onclick="prevQuestion()">
+                        <i class="fas fa-arrow-left"></i> Sebelum
+                    </button>
+                    <button class="btn btn-success nav-btn hidden" id="btn-submit" onclick="submitExam()">
+                        <i class="fas fa-paper-plane"></i> Kirim Jawaban
+                    </button>
+                    <button class="btn btn-secondary nav-btn hidden" id="btn-next" onclick="nextQuestion()">
+                        Selanjutnya <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                
+                <!-- Question Grid -->
+                <div class="question-grid-container">
+                    <div class="question-grid" id="question-grid">
+                        <!-- Grid will be inserted here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SCREEN 4: RESULT -->
+            <div class="screen" id="screen-result">
+                <div class="result-container">
+                    <div class="result-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="result-title">Hasil Ujian</h2>
+                    
+                    <div class="result-details">
+                        <div class="result-row">
+                            <span class="result-label">Nama Siswa:</span>
+                            <span class="result-value" id="result-nama">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Kelas:</span>
+                            <span class="result-value" id="result-kelas">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Mata Pelajaran:</span>
+                            <span class="result-value" id="result-mapel">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Jumlah Soal:</span>
+                            <span class="result-value" id="result-total-soal">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Soal Dijawab:</span>
+                            <span class="result-value" id="result-dijawab">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Waktu Pengerjaan:</span>
+                            <span class="result-value" id="result-nilai">-</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-success" onclick="showPenutup()" style="width: auto; padding: 15px 40px;">
+                        <i class="fas fa-eye"></i> Lihat Bukti Ujian
+                    </button>
+                </div>
+            </div>
+            
+            <!-- SCREEN 5: PENUTUP -->
+            <div class="screen" id="screen-penutup">
+                <div class="penutup-container" id="penutup-container">
+                    <div class="penutup-message" id="penutup-message">
+                        <!-- Message akan dimasukkan di sini -->
+                    </div>
+                    
+                    <div class="tab-switch-info" id="tab-switch-info">
+                        <!-- Tab switch info akan dimasukkan di sini -->
+                    </div>
+                    
+                    <div style="margin-top: 30px; text-align: center;">
+                        <button class="btn btn-danger" onclick="keluarAplikasi()" style="width: auto; padding: 15px 40px;">
+                            <i class="fas fa-sign-out-alt"></i> Keluar Aplikasi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- FOOTER -->
+        <div class="footer">
+            <p>© 2026 CBT SMAN 2 Cikarang Barat • Hak Cipta Donny Nugroho</p>
+            <p style="margin-top: 5px; font-size: 0.75rem; opacity: 0.7;">
+                Sistem ini mencatat aktivitas ujian untuk menjaga integritas
+            </p>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

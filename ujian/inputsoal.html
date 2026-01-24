@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin CBT - Input & Edit Soal Ujian</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --secondary: #764ba2;
+            --success: #28a745;
+            --warning: #ff9800;
+            --danger: #e74c3c;
+            --bg: #f4f7f6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .content-padding { padding: 30px; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9em; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        textarea { height: 250px; resize: vertical; font-family: monospace; }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        
+        .btn-success { background: var(--success); }
+        .btn-warning { background: var(--warning); }
+        .btn-danger { background: var(--danger); }
+
+        .token-display {
+            background: #e8f0fe;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 2px dashed var(--primary);
+        }
+        
+        .token-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .token-input-group input {
+            flex: 1;
+        }
+        
+        .token-input-group .btn {
+            flex-shrink: 0;
+        }
+
+        #loading-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            flex-direction: column;
+        }
+
+        .progress-container {
+            width: 300px;
+            background: #444;
+            height: 10px;
+            border-radius: 5px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--success);
+            transition: width 0.3s;
+        }
+
+        #results-section { display: none; padding: 40px; text-align: center; }
+        .stat-box { background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #ddd; }
+        .stat-value { font-size: 40px; font-weight: bold; color: var(--primary); }
+        
+        .notification {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .notification-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid var(--success);
+        }
+        
+        .notification-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .notification-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid var(--primary);
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-database"></i> Panel Admin Upload & Edit Soal</h1>
+            <p style="margin-top: 5px; opacity: 0.9;">Create, Read, Update, Delete - Sistem lengkap</p>
+        </div>
+
+        <div id="setup-step" class="content-padding">
+            <h3 style="margin-bottom: 15px; color: var(--primary);">
+                <i class="fas fa-key"></i> Token Ujian
+            </h3>
+            
+            <div class="token-input-group">
+                <input type="text" id="input-token" placeholder="Masukkan Token (untuk edit) atau kosongkan (untuk baru)" maxlength="50">
+                <button class="btn btn-warning" onclick="loadExistingData()">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn btn-success" onclick="generateNewToken()">
+                    <i class="fas fa-plus"></i> Baru
+                </button>
+            </div>
+            
+            <div id="notification-area"></div>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid var(--primary);">
+                <p style="margin-bottom: 10px; color: #666;">
+                    <i class="fas fa-info-circle"></i> <strong>Petunjuk:</strong>
+                </p>
+                <ul style="color: #666; padding-left: 20px; font-size: 0.9em;">
+                    <li>Untuk membuat ujian baru: Klik <strong>Buat Baru</strong></li>
+                    <li>Untuk mengedit ujian yang ada: Masukkan token lalu klik <strong>Edit</strong></li>
+                    <li>Sistem akan otomatis mengupdate data yang sudah ada</li>
+                    <li>Soal lama akan dihapus saat mengedit</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="main-content" class="content-padding" style="display: none;">
+            <div class="token-display">
+                <small>TOKEN UJIAN:</small>
+                <h2 id="display-token" style="letter-spacing: 5px; color: #1a73e8;">-</h2>
+                <p id="edit-mode-indicator" style="color: #666; font-size: 0.9em; margin-top: 5px;">
+                    <i class="fas fa-sync-alt"></i> Mode: <span id="mode-text">Buat Baru</span>
+                </p>
+            </div>
+
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Mata Pelajaran *</label>
+                    <input type="text" id="input-mapel" placeholder="Contoh: Matematika" required>
+                </div>
+                <div class="input-group">
+                    <label>Nama Guru *</label>
+                    <input type="text" id="input-guru" placeholder="Contoh: Budi Santoso, S.Pd" required>
+                </div>
+                <div class="input-group">
+                    <label>Durasi (Menit) *</label>
+                    <input type="number" id="input-durasi" min="1" max="300" value="90" required>
+                </div>
+                <div class="input-group">
+                    <label>Jumlah Soal yang Tampil *</label>
+                    <input type="number" id="input-jml-soal" min="1" max="200" placeholder="Contoh: 40" required>
+                    <small style="color: #666;">*Hanya soal ini yang akan dilihat siswa</small>
+                </div>
+                <div class="input-group">
+                    <label>Status Ujian</label>
+                    <select id="input-aktif">
+                        <option value="1">Aktif</option>
+                        <option value="0">Tidak Aktif</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Bank Soal: <span id="bank-soal-count">0</span> soal</label>
+                    <div style="padding: 10px; background: #f8f9fa; border-radius: 8px; color: #666;">
+                        <i class="fas fa-database"></i> Total soal yang diupload akan disimpan di bank soal
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>
+                    Input Soal (Format: Soal | A | B | C | D | E | Kunci | Link_Gambar)
+                    <button class="btn" onclick="showFormatExample()" style="padding: 5px 10px; font-size: 12px; margin-left: 10px;">
+                        <i class="fas fa-question-circle"></i> Contoh
+                    </button>
+                </label>
+                <textarea id="input-soal" placeholder="Soal 1 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | A | 
+Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.com/img.jpg" rows="12"></textarea>
+                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                    <small style="color: #666;">*Gunakan karakter pipe (|) sebagai pemisah. Kunci harus huruf A-E.</small>
+                    <small id="soal-count" style="color: var(--primary); font-weight: bold;">0 soal</small>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 15px; margin-top: 30px;">
+                <button class="btn btn-danger" onclick="resetForm()" style="flex: 1;">
+                    <i class="fas fa-trash-alt"></i> Reset Form
+                </button>
+                <button class="btn btn-success" onclick="uploadData()" style="flex: 2;">
+                    <i class="fas fa-cloud-upload-alt"></i> Simpan ke Database
+                </button>
+            </div>
+        </div>
+
+        <div id="results-section">
+            <div id="results-container"></div>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+                <button class="btn btn-warning" onclick="continueEditing()" style="max-width: 200px;">
+                    <i class="fas fa-edit"></i> Edit Lagi
+                </button>
+                <button class="btn" onclick="location.reload()" style="max-width: 200px;">
+                    <i class="fas fa-redo"></i> Buat Baru
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-modal">
+        <i class="fas fa-spinner fa-spin fa-3x"></i>
+        <p style="margin-top: 20px;" id="progress-text">Sedang memproses...</p>
+        <div class="progress-container">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+    </div>
+
+    <script>
+        // KONFIGURASI API
+        const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev/"; 
+        let adminToken = localStorage.getItem('adminToken') || "";
+        let currentToken = "";
+        let isEditMode = false;
+        let originalToken = "";
+
+        // Fungsi awal saat halaman dimuat
+        window.onload = () => {
+            if (!adminToken) {
+                adminToken = prompt("Masukkan Admin Token untuk melanjutkan:");
+                if (adminToken) {
+                    localStorage.setItem('adminToken', adminToken);
+                    showNotification("Admin token disimpan", "info");
+                } else {
+                    location.reload();
+                }
+            }
+            
+            // Setup event listeners
+            document.getElementById('input-soal').addEventListener('input', updateSoalCount);
+            document.getElementById('input-token').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadExistingData();
+                }
+            });
+        };
+
+        function showNotification(message, type = 'info') {
+            const notificationArea = document.getElementById('notification-area');
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            notificationArea.innerHTML = '';
+            notificationArea.appendChild(notification);
+            
+            // Auto remove setelah 5 detik
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        function generateNewToken() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            currentToken = result;
+            isEditMode = false;
+            originalToken = "";
+            
+            document.getElementById('display-token').textContent = currentToken;
+            document.getElementById('mode-text').textContent = 'Buat Baru';
+            document.getElementById('mode-text').style.color = '#28a745';
+            
+            // Clear form for new exam
+            document.getElementById('input-mapel').value = '';
+            document.getElementById('input-guru').value = '';
+            document.getElementById('input-durasi').value = '90';
+            document.getElementById('input-jml-soal').value = '';
+            document.getElementById('input-aktif').value = '1';
+            document.getElementById('input-soal').value = '';
+            updateSoalCount();
+            
+            document.getElementById('setup-step').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            
+            showNotification(`Token baru dibuat: ${currentToken}`, 'success');
+        }
+
+        async function loadExistingData() {
+            const token = document.getElementById('input-token').value.trim().toUpperCase();
+            
+            if (!token) {
+                showNotification('Masukkan token untuk mengedit', 'warning');
+                return;
+            }
+            
+            if (!adminToken) {
+                showNotification('Admin token tidak ditemukan', 'error');
+                return;
+            }
+            
+            showLoading('Mengambil data ujian...');
+            
+            try {
+                // Get exam data with answers
+                const response = await fetch(`${API_URL}/api/admin/get-ujian?token=${encodeURIComponent(token)}`, {
+                    headers: { 
+                        'X-Admin-Token': adminToken 
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: Gagal mengambil data`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Data tidak ditemukan');
+                }
+                
+                // Set mode to edit
+                currentToken = token;
+                originalToken = token;
+                isEditMode = true;
+                
+                // Fill form with existing data
+                document.getElementById('display-token').textContent = currentToken;
+                document.getElementById('input-mapel').value = data.ujian.mapel || '';
+                document.getElementById('input-guru').value = data.ujian.nama_guru || '';
+                document.getElementById('input-durasi').value = data.ujian.durasi || 90;
+                document.getElementById('input-jml-soal').value = data.ujian.jml_soal || '';
+                document.getElementById('input-aktif').value = data.ujian.aktif || '1';
+                document.getElementById('input-soal').value = data.soal_text || '';
+                
+                // Update UI
+                document.getElementById('mode-text').textContent = 'Mode Edit';
+                document.getElementById('mode-text').style.color = '#ff9800';
+                document.getElementById('bank-soal-count').textContent = data.ujian.jumlah_soal_di_bank || 0;
+                updateSoalCount();
+                
+                document.getElementById('setup-step').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                
+                showNotification(`Data ujian "${data.ujian.mapel}" berhasil dimuat`, 'success');
+                
+            } catch (error) {
+                console.error('Load data error:', error);
+                showNotification(`Gagal memuat data: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function updateSoalCount() {
+            const text = document.getElementById('input-soal').value;
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            const count = lines.length;
+            document.getElementById('soal-count').textContent = `${count} soal`;
+        }
+
+        async function uploadData() {
+            const mapel = document.getElementById('input-mapel').value.trim();
+            const guru = document.getElementById('input-guru').value.trim();
+            const durasi = document.getElementById('input-durasi').value;
+            const jmlSoal = document.getElementById('input-jml-soal').value;
+            const aktif = document.getElementById('input-aktif').value;
+            const soalText = document.getElementById('input-soal').value.trim();
+
+            // Validation
+            if (!mapel || !guru || !durasi || !jmlSoal || !soalText) {
+                showNotification('Lengkapi semua data sebelum upload!', 'error');
+                return;
+            }
+
+            if (currentToken.length < 3) {
+                showNotification('Token tidak valid', 'error');
+                return;
+            }
+
+            const lines = soalText.split('\n').filter(line => line.trim() !== "");
+            if (lines.length === 0) {
+                showNotification('Masukkan minimal 1 soal', 'error');
+                return;
+            }
+
+            // Validate each line
+            for (let i = 0; i < lines.length; i++) {
+                const parts = lines[i].split('|');
+                if (parts.length < 7) {
+                    showNotification(`Soal ${i+1}: Format tidak valid (minimal 7 bagian)`, 'error');
+                    return;
+                }
+                
+                const kunci = parts[6].trim().toUpperCase();
+                if (!['A', 'B', 'C', 'D', 'E'].includes(kunci)) {
+                    showNotification(`Soal ${i+1}: Kunci harus A, B, C, D, atau E`, 'error');
+                    return;
+                }
+            }
+
+            showLoading('Menyimpan data ujian...');
+
+            try {
+                // 1. Save/Update exam metadata
+                const resUjian = await fetch(`${API_URL}/api/admin/ujian`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken 
+                    },
+                    body: JSON.stringify({
+                        token: currentToken,
+                        mapel: mapel,
+                        nama_guru: guru,
+                        durasi: parseInt(durasi),
+                        jml_soal: parseInt(jmlSoal),
+                        aktif: parseInt(aktif)
+                    })
+                });
+
+                if (!resUjian.ok) {
+                    throw new Error("Gagal menyimpan metadata ujian.");
+                }
+
+                // 2. Delete old questions if in edit mode
+                if (isEditMode) {
+                    // First upload a dummy question with DELETE_OLD flag
+                    await fetch(`${API_URL}/api/admin/soal`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-Admin-Token': adminToken 
+                        },
+                        body: JSON.stringify({
+                            token: currentToken,
+                            soal: "TEMP_DELETE",
+                            opsi_a: "A",
+                            opsi_b: "B",
+                            opsi_c: "C",
+                            opsi_d: "D",
+                            kunci: "A",
+                            DELETE_OLD: true
+                        })
+                    });
+                }
+
+                // 3. Upload questions one by one
+                let successCount = 0;
+                for (let i = 0; i < lines.length; i++) {
+                    const parts = lines[i].split('|');
+                    
+                    const soalObj = {
+                        token: currentToken,
+                        soal: parts[0].trim(),
+                        opsi_a: parts[1].trim(),
+                        opsi_b: parts[2].trim(),
+                        opsi_c: parts[3].trim(),
+                        opsi_d: parts[4].trim(),
+                        opsi_e: parts[5] ? parts[5].trim() : "",
+                        kunci: parts[6].trim().toUpperCase(),
+                        img_link: parts[7] ? parts[7].trim() : ""
+                    };
+
+                    const resSoal = await fetch(`${API_URL}/api/admin/soal`, {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-Admin-Token': adminToken 
+                        },
+                        body: JSON.stringify(soalObj)
+                    });
+
+                    if (resSoal.ok) successCount++;
+                    
+                    // Update progress UI
+                    let pc = Math.round(((i + 1) / lines.length) * 100);
+                    document.getElementById('progress-fill').style.width = pc + '%';
+                    document.getElementById('progress-text').textContent = `Mengupload soal ke-${i+1}/${lines.length}...`;
+                }
+
+                showFinalResults(successCount, lines.length, isEditMode);
+
+            } catch (e) {
+                console.error('Upload error:', e);
+                showNotification("Kesalahan Sistem: " + e.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function showFinalResults(success, total, isEdit) {
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('results-section').style.display = 'block';
+            
+            const jmlSoal = document.getElementById('input-jml-soal').value;
+            const mapel = document.getElementById('input-mapel').value;
+            
+            document.getElementById('results-container').innerHTML = `
+                <div class="stat-box">
+                    <h3 style="color: ${isEdit ? '#ff9800' : '#28a745'}; margin-bottom: 20px;">
+                        <i class="fas fa-${isEdit ? 'edit' : 'check-circle'}"></i> 
+                        ${isEdit ? 'Ujian Berhasil Diperbarui' : 'Ujian Berhasil Dibuat'}
+                    </h3>
+                    <div class="stat-value">${success}/${total}</div>
+                    <p style="margin-top:10px; font-size: 1.2em;">Soal berhasil disimpan</p>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left;">
+                        <p><strong>Detail Ujian:</strong></p>
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            <li><strong>Token:</strong> ${currentToken}</li>
+                            <li><strong>Mapel:</strong> ${mapel}</li>
+                            <li><strong>Jumlah Soal di Bank:</strong> ${total} soal</li>
+                            <li><strong>Limit Tampil Siswa:</strong> ${jmlSoal} soal</li>
+                            <li><strong>Status:</strong> ${document.getElementById('input-aktif').value === '1' ? 'Aktif' : 'Tidak Aktif'}</li>
+                        </ul>
+                    </div>
+                    
+                    <p style="color:#666; font-size:14px; margin-top:20px;">
+                        <i class="fas fa-info-circle"></i> 
+                        Siswa hanya akan melihat <b>${jmlSoal} soal acak</b> dari total ${total} soal di bank.
+                    </p>
+                </div>
+            `;
+        }
+
+        function resetForm() {
+            if (confirm('Apakah Anda yakin ingin mereset form? Semua data yang belum disimpan akan hilang.')) {
+                document.getElementById('input-mapel').value = '';
+                document.getElementById('input-guru').value = '';
+                document.getElementById('input-durasi').value = '90';
+                document.getElementById('input-jml-soal').value = '';
+                document.getElementById('input-aktif').value = '1';
+                document.getElementById('input-soal').value = '';
+                updateSoalCount();
+                
+                showNotification('Form telah direset', 'info');
+            }
+        }
+
+        function continueEditing() {
+            document.getElementById('results-section').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        }
+
+        function showFormatExample() {
+            alert(`CONTOH FORMAT SOAL:\n\n` +
+                  `Apa ibu kota Indonesia? | Jakarta | Bandung | Surabaya | Medan | Yogyakarta | A | https://example.com/gambar.jpg\n` +
+                  `2 + 2 = ? | 3 | 4 | 5 | 6 | 7 | B | \n` +
+                  `\nPETUNJUK:\n` +
+                  `1. Gunakan | sebagai pemisah\n` +
+                  `2. Urutan: Soal | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | Kunci | Link Gambar\n` +
+                  `3. Opsi E dan Link Gambar bisa dikosongkan\n` +
+                  `4. Kunci harus huruf A-E`);
+        }
+
+        function showLoading(message) {
+            document.getElementById('progress-text').textContent = message;
+            document.getElementById('progress-fill').style.width = '0%';
+            document.getElementById('loading-modal').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-modal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
