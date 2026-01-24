@@ -213,17 +213,40 @@ async function handleLogin() {
         const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
         
         if (!checkRes.ok) {
-            throw new Error(`HTTP ${checkRes.status}: Gagal memeriksa token`);
+            const errorText = await checkRes.text();
+            console.error('Check token error:', errorText);
+            throw new Error(`Gagal memeriksa token (HTTP ${checkRes.status})`);
         }
         
         const checkData = await checkRes.json();
+        console.log('Check token response:', checkData);
         
-        if (!checkData.success || !checkData.exists) {
-            throw new Error('Token ujian tidak ditemukan atau sudah kadaluarsa');
+        // PERBAIKAN 1: Response dari server punya field 'exists' bukan 'success'
+        if (!checkData.success) {
+            throw new Error(checkData.error || 'Gagal memeriksa token');
+        }
+        
+        // PERBAIKAN 2: Cek apakah token ada
+        if (!checkData.exists) {
+            throw new Error('Token ujian tidak ditemukan');
+        }
+        
+        // PERBAIKAN 3: Cek apakah token aktif
+        if (!checkData.active) {
+            throw new Error('Token ujian tidak aktif. Hubungi guru.');
         }
         
         // Login
         document.getElementById('loading-message').textContent = 'Login ke sistem...';
+        
+        // PERBAIKAN 4: Pastikan parameter sesuai dengan yang diharapkan server
+        const loginBody = {
+            nama: nama,
+            kelas: jenjang,  // Server mengharapkan 'kelas' = jenjang
+            rombel: kelas,   // Server mengharapkan 'rombel' = kelas
+            token: token
+        };
+        console.log('Login body:', loginBody);
         
         const loginRes = await fetch(`${API_URL}/api/login`, {
             method: 'POST',
@@ -231,26 +254,31 @@ async function handleLogin() {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({
-                nama: nama,
-                kelas: jenjang,
-                rombel: kelas,
-                token: token
-            })
+            body: JSON.stringify(loginBody)
         });
         
+        console.log('Login response status:', loginRes.status);
+        
         if (!loginRes.ok) {
+            const loginError = await loginRes.text();
+            console.error('Login error text:', loginError);
             throw new Error(`HTTP ${loginRes.status}: Gagal login ke sistem`);
         }
         
         const loginData = await loginRes.json();
+        console.log('Login data:', loginData);
         
+        // PERBAIKAN 5: Validasi response login
         if (!loginData.success) {
             throw new Error(loginData.error || 'Gagal login ke sistem');
         }
         
+        if (!loginData.session_id) {
+            throw new Error('Session ID tidak diterima dari server');
+        }
+        
         state.sessionId = loginData.session_id;
-        state.sessionSeed = loginData.session_seed;
+        state.sessionSeed = loginData.session_seed || 0;
         state.examData = loginData.ujian;
         state.waktuMulai = new Date();
         
@@ -261,13 +289,20 @@ async function handleLogin() {
             `${API_URL}/api/soal?token=${encodeURIComponent(token)}&session_id=${encodeURIComponent(state.sessionId)}`
         );
         
+        console.log('Soal response status:', soalRes.status);
+        
         if (!soalRes.ok) {
             throw new Error(`HTTP ${soalRes.status}: Gagal mengambil soal`);
         }
         
         const soalData = await soalRes.json();
+        console.log('Soal data:', soalData);
         
-        if (!soalData.success || !soalData.soal || soalData.soal.length === 0) {
+        if (!soalData.success) {
+            throw new Error(soalData.error || 'Gagal mengambil soal');
+        }
+        
+        if (!soalData.soal || soalData.soal.length === 0) {
             throw new Error('Tidak ada soal yang tersedia untuk ujian ini');
         }
         
@@ -307,6 +342,7 @@ async function handleLogin() {
         
         let errorMessage = error.message;
         
+        // PERBAIKAN 6: Error handling yang lebih baik
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
             errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
         }
@@ -315,11 +351,15 @@ async function handleLogin() {
             errorMessage = 'Token ujian tidak valid. Pastikan token yang dimasukkan benar.';
         }
         
+        if (errorMessage.includes('Session ID')) {
+            errorMessage = 'Gagal membuat sesi ujian. Coba lagi atau hubungi admin.';
+        }
+        
+        console.error('Final error:', errorMessage);
         showScreen('screen-login');
         showError(errorMessage);
     }
 }
-
 // ==================== EXAM SETUP ====================
 function setupExamScreen() {
     // Update exam info with limit data
@@ -886,4 +926,5 @@ document.addEventListener('drop', function(e) {
         e.preventDefault();
         return false;
     }
+
 });
