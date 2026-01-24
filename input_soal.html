@@ -140,25 +140,6 @@
             background: #f1f7ff;
         }
 
-        .file-upload-wrapper i {
-            font-size: 40px;
-            color: #1a73e8;
-            margin-bottom: 10px;
-        }
-
-        #file-info {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #28a745;
-            display: none;
-            font-weight: 600;
-        }
-
-        .progress-container {
-            margin-top: 20px;
-            display: none;
-        }
-
         .progress-bar {
             height: 10px;
             background: #e9ecef;
@@ -171,13 +152,6 @@
             background: #1a73e8;
             width: 0%;
             transition: width 0.3s;
-        }
-
-        .progress-text {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-            text-align: right;
         }
 
         #loading-modal {
@@ -226,16 +200,6 @@
 
         .stat-value { font-size: 24px; font-weight: 700; color: #1a73e8; }
         .stat-label { font-size: 14px; color: #666; margin-top: 5px; }
-
-        .helper-text {
-            background: #fff3cd;
-            color: #856404;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            font-size: 14px;
-            border: 1px solid #ffeeba;
-        }
     </style>
 </head>
 <body>
@@ -273,13 +237,10 @@
                         <label>Durasi (Menit)</label>
                         <input type="number" id="durasi" placeholder="Contoh: 90">
                     </div>
-                    
                     <div class="form-group">
                         <label>Jumlah Soal Diujikan</label>
                         <input type="number" id="jml_soal" placeholder="Contoh: 40">
-                        <small style="color: #666; font-size: 11px;">Kosongkan jika semua soal.</small>
                     </div>
-
                     <div class="form-group" style="grid-column: span 2;">
                         <label>Token Ujian (Manual/Otomatis)</label>
                         <div style="display: flex; gap: 10px;">
@@ -288,24 +249,15 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="helper-text" style="margin-top: 20px;">
-                    <strong>Tips:</strong> Pastikan token unik dan mudah diingat oleh siswa. Token akan digunakan untuk mengakses soal.
-                </div>
             </div>
 
             <div class="card">
                 <div class="card-title">📤 Upload Data Soal</div>
-                <p style="font-size: 14px; color: #666; margin-bottom: 15px;">
-                    Gunakan format baris: <br>
-                    <code>Soal | A | B | C | D | E | Kunci | Link_Gambar</code>
-                </p>
-
                 <div class="file-upload-wrapper" onclick="document.getElementById('excelFile').click()">
                     <i>📁</i>
                     <p>Klik untuk pilih file teks/excel soal</p>
                     <input type="file" id="excelFile" hidden accept=".txt,.csv">
-                    <div id="file-info"></div>
+                    <div id="file-info" style="margin-top:15px; color:#28a745; font-weight:600; display:none;"></div>
                 </div>
 
                 <button class="btn btn-success" id="btn-upload" onclick="saveUjian()">
@@ -317,7 +269,6 @@
         <div id="results-section" class="results-section">
             <h2 style="color: #28a745;">✅ Berhasil Diupload!</h2>
             <div id="results-container" class="stat-grid"></div>
-            
             <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: center;">
                 <button class="btn btn-primary" onclick="openNewUjian()" style="width: auto;">Buat Ujian Baru</button>
                 <button class="btn btn-secondary" onclick="backToUpload()">Edit Data Terakhir</button>
@@ -330,7 +281,6 @@
         let currentUjianToken = "";
         let rawData = "";
 
-        // File Selection Listener
         document.getElementById('excelFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -358,7 +308,7 @@
             const guru = document.getElementById('nama_guru').value;
             const durasi = document.getElementById('durasi').value;
             const token = document.getElementById('token').value;
-            const jmlSoal = document.getElementById('jml_soal').value; // Penambahan
+            const jmlSoal = document.getElementById('jml_soal').value; // Ambil nilai jml_soal
 
             if (!mapel || !guru || !durasi || !token) {
                 alert('Mohon lengkapi semua data ujian!');
@@ -378,7 +328,6 @@
             document.getElementById('progress-text').textContent = "Membuat sesi ujian...";
 
             try {
-                // Step 1: Simpan detail ujian
                 const resUjian = await fetch(API_URL + 'api/admin/ujian', {
                     method: 'POST',
                     headers: {
@@ -390,7 +339,7 @@
                         mapel: mapel,
                         nama_guru: guru,
                         durasi: parseInt(durasi),
-                        jml_soal: jmlSoal ? parseInt(jmlSoal) : 0, // Penambahan terintegrasi
+                        jml_soal: jmlSoal ? parseInt(jmlSoal) : 0, // Integrasi jml_soal
                         aktif: 1
                     })
                 });
@@ -455,15 +404,11 @@
 
         function showFinalResults(success, total) {
             document.getElementById('main-content').style.display = 'none';
-            document.getElementById('results-section').style.display = 'block';
+            document.getElementById('results-section').style.display = 'grid';
             document.getElementById('results-container').innerHTML = `
                 <div class="stat-box">
                     <div class="stat-value">${success}/${total}</div>
                     <div class="stat-label">Soal Berhasil Diupload</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value">${document.getElementById('token').value}</div>
-                    <div class="stat-label">Token Ujian Aktif</div>
                 </div>
             `;
         }
