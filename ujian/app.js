@@ -1,5 +1,6 @@
 // ==================== KONFIGURASI ====================
-const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev/";
+// PERBAIKAN: Hapus slash di akhir URL
+const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev";
 
 // ==================== STATE MANAGEMENT ====================
 let state = {
@@ -51,19 +52,21 @@ function showError(message, isLoginError = true) {
         setTimeout(() => {
             errorBox.style.animation = '';
         }, 10);
+        
+        // Hapus tombol test sebelumnya jika ada
+        const existingBtn = errorBox.querySelector('button');
+        if (existingBtn) existingBtn.remove();
     } else {
         showNotification(message, 'error');
     }
 }
 
 function showNotification(message, type = 'info') {
-    // Cek jika ada notifikasi sebelumnya, hapus
     const existingNotifications = document.querySelectorAll('.notification');
     existingNotifications.forEach(notification => {
         notification.remove();
     });
     
-    // Buat elemen notifikasi
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
@@ -74,13 +77,11 @@ function showNotification(message, type = 'info') {
     
     document.body.appendChild(notification);
     
-    // Fungsi close
     notification.querySelector('.notification-close').onclick = () => {
         notification.style.animation = 'slideIn 0.3s ease-out reverse';
         setTimeout(() => notification.remove(), 300);
     };
     
-    // Auto remove setelah 5 detik
     setTimeout(() => {
         if (notification.parentNode) {
             notification.style.animation = 'slideIn 0.3s ease-out reverse';
@@ -158,7 +159,6 @@ function getViewableImageUrl(imageId) {
 
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', function() {
-    // Setup jenjang dropdown
     const jenjangSelect = document.getElementById('jenjang');
     if (jenjangSelect) {
         jenjangSelect.addEventListener('change', function() {
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Setup enter key for login - PERBAIKAN: tambah event listener untuk semua input login
+    // PERBAIKAN: Tambah enter key untuk semua input
     const loginInputs = ['nama', 'jenjang', 'kelas', 'token'];
     loginInputs.forEach(inputId => {
         const input = document.getElementById(inputId);
@@ -179,7 +179,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Clear any existing exam data
     clearExamData();
 });
 
@@ -213,9 +212,13 @@ async function handleLogin() {
         // Check token
         document.getElementById('loading-message').textContent = 'Memeriksa token ujian...';
         
+        // PERBAIKAN: Gunakan URL yang benar
         const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
         
         if (!checkRes.ok) {
+            if (checkRes.status === 404) {
+                throw new Error('Endpoint API tidak ditemukan. Hubungi administrator.');
+            }
             throw new Error(`HTTP ${checkRes.status}: Gagal memeriksa token`);
         }
         
@@ -225,9 +228,10 @@ async function handleLogin() {
             throw new Error('Token ujian tidak ditemukan atau sudah kadaluarsa');
         }
         
-        // Login - PERBAIKAN: tambah error handling yang lebih spesifik
+        // Login
         document.getElementById('loading-message').textContent = 'Login ke sistem...';
         
+        // PERBAIKAN: Struktur JSON yang benar
         const loginRes = await fetch(`${API_URL}/api/login`, {
             method: 'POST',
             headers: { 
@@ -236,13 +240,16 @@ async function handleLogin() {
             },
             body: JSON.stringify({
                 nama: nama,
-                kelas: jenjang, // PERBAIKAN: ini mungkin perlu diubah sesuai field di server
-                rombel: kelas,
+                jenjang: jenjang,  // PERBAIKAN: Field jenjang
+                kelas: kelas,      // PERBAIKAN: Field kelas
                 token: token
             })
         });
         
         if (!loginRes.ok) {
+            if (loginRes.status === 404) {
+                throw new Error('Endpoint login tidak ditemukan. Hubungi administrator.');
+            }
             const errorText = await loginRes.text();
             console.error('Login response error:', errorText);
             throw new Error(`HTTP ${loginRes.status}: Gagal login ke sistem`);
@@ -267,6 +274,9 @@ async function handleLogin() {
         );
         
         if (!soalRes.ok) {
+            if (soalRes.status === 404) {
+                throw new Error('Endpoint soal tidak ditemukan. Hubungi administrator.');
+            }
             throw new Error(`HTTP ${soalRes.status}: Gagal mengambil soal`);
         }
         
@@ -322,6 +332,66 @@ async function handleLogin() {
         
         showScreen('screen-login');
         showError(errorMessage);
+        
+        // Tambah tombol untuk testing API
+        const errorBox = document.getElementById('login-error');
+        const testBtn = document.createElement('button');
+        testBtn.textContent = 'Test Koneksi API';
+        testBtn.style.marginTop = '10px';
+        testBtn.style.padding = '5px 10px';
+        testBtn.style.background = '#4285f4';
+        testBtn.style.color = 'white';
+        testBtn.style.border = 'none';
+        testBtn.style.borderRadius = '4px';
+        testBtn.style.cursor = 'pointer';
+        testBtn.onclick = testAPIConnection;
+        errorBox.appendChild(testBtn);
+    }
+}
+
+// ==================== FUNCTION UNTUK TEST KONEKSI API ====================
+async function testAPIConnection() {
+    const token = document.getElementById('token').value.trim().toUpperCase() || 'TEST';
+    
+    showNotification('Sedang menguji koneksi API...', 'info');
+    
+    try {
+        const testUrl = `${API_URL}/api/check-token?token=${encodeURIComponent(token)}`;
+        console.log('Testing URL:', testUrl);
+        
+        const response = await fetch(testUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        let result = `Status: ${response.status}\n`;
+        result += `Status Text: ${response.statusText}\n`;
+        result += `URL: ${testUrl}\n`;
+        
+        if (response.ok) {
+            try {
+                const data = await response.json();
+                result += `Response: ${JSON.stringify(data, null, 2)}`;
+                showNotification('API berhasil diakses!', 'success');
+            } catch (jsonError) {
+                result += `Error parsing JSON: ${jsonError.message}`;
+                showNotification('API diakses tapi response bukan JSON', 'warning');
+            }
+        } else {
+            showNotification(`API error: ${response.status}`, 'error');
+        }
+        
+        console.log('API Test Result:', result);
+        alert('Hasil test API:\n\n' + result);
+        
+    } catch (error) {
+        console.error('API Test Error:', error);
+        alert('Error testing API:\n\n' + error.message + 
+              '\n\nPastikan:\n1. Koneksi internet aktif\n' +
+              '2. URL API benar: ' + API_URL + 
+              '\n3. CORS diizinkan oleh server');
     }
 }
 
@@ -478,13 +548,12 @@ function selectAnswer(answer) {
     
     updateProgress();
     
-    // Auto-next setelah 500ms - PERBAIKAN: tambah konfirmasi jika ingin auto-next
-    const shouldAutoNext = document.getElementById('auto-next-toggle')?.checked !== false;
-    if (shouldAutoNext && currentIndex < state.questions.length - 1) {
-        setTimeout(() => {
+    // Auto-next setelah 500ms
+    setTimeout(() => {
+        if (currentIndex < state.questions.length - 1) {
             showQuestion(currentIndex + 1);
-        }, 500);
-    }
+        }
+    }, 500);
 }
 
 function prevQuestion() {
@@ -515,7 +584,6 @@ function startTimer() {
         // Change color when time is running out
         if (state.remainingTime <= 300) {
             timerElement.style.background = '#e74c3c';
-            // Beri peringatan saat 5 menit terakhir
             if (state.remainingTime === 300) {
                 showNotification('Waktu tersisa 5 menit!', 'error');
             }
@@ -571,7 +639,7 @@ async function logTabSwitch() {
 async function submitExam() {
     if (state.examSubmitted) return;
     
-    // PERBAIKAN: Tambah konfirmasi sebelum submit
+    // Tambah konfirmasi sebelum submit
     if (!confirm('Apakah Anda yakin ingin mengirim jawaban? Pastikan semua soal sudah dijawab.')) {
         return;
     }
@@ -626,7 +694,7 @@ async function submitExam() {
         
     } catch (error) {
         console.error('Submit error:', error);
-        // PERBAIKAN: Jangan langsung showResult jika gagal, beri opsi retry
+        // Beri opsi retry jika gagal
         if (confirm('Gagal mengirim jawaban ke server. Coba lagi?')) {
             state.examSubmitted = false;
             state.isExamActive = true;
@@ -642,19 +710,22 @@ function showResult(resultData) {
     let waktuPengerjaan = 0;
     if (state.waktuMulai && state.waktuSelesai) {
         const diffMs = state.waktuSelesai - state.waktuMulai;
-        waktuPengerjaan = Math.floor(diffMs / 1000 / 60); // dalam menit
+        waktuPengerjaan = Math.floor(diffMs / 1000 / 60);
     } else {
         waktuPengerjaan = Math.max(0, (state.examData?.durasi || 0) - Math.floor(state.remainingTime / 60));
     }
     
-    // Update result screen with limit info
+    // PERBAIKAN: Perbaiki ID elemen untuk waktu pengerjaan
     document.getElementById('result-nama').textContent = state.student.nama;
     document.getElementById('result-kelas').textContent = state.student.kelas;
     document.getElementById('result-mapel').textContent = state.examData?.mapel || '-';
     document.getElementById('result-total-soal').textContent = `${state.questions.length} soal (dari ${state.totalSoalDiBank} soal di bank)`;
     document.getElementById('result-dijawab').textContent = `${Object.keys(state.answers).length} soal`;
-    // PERBAIKAN: Label waktu pengerjaan salah (seharusnya bukan 'nilai')
-    document.getElementById('result-waktu').textContent = `${waktuPengerjaan} menit`;
+    // PERBAIKAN: Ganti result-nilai menjadi result-waktu
+    const waktuElement = document.getElementById('result-waktu') || document.getElementById('result-nilai');
+    if (waktuElement) {
+        waktuElement.textContent = `${waktuPengerjaan} menit`;
+    }
     
     // Add limit info if applicable
     const limitInfoElement = document.getElementById('result-limit-info');
@@ -751,7 +822,7 @@ function showPenutup() {
 }
 
 function keluarAplikasi() {
-    // PERBAIKAN: Tambah konfirmasi sebelum keluar
+    // Tambah konfirmasi sebelum keluar
     if (state.isExamActive && !state.examSubmitted) {
         if (!confirm('Ujian belum selesai. Yakin ingin keluar?')) {
             return;
@@ -813,7 +884,7 @@ window.addEventListener('beforeunload', function(e) {
 // Handler untuk fullscreen
 document.addEventListener('fullscreenchange', function() {
     if (state.isExamActive && !state.examSubmitted && !document.fullscreenElement) {
-        // PERBAIKAN: Delay sedikit sebelum kembali ke fullscreen
+        // Delay sedikit sebelum kembali ke fullscreen
         setTimeout(() => {
             if (state.isExamActive && !state.examSubmitted && !document.fullscreenElement) {
                 enterFullscreen();
@@ -901,7 +972,7 @@ document.addEventListener('keydown', function(e) {
             return false;
         }
         
-        // PERBAIKAN: Tambah block untuk escape key (bisa keluar fullscreen)
+        // Block escape key untuk keluar fullscreen
         if (e.key === 'Escape' && document.fullscreenElement) {
             e.preventDefault();
             showNotification('Tidak dapat keluar dari fullscreen selama ujian!', 'error');
@@ -933,23 +1004,20 @@ document.addEventListener('drop', function(e) {
     }
 });
 
-// PERBAIKAN TAMBAHAN: Tambah fungsi untuk debugging
-function debugState() {
-    console.log('State saat ini:', state);
-    return state;
+// PERBAIKAN TAMBAHAN: Debug fungsi
+function debugAPI() {
+    console.log('=== DEBUG API ===');
+    console.log('API_URL:', API_URL);
+    console.log('Full URLs:');
+    console.log('- Check Token:', `${API_URL}/api/check-token?token=TEST`);
+    console.log('- Login:', `${API_URL}/api/login`);
+    console.log('- Soal:', `${API_URL}/api/soal`);
+    console.log('- Nilai:', `${API_URL}/api/nilai`);
+    console.log('================');
 }
 
-// PERBAIKAN TAMBAHAN: Tambah fungsi untuk reset timer (jika diperlukan)
-function resetTimer() {
-    if (state.isExamActive && !state.examSubmitted) {
-        state.remainingTime = state.examData.durasi * 60;
-        startTimer();
-        showNotification('Timer direset ke waktu awal', 'info');
-    }
-}
-
-// PERBAIKAN TAMBAHAN: Export state untuk debugging (opsional)
+// Tambah ke window untuk debugging
 if (typeof window !== 'undefined') {
+    window.debugAPI = debugAPI;
     window.appState = state;
-    window.debugState = debugState;
 }
