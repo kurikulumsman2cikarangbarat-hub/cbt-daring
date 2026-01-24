@@ -212,7 +212,6 @@ async function handleLogin() {
         // Check token
         document.getElementById('loading-message').textContent = 'Memeriksa token ujian...';
         
-        // PERBAIKAN: Gunakan URL yang benar
         const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
         
         if (!checkRes.ok) {
@@ -228,10 +227,16 @@ async function handleLogin() {
             throw new Error('Token ujian tidak ditemukan atau sudah kadaluarsa');
         }
         
-        // Login
+        // Login - PERBAIKAN: Gunakan struktur yang benar sesuai API
         document.getElementById('loading-message').textContent = 'Login ke sistem...';
         
-        // PERBAIKAN: Struktur JSON yang benar
+        console.log('Data yang dikirim ke API:', {
+            nama: nama,
+            kelas: jenjang,    // PERBAIKAN: 'kelas' diisi dengan jenjang (X, XI, XII)
+            rombel: kelas,     // PERBAIKAN: 'rombel' diisi dengan kelas (X-A, XI-B, dll)
+            token: token
+        });
+        
         const loginRes = await fetch(`${API_URL}/api/login`, {
             method: 'POST',
             headers: { 
@@ -240,19 +245,35 @@ async function handleLogin() {
             },
             body: JSON.stringify({
                 nama: nama,
-                jenjang: jenjang,  // PERBAIKAN: Field jenjang
-                kelas: kelas,      // PERBAIKAN: Field kelas
+                kelas: jenjang,    // PERBAIKAN: Field 'kelas' = jenjang
+                rombel: kelas,     // PERBAIKAN: Field 'rombel' = kelas
                 token: token
             })
         });
         
         if (!loginRes.ok) {
-            if (loginRes.status === 404) {
+            // Coba dapatkan detail error dari response
+            let errorDetail = '';
+            try {
+                const errorData = await loginRes.json();
+                errorDetail = `\nDetail: ${JSON.stringify(errorData)}`;
+                console.error('Login error details:', errorData);
+                
+                // Jika ada error spesifik tentang field yang dibutuhkan
+                if (errorData.error === "Data tidak lengkap" && errorData.required) {
+                    errorDetail = `\nField yang diperlukan: ${errorData.required.join(', ')}`;
+                }
+            } catch (e) {
+                // Jika tidak bisa parse JSON, gunakan text response
+                errorDetail = `\nResponse: ${await loginRes.text()}`;
+            }
+            
+            if (loginRes.status === 400) {
+                throw new Error(`Data yang dikirim tidak valid (400 Bad Request).${errorDetail}`);
+            } else if (loginRes.status === 404) {
                 throw new Error('Endpoint login tidak ditemukan. Hubungi administrator.');
             }
-            const errorText = await loginRes.text();
-            console.error('Login response error:', errorText);
-            throw new Error(`HTTP ${loginRes.status}: Gagal login ke sistem`);
+            throw new Error(`HTTP ${loginRes.status}: Gagal login ke sistem${errorDetail}`);
         }
         
         const loginData = await loginRes.json();
@@ -274,9 +295,6 @@ async function handleLogin() {
         );
         
         if (!soalRes.ok) {
-            if (soalRes.status === 404) {
-                throw new Error('Endpoint soal tidak ditemukan. Hubungi administrator.');
-            }
             throw new Error(`HTTP ${soalRes.status}: Gagal mengambil soal`);
         }
         
@@ -330,71 +348,93 @@ async function handleLogin() {
             errorMessage = 'Token ujian tidak valid. Pastikan token yang dimasukkan benar.';
         }
         
+        if (errorMessage.includes('400') || errorMessage.includes('Bad Request')) {
+            errorMessage = 'Data yang dimasukkan tidak valid. Periksa kembali data Anda.';
+        }
+        
         showScreen('screen-login');
         showError(errorMessage);
         
-        // Tambah tombol untuk testing API
+        // Tambah tombol untuk testing API dengan struktur yang benar
         const errorBox = document.getElementById('login-error');
+        const existingBtn = errorBox.querySelector('button');
+        if (existingBtn) existingBtn.remove();
+        
         const testBtn = document.createElement('button');
-        testBtn.textContent = 'Test Koneksi API';
+        testBtn.textContent = 'Test Login Request';
         testBtn.style.marginTop = '10px';
         testBtn.style.padding = '5px 10px';
-        testBtn.style.background = '#4285f4';
+        testBtn.style.background = '#ff9800';
         testBtn.style.color = 'white';
         testBtn.style.border = 'none';
         testBtn.style.borderRadius = '4px';
         testBtn.style.cursor = 'pointer';
-        testBtn.onclick = testAPIConnection;
+        testBtn.onclick = testLoginRequest;
         errorBox.appendChild(testBtn);
     }
 }
 
-// ==================== FUNCTION UNTUK TEST KONEKSI API ====================
-async function testAPIConnection() {
-    const token = document.getElementById('token').value.trim().toUpperCase() || 'TEST';
+// ==================== FUNCTION UNTUK TEST LOGIN REQUEST ====================
+async function testLoginRequest() {
+    const nama = document.getElementById('nama').value.trim() || 'Nama Siswa Test';
+    const jenjang = document.getElementById('jenjang').value || 'X';
+    const kelas = document.getElementById('kelas').value || 'X-A';
+    const token = document.getElementById('token').value.trim().toUpperCase() || 'TEST123';
     
-    showNotification('Sedang menguji koneksi API...', 'info');
+    showNotification('Menguji request login...', 'info');
+    
+    const requestData = {
+        nama: nama,
+        kelas: jenjang,    // PERBAIKAN: 'kelas' = jenjang
+        rombel: kelas,     // PERBAIKAN: 'rombel' = kelas
+        token: token
+    };
+    
+    console.log('Request Data untuk test:', requestData);
     
     try {
-        const testUrl = `${API_URL}/api/check-token?token=${encodeURIComponent(token)}`;
-        console.log('Testing URL:', testUrl);
-        
-        const response = await fetch(testUrl, {
-            method: 'GET',
-            headers: {
+        const response = await fetch(`${API_URL}/api/login`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
                 'Accept': 'application/json'
-            }
+            },
+            body: JSON.stringify(requestData)
         });
         
         let result = `Status: ${response.status}\n`;
         result += `Status Text: ${response.statusText}\n`;
-        result += `URL: ${testUrl}\n`;
+        result += `URL: ${API_URL}/api/login\n`;
+        result += `Request Body:\n${JSON.stringify(requestData, null, 2)}\n\n`;
         
         if (response.ok) {
             try {
                 const data = await response.json();
-                result += `Response: ${JSON.stringify(data, null, 2)}`;
-                showNotification('API berhasil diakses!', 'success');
+                result += `Response Success: ${JSON.stringify(data, null, 2)}`;
+                showNotification('Login request berhasil!', 'success');
             } catch (jsonError) {
                 result += `Error parsing JSON: ${jsonError.message}`;
-                showNotification('API diakses tapi response bukan JSON', 'warning');
+                showNotification('Response bukan JSON valid', 'warning');
             }
         } else {
-            showNotification(`API error: ${response.status}`, 'error');
+            try {
+                const errorData = await response.json();
+                result += `Error Response:\n${JSON.stringify(errorData, null, 2)}`;
+            } catch (e) {
+                const textResponse = await response.text();
+                result += `Error Response (text):\n${textResponse}`;
+            }
+            showNotification(`Login failed: ${response.status}`, 'error');
         }
         
-        console.log('API Test Result:', result);
-        alert('Hasil test API:\n\n' + result);
+        console.log('Login Test Result:', result);
+        alert('Hasil test login:\n\n' + result);
         
     } catch (error) {
-        console.error('API Test Error:', error);
-        alert('Error testing API:\n\n' + error.message + 
-              '\n\nPastikan:\n1. Koneksi internet aktif\n' +
-              '2. URL API benar: ' + API_URL + 
-              '\n3. CORS diizinkan oleh server');
+        console.error('Test Login Error:', error);
+        alert('Error testing login:\n\n' + error.message);
     }
 }
-
 // ==================== EXAM SETUP ====================
 function setupExamScreen() {
     // Update exam info with limit data
@@ -1021,3 +1061,4 @@ if (typeof window !== 'undefined') {
     window.debugAPI = debugAPI;
     window.appState = state;
 }
+
