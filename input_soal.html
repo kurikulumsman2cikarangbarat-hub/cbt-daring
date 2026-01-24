@@ -237,6 +237,7 @@
                         <label>Durasi (Menit)</label>
                         <input type="number" id="durasi" placeholder="Contoh: 90">
                     </div>
+                    
                     <div class="form-group">
                         <label>Jumlah Soal Diujikan</label>
                         <input type="number" id="jml_soal" placeholder="Contoh: 40">
@@ -339,7 +340,7 @@
                         mapel: mapel,
                         nama_guru: guru,
                         durasi: parseInt(durasi),
-                        jml_soal: jmlSoal ? parseInt(jmlSoal) : 0, // Integrasi jml_soal
+                        jml_soal: jmlSoal ? parseInt(jmlSoal) : 0, // Mengirimkan jml_soal ke DB
                         aktif: 1
                     })
                 });
