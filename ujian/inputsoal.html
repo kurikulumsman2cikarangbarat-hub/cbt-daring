@@ -298,94 +298,118 @@
             document.getElementById('soal-count').textContent = `${count} soal`;
         }
 
-        async function uploadData() {
-            const soalRaw = document.getElementById('input-soal').value.trim();
-            const mapel = document.getElementById('input-mapel').value.trim();
-            const guru = document.getElementById('input-guru').value.trim();
-            const jml = document.getElementById('input-jml-soal').value;
+async function uploadData() {
+  const soalRaw = document.getElementById('input-soal').value.trim();
+  const mapel = document.getElementById('input-mapel').value.trim();
+  const guru = document.getElementById('input-guru').value.trim();
+  const jml = document.getElementById('input-jml-soal').value;
+  const durasi = document.getElementById('input-durasi').value;
 
-            if (!currentToken) return alert("Token belum ditentukan!");
-            if (!soalRaw || !mapel || !guru || !jml) return alert("Lengkapi semua data!");
+  if (!currentToken) return alert("Token belum ditentukan!");
+  if (!soalRaw || !mapel || !guru || !jml || !durasi) {
+    return alert("Lengkapi semua data: mapel, guru, durasi, jumlah soal, dan soal!");
+  }
 
-            const lines = soalRaw.split('\n');
-            showLoading("Menyimpan Metadata...");
-            document.getElementById('progress-fill').style.width = '10%';
+  const lines = soalRaw.split('\n');
+  showLoading("Menyimpan Metadata...");
+  document.getElementById('progress-fill').style.width = '10%';
 
-            try {
-                // 1. Simpan Ujian - TIDAK PERLU X-Admin-Token lagi
-                const uRes = await fetch(`${API_URL}/api/admin/ujian`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        token: currentToken,
-                        mapel: mapel,
-                        nama_guru: guru,
-                        durasi: parseInt(document.getElementById('input-durasi').value),
-                        jml_soal: parseInt(jml),
-                        aktif: 1
-                    })
-                });
-                
-                const uData = await uRes.json();
-                
-                if (!uRes.ok) {
-                    throw new Error(uData.error || `Gagal simpan metadata ujian (Status: ${uRes.status})`);
-                }
+  try {
+    // Debug: Tampilkan data yang akan dikirim
+    console.log("Data ujian yang akan dikirim:", {
+      token: currentToken,
+      mapel: mapel,
+      nama_guru: guru,
+      durasi: parseInt(durasi),
+      jml_soal: parseInt(jml),
+      aktif: 1
+    });
 
-                // 2. Jika edit, hapus soal lama - TIDAK PERLU X-Admin-Token lagi
-                if (isEditMode) {
-                    await fetch(`${API_URL}/api/admin/soal`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            token: currentToken, 
-                            DELETE_OLD: true, 
-                            soal: "DEL" 
-                        })
-                    });
-                }
+    // 1. Simpan Ujian
+    const uRes = await fetch(`${API_URL}/api/admin/ujian`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: currentToken,
+        mapel: mapel,
+        nama_guru: guru,
+        durasi: parseInt(durasi),
+        jml_soal: parseInt(jml),
+        aktif: 1
+      })
+    });
+    
+    const uData = await uRes.json();
+    console.log("Response simpan ujian:", uData);
+    
+    if (!uRes.ok) {
+      throw new Error(uData.error || `Gagal simpan metadata ujian (Status: ${uRes.status})`);
+    }
 
-                // 3. Upload Soal - TIDAK PERLU X-Admin-Token lagi
-                for (let i = 0; i < lines.length; i++) {
-                    const c = lines[i].split('\t');
-                    if (c.length < 7) continue;
+    // 2. Jika edit, hapus soal lama
+    if (isEditMode) {
+      console.log("Mode edit: Menghapus soal lama...");
+      await fetch(`${API_URL}/api/admin/soal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          token: currentToken, 
+          DELETE_OLD: true, 
+          soal: "DEL" 
+        })
+      });
+    }
 
-                    const sRes = await fetch(`${API_URL}/api/admin/soal`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            token: currentToken,
-                            soal: c[0].trim(), 
-                            opsi_a: c[1].trim(), 
-                            opsi_b: c[2].trim(),
-                            opsi_c: c[3].trim(), 
-                            opsi_d: c[4].trim(), 
-                            opsi_e: c[5] ? c[5].trim() : "",
-                            kunci: c[6].trim().toUpperCase(), 
-                            img_link: c[7] ? c[7].trim() : "",
-                            aktif: 1
-                        })
-                    });
-                    
-                    if (!sRes.ok) {
-                        const sData = await sRes.json();
-                        throw new Error(`Gagal upload soal baris ${i+1}: ${sData.error || 'Error server'}`);
-                    }
-                    
-                    let pct = 10 + Math.round(((i + 1) / lines.length) * 90);
-                    document.getElementById('progress-fill').style.width = pct + '%';
-                    document.getElementById('progress-text').textContent = `Mengunggah Soal: ${i+1}/${lines.length}`;
-                }
-                alert("Sukses! Data telah diperbarui.");
-                location.reload();
-            } catch (e) {
-                alert(e.message);
-                console.error("Upload error:", e);
-            } finally { 
-                hideLoading(); 
-            }
-        }
+    // 3. Upload Soal
+    console.log(`Mulai upload ${lines.length} soal...`);
+    for (let i = 0; i < lines.length; i++) {
+      const c = lines[i].split('\t');
+      if (c.length < 7) {
+        console.warn(`Baris ${i+1} diabaikan: format tidak valid`, c);
+        continue;
+      }
 
+      const soalData = {
+        token: currentToken,
+        soal: c[0].trim(), 
+        opsi_a: c[1].trim(), 
+        opsi_b: c[2].trim(),
+        opsi_c: c[3].trim(), 
+        opsi_d: c[4].trim(), 
+        opsi_e: c[5] ? c[5].trim() : "",
+        kunci: c[6].trim().toUpperCase(), 
+        img_link: c[7] ? c[7].trim() : "",
+        aktif: 1
+      };
+      
+      console.log(`Upload soal ${i+1}:`, soalData);
+
+      const sRes = await fetch(`${API_URL}/api/admin/soal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(soalData)
+      });
+      
+      const sData = await sRes.json();
+      
+      if (!sRes.ok) {
+        throw new Error(`Gagal upload soal baris ${i+1}: ${sData.error || 'Error server'}`);
+      }
+      
+      let pct = 10 + Math.round(((i + 1) / lines.length) * 90);
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('progress-text').textContent = `Mengunggah Soal: ${i+1}/${lines.length}`;
+    }
+    
+    alert("Sukses! Data telah diperbarui.");
+    location.reload();
+  } catch (e) {
+    console.error("Upload error details:", e);
+    alert(`ERROR: ${e.message}\n\nCoba buka console (F12) untuk detail.`);
+  } finally { 
+    hideLoading(); 
+  }
+}
         function showLoading(msg) {
             document.getElementById('progress-text').textContent = msg;
             document.getElementById('progress-fill').style.width = '0%';
@@ -398,3 +422,4 @@
     </script>
 </body>
 </html>
+
