@@ -66,7 +66,14 @@
             outline: none;
         }
 
-        textarea { height: 250px; resize: vertical; font-family: monospace; }
+        textarea { 
+            height: 300px; 
+            resize: vertical; 
+            font-family: 'Courier New', monospace;
+            line-height: 1.5;
+            white-space: pre;
+            overflow-x: auto;
+        }
 
         .btn {
             background: var(--primary);
@@ -111,6 +118,23 @@
         
         .token-input-group .btn {
             flex-shrink: 0;
+        }
+        
+        .format-hint {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        
+        .format-hint code {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
         }
 
         #loading-modal {
@@ -177,43 +201,78 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+        
+        .tab-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        
+        .tab-preview .tab {
+            display: inline-block;
+            width: 40px;
+            text-align: center;
+            color: #666;
+            font-size: 0.8em;
+        }
+        
+        .tab-preview .tab:after {
+            content: '→';
+            margin-left: 5px;
+            color: #999;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-database"></i> Panel Admin Upload & Edit Soal</h1>
-            <p style="margin-top: 5px; opacity: 0.9;">Create, Read, Update, Delete - Sistem lengkap</p>
+            <h1><i class="fas fa-database"></i> Panel Admin Upload & Edit Soal Ujian</h1>
+            <p style="margin-top: 5px; opacity: 0.9;">Format TAB - Token Manual - Sistem Lengkap</p>
         </div>
 
         <div id="setup-step" class="content-padding">
             <h3 style="margin-bottom: 15px; color: var(--primary);">
-                <i class="fas fa-key"></i> Token Ujian
+                <i class="fas fa-key"></i> Input Token Ujian
             </h3>
             
             <div class="token-input-group">
-                <input type="text" id="input-token" placeholder="Masukkan Token (untuk edit) atau kosongkan (untuk baru)" maxlength="50">
+                <input type="text" id="input-token" placeholder="Masukkan Token Ujian (Contoh: MTK2024)" maxlength="50">
                 <button class="btn btn-warning" onclick="loadExistingData()">
-                    <i class="fas fa-edit"></i> Edit
+                    <i class="fas fa-edit"></i> Edit Ujian
                 </button>
-                <button class="btn btn-success" onclick="generateNewToken()">
-                    <i class="fas fa-plus"></i> Baru
+                <button class="btn btn-success" onclick="createNewExam()">
+                    <i class="fas fa-plus"></i> Buat Ujian Baru
                 </button>
             </div>
             
             <div id="notification-area"></div>
             
+            <div class="format-hint">
+                <p><strong><i class="fas fa-info-circle"></i> Petunjuk:</strong></p>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>Token harus diinput <strong>manual</strong> oleh guru (Contoh: MTK2024, IPAXI, dll)</li>
+                    <li>Untuk membuat ujian baru: Masukkan token baru lalu klik <strong>Buat Ujian Baru</strong></li>
+                    <li>Untuk mengedit ujian yang ada: Masukkan token lama lalu klik <strong>Edit Ujian</strong></li>
+                    <li>Token yang sama akan mengupdate data ujian yang sudah ada</li>
+                </ul>
+            </div>
+            
             <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid var(--primary);">
                 <p style="margin-bottom: 10px; color: #666;">
-                    <i class="fas fa-info-circle"></i> <strong>Petunjuk:</strong>
+                    <i class="fas fa-exclamation-circle"></i> <strong>Format Soal Baru (TAB):</strong>
                 </p>
-                <ul style="color: #666; padding-left: 20px; font-size: 0.9em;">
-                    <li>Untuk membuat ujian baru: Klik <strong>Buat Baru</strong></li>
-                    <li>Untuk mengedit ujian yang ada: Masukkan token lalu klik <strong>Edit</strong></li>
-                    <li>Sistem akan otomatis mengupdate data yang sudah ada</li>
-                    <li>Soal lama akan dihapus saat mengedit</li>
-                </ul>
+                <div class="tab-preview">
+                    Soal 1<span class="tab"></span>A<span class="tab"></span>B<span class="tab"></span>C<span class="tab"></span>D<span class="tab"></span>E<span class="tab"></span>Kunci<span class="tab"></span>Link_Gambar
+                </div>
+                <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
+                    Gunakan <strong>TAB</strong> (tekan tombol Tab di keyboard) sebagai pemisah antar kolom
+                </p>
             </div>
         </div>
 
@@ -261,16 +320,33 @@
 
             <div class="input-group">
                 <label>
-                    Input Soal (Format: Soal | A | B | C | D | E | Kunci | Link_Gambar)
+                    Input Soal (Format: Soal [TAB] A [TAB] B [TAB] C [TAB] D [TAB] E [TAB] Kunci [TAB] Link_Gambar)
                     <button class="btn" onclick="showFormatExample()" style="padding: 5px 10px; font-size: 12px; margin-left: 10px;">
-                        <i class="fas fa-question-circle"></i> Contoh
+                        <i class="fas fa-question-circle"></i> Contoh & Cara
                     </button>
                 </label>
-                <textarea id="input-soal" placeholder="Soal 1 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | A | 
-Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.com/img.jpg" rows="12"></textarea>
+                <textarea id="input-soal" placeholder="Soal 1→A→B→C→D→E→A→https://example.com/gambar.jpg
+Soal 2→A→B→C→D→→B→
+Soal 3→A→B→C→D→E→C" rows="12"></textarea>
                 <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                    <small style="color: #666;">*Gunakan karakter pipe (|) sebagai pemisah. Kunci harus huruf A-E.</small>
-                    <small id="soal-count" style="color: var(--primary); font-weight: bold;">0 soal</small>
+                    <div>
+                        <small style="color: #666;">
+                            *Gunakan <strong>TAB</strong> sebagai pemisah. Kunci harus huruf A-E.
+                        </small>
+                    </div>
+                    <div>
+                        <small id="soal-count" style="color: var(--primary); font-weight: bold;">0 soal</small>
+                    </div>
+                </div>
+                
+                <div class="format-hint" style="margin-top: 15px;">
+                    <p><strong><i class="fas fa-lightbulb"></i> Tips:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px; font-size: 0.9em;">
+                        <li>Salin data dari Excel/Google Sheets dengan format kolom yang sesuai</li>
+                        <li>Gunakan <code>Ctrl+V</code> untuk paste data dengan TAB separator</li>
+                        <li>Kolom E dan Link_Gambar bisa dikosongkan</li>
+                        <li>Simbol → dalam preview menunjukkan posisi TAB</li>
+                    </ul>
                 </div>
             </div>
 
@@ -332,7 +408,45 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
                     loadExistingData();
                 }
             });
+            
+            // Visualize TAB in textarea
+            document.getElementById('input-soal').addEventListener('paste', function(e) {
+                // Process pasted content
+                setTimeout(() => {
+                    visualizeTabs();
+                }, 10);
+            });
+            
+            // Convert TAB to visible arrow for display
+            document.getElementById('input-soal').addEventListener('input', function() {
+                setTimeout(() => {
+                    visualizeTabs();
+                }, 10);
+            });
         };
+        
+        // Fungsi untuk menampilkan TAB sebagai panah
+        function visualizeTabs() {
+            const textarea = document.getElementById('input-soal');
+            const originalValue = textarea.value;
+            
+            // Simpan cursor position
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            
+            // Replace tabs with arrow for display only
+            const displayValue = originalValue.replace(/\t/g, '→');
+            
+            // Update display if different
+            if (textarea.value !== displayValue) {
+                textarea.value = displayValue;
+                
+                // Restore cursor position
+                setTimeout(() => {
+                    textarea.setSelectionRange(start, end);
+                }, 0);
+            }
+        }
 
         function showNotification(message, type = 'info') {
             const notificationArea = document.getElementById('notification-area');
@@ -353,19 +467,25 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
             }, 5000);
         }
 
-        function generateNewToken() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let result = '';
-            for (let i = 0; i < 6; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
+        function createNewExam() {
+            const token = document.getElementById('input-token').value.trim().toUpperCase();
+            
+            if (!token) {
+                showNotification('Masukkan token untuk membuat ujian baru', 'warning');
+                return;
             }
             
-            currentToken = result;
+            if (token.length < 3) {
+                showNotification('Token minimal 3 karakter', 'error');
+                return;
+            }
+            
+            currentToken = token;
             isEditMode = false;
             originalToken = "";
             
             document.getElementById('display-token').textContent = currentToken;
-            document.getElementById('mode-text').textContent = 'Buat Baru';
+            document.getElementById('mode-text').textContent = 'Buat Ujian Baru';
             document.getElementById('mode-text').style.color = '#28a745';
             
             // Clear form for new exam
@@ -380,7 +500,7 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
             document.getElementById('setup-step').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
             
-            showNotification(`Token baru dibuat: ${currentToken}`, 'success');
+            showNotification(`Siap membuat ujian baru dengan token: ${currentToken}`, 'success');
         }
 
         async function loadExistingData() {
@@ -428,7 +548,13 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
                 document.getElementById('input-durasi').value = data.ujian.durasi || 90;
                 document.getElementById('input-jml-soal').value = data.ujian.jml_soal || '';
                 document.getElementById('input-aktif').value = data.ujian.aktif || '1';
-                document.getElementById('input-soal').value = data.soal_text || '';
+                
+                // Convert soal_text back to TAB format
+                let soalText = data.soal_text || '';
+                // Replace pipe with TAB and clean up
+                soalText = soalText.replace(/\s*\|\s*/g, '\t');
+                document.getElementById('input-soal').value = soalText;
+                visualizeTabs();
                 
                 // Update UI
                 document.getElementById('mode-text').textContent = 'Mode Edit';
@@ -443,7 +569,18 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
                 
             } catch (error) {
                 console.error('Load data error:', error);
-                showNotification(`Gagal memuat data: ${error.message}`, 'error');
+                
+                // Check if it's a 404 error (exam not found)
+                if (error.message.includes('404') || error.message.includes('tidak ditemukan')) {
+                    showNotification(`Token "${token}" tidak ditemukan. Buat ujian baru dengan token ini?`, 'warning');
+                    
+                    // Offer to create new exam
+                    if (confirm(`Token "${token}" tidak ditemukan. Ingin membuat ujian baru dengan token ini?`)) {
+                        createNewExam();
+                    }
+                } else {
+                    showNotification(`Gagal memuat data: ${error.message}`, 'error');
+                }
             } finally {
                 hideLoading();
             }
@@ -462,7 +599,10 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
             const durasi = document.getElementById('input-durasi').value;
             const jmlSoal = document.getElementById('input-jml-soal').value;
             const aktif = document.getElementById('input-aktif').value;
-            const soalText = document.getElementById('input-soal').value.trim();
+            
+            // Get soal text and convert arrows back to tabs
+            let soalText = document.getElementById('input-soal').value;
+            soalText = soalText.replace(/→/g, '\t').trim();
 
             // Validation
             if (!mapel || !guru || !durasi || !jmlSoal || !soalText) {
@@ -471,7 +611,7 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
             }
 
             if (currentToken.length < 3) {
-                showNotification('Token tidak valid', 'error');
+                showNotification('Token minimal 3 karakter', 'error');
                 return;
             }
 
@@ -481,19 +621,38 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
                 return;
             }
 
-            // Validate each line
+            // Validate each line (TAB separated)
+            let validationErrors = [];
             for (let i = 0; i < lines.length; i++) {
-                const parts = lines[i].split('|');
+                const parts = lines[i].split('\t');
+                
+                // Minimal 7 parts (soal, A, B, C, D, E, kunci)
+                // Link gambar (part ke-8) optional
                 if (parts.length < 7) {
-                    showNotification(`Soal ${i+1}: Format tidak valid (minimal 7 bagian)`, 'error');
-                    return;
+                    validationErrors.push(`Soal ${i+1}: Format tidak valid (minimal 7 kolom dipisah TAB)`);
+                    continue;
                 }
                 
                 const kunci = parts[6].trim().toUpperCase();
                 if (!['A', 'B', 'C', 'D', 'E'].includes(kunci)) {
-                    showNotification(`Soal ${i+1}: Kunci harus A, B, C, D, atau E`, 'error');
-                    return;
+                    validationErrors.push(`Soal ${i+1}: Kunci harus A, B, C, D, atau E (ditemukan: ${kunci})`);
                 }
+                
+                // Validate required columns
+                const requiredColumns = [0, 1, 2, 3, 4]; // soal, A, B, C, D
+                for (const col of requiredColumns) {
+                    if (!parts[col] || parts[col].trim() === '') {
+                        validationErrors.push(`Soal ${i+1}: Kolom ${col === 0 ? 'Soal' : String.fromCharCode(64 + col)} tidak boleh kosong`);
+                    }
+                }
+            }
+            
+            if (validationErrors.length > 0) {
+                showNotification('Ada kesalahan dalam format soal:', 'error');
+                setTimeout(() => {
+                    alert('KESALAHAN FORMAT:\n\n' + validationErrors.join('\n'));
+                }, 100);
+                return;
             }
 
             showLoading('Menyimpan data ujian...');
@@ -517,7 +676,8 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
                 });
 
                 if (!resUjian.ok) {
-                    throw new Error("Gagal menyimpan metadata ujian.");
+                    const errorData = await resUjian.json();
+                    throw new Error(errorData.error || "Gagal menyimpan metadata ujian.");
                 }
 
                 // 2. Delete old questions if in edit mode
@@ -545,7 +705,7 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
                 // 3. Upload questions one by one
                 let successCount = 0;
                 for (let i = 0; i < lines.length; i++) {
-                    const parts = lines[i].split('|');
+                    const parts = lines[i].split('\t');
                     
                     const soalObj = {
                         token: currentToken,
@@ -615,8 +775,16 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
                     
                     <p style="color:#666; font-size:14px; margin-top:20px;">
                         <i class="fas fa-info-circle"></i> 
-                        Siswa hanya akan melihat <b>${jmlSoal} soal acak</b> dari total ${total} soal di bank.
+                        Siswa akan melihat <b>${jmlSoal} soal acak</b> dari total ${total} soal di bank.
                     </p>
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #4caf50;">
+                        <p><strong><i class="fas fa-clipboard-check"></i> Token untuk siswa:</strong></p>
+                        <h2 style="color: #1a73e8; letter-spacing: 3px; margin: 10px 0;">${currentToken}</h2>
+                        <p style="color: #666; font-size: 0.9em;">
+                            Berikan token ini kepada siswa untuk mengikuti ujian
+                        </p>
+                    </div>
                 </div>
             `;
         }
@@ -641,14 +809,39 @@ Soal 2 | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | B | https://link-gambar.co
         }
 
         function showFormatExample() {
-            alert(`CONTOH FORMAT SOAL:\n\n` +
-                  `Apa ibu kota Indonesia? | Jakarta | Bandung | Surabaya | Medan | Yogyakarta | A | https://example.com/gambar.jpg\n` +
-                  `2 + 2 = ? | 3 | 4 | 5 | 6 | 7 | B | \n` +
-                  `\nPETUNJUK:\n` +
-                  `1. Gunakan | sebagai pemisah\n` +
-                  `2. Urutan: Soal | Opsi A | Opsi B | Opsi C | Opsi D | Opsi E | Kunci | Link Gambar\n` +
-                  `3. Opsi E dan Link Gambar bisa dikosongkan\n` +
-                  `4. Kunci harus huruf A-E`);
+            const example = `CONTOH FORMAT SOAL (TAB-SEPARATED):
+
+Apa ibu kota Indonesia?	Jakarta	Bandung	Surabaya	Medan	Yogyakarta	A	https://example.com/gambar.jpg
+2 + 2 = ?	3	4	5	6	7	B	
+Siapa penemu bola lampu?	Newton	Edison	Einstein	Galileo	Copsen	B	https://drive.google.com/file/d/abc123
+
+CARA MENGGUNAKAN:
+
+1. SALIN DATA DARI EXCEL:
+   - Siapkan data di Excel/Google Sheets dengan 8 kolom:
+     Kolom 1: Soal
+     Kolom 2: Opsi A
+     Kolom 3: Opsi B  
+     Kolom 4: Opsi C
+     Kolom 5: Opsi D
+     Kolom 6: Opsi E (bisa kosong)
+     Kolom 7: Kunci (A-E)
+     Kolom 8: Link Gambar (bisa kosong)
+
+2. PASTE KE TEXTAREA:
+   - Select semua data di Excel
+   - Ctrl+C untuk copy
+   - Klik textarea di atas
+   - Ctrl+V untuk paste
+   - Data akan otomatis dalam format TAB
+
+3. FORMAT YANG DITERIMA:
+   - Minimal 7 kolom (Soal, A, B, C, D, Kunci)
+   - Opsi E dan Link Gambar opsional
+   - Kunci harus huruf A, B, C, D, atau E
+   - Simbol → menunjukkan posisi TAB`;
+
+            alert(example);
         }
 
         function showLoading(message) {
