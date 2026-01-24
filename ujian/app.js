@@ -215,9 +215,6 @@ async function handleLogin() {
         const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
         
         if (!checkRes.ok) {
-            if (checkRes.status === 404) {
-                throw new Error('Endpoint API tidak ditemukan. Hubungi administrator.');
-            }
             throw new Error(`HTTP ${checkRes.status}: Gagal memeriksa token`);
         }
         
@@ -227,15 +224,12 @@ async function handleLogin() {
             throw new Error('Token ujian tidak ditemukan atau sudah kadaluarsa');
         }
         
-        // Login - PERBAIKAN: Gunakan struktur yang benar sesuai API
+        // Login - PERBAIKAN: Sesuai dengan struktur di worker
         document.getElementById('loading-message').textContent = 'Login ke sistem...';
         
-        console.log('Data yang dikirim ke API:', {
-            nama: nama,
-            kelas: jenjang,    // PERBAIKAN: 'kelas' diisi dengan jenjang (X, XI, XII)
-            rombel: kelas,     // PERBAIKAN: 'rombel' diisi dengan kelas (X-A, XI-B, dll)
-            token: token
-        });
+        // PERHATIAN: Sesuaikan dengan struktur yang diharapkan oleh worker
+        // Worker mengharapkan: { nama, kelas, rombel, token }
+        // Dimana: 'kelas' = jenjang (X/XI/XII), 'rombel' = kelas (X-A/XI-B/XI-C)
         
         const loginRes = await fetch(`${API_URL}/api/login`, {
             method: 'POST',
@@ -245,35 +239,28 @@ async function handleLogin() {
             },
             body: JSON.stringify({
                 nama: nama,
-                kelas: jenjang,    // PERBAIKAN: Field 'kelas' = jenjang
-                rombel: kelas,     // PERBAIKAN: Field 'rombel' = kelas
+                kelas: jenjang,     // PERBAIKAN: Field 'kelas' diisi dengan jenjang
+                rombel: kelas,      // PERBAIKAN: Field 'rombel' diisi dengan kelas
                 token: token
             })
         });
         
         if (!loginRes.ok) {
-            // Coba dapatkan detail error dari response
-            let errorDetail = '';
+            // Coba dapatkan detail error
+            let errorText = '';
             try {
                 const errorData = await loginRes.json();
-                errorDetail = `\nDetail: ${JSON.stringify(errorData)}`;
-                console.error('Login error details:', errorData);
+                errorText = JSON.stringify(errorData, null, 2);
                 
-                // Jika ada error spesifik tentang field yang dibutuhkan
+                // Jika error spesifik tentang field yang dibutuhkan
                 if (errorData.error === "Data tidak lengkap" && errorData.required) {
-                    errorDetail = `\nField yang diperlukan: ${errorData.required.join(', ')}`;
+                    errorText = `Field yang diperlukan: ${errorData.required.join(', ')}`;
                 }
             } catch (e) {
-                // Jika tidak bisa parse JSON, gunakan text response
-                errorDetail = `\nResponse: ${await loginRes.text()}`;
+                errorText = await loginRes.text();
             }
             
-            if (loginRes.status === 400) {
-                throw new Error(`Data yang dikirim tidak valid (400 Bad Request).${errorDetail}`);
-            } else if (loginRes.status === 404) {
-                throw new Error('Endpoint login tidak ditemukan. Hubungi administrator.');
-            }
-            throw new Error(`HTTP ${loginRes.status}: Gagal login ke sistem${errorDetail}`);
+            throw new Error(`HTTP ${loginRes.status}: Gagal login ke sistem\n${errorText}`);
         }
         
         const loginData = await loginRes.json();
@@ -348,32 +335,10 @@ async function handleLogin() {
             errorMessage = 'Token ujian tidak valid. Pastikan token yang dimasukkan benar.';
         }
         
-        if (errorMessage.includes('400') || errorMessage.includes('Bad Request')) {
-            errorMessage = 'Data yang dimasukkan tidak valid. Periksa kembali data Anda.';
-        }
-        
         showScreen('screen-login');
         showError(errorMessage);
-        
-        // Tambah tombol untuk testing API dengan struktur yang benar
-        const errorBox = document.getElementById('login-error');
-        const existingBtn = errorBox.querySelector('button');
-        if (existingBtn) existingBtn.remove();
-        
-        const testBtn = document.createElement('button');
-        testBtn.textContent = 'Test Login Request';
-        testBtn.style.marginTop = '10px';
-        testBtn.style.padding = '5px 10px';
-        testBtn.style.background = '#ff9800';
-        testBtn.style.color = 'white';
-        testBtn.style.border = 'none';
-        testBtn.style.borderRadius = '4px';
-        testBtn.style.cursor = 'pointer';
-        testBtn.onclick = testLoginRequest;
-        errorBox.appendChild(testBtn);
     }
 }
-
 // ==================== FUNCTION UNTUK TEST LOGIN REQUEST ====================
 async function testLoginRequest() {
     const nama = document.getElementById('nama').value.trim() || 'Nama Siswa Test';
@@ -1061,4 +1026,5 @@ if (typeof window !== 'undefined') {
     window.debugAPI = debugAPI;
     window.appState = state;
 }
+
 
