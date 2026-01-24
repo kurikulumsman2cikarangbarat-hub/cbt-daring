@@ -71,8 +71,6 @@
             resize: vertical; 
             font-family: 'Courier New', monospace;
             line-height: 1.5;
-            white-space: pre;
-            overflow-x: auto;
         }
 
         .btn {
@@ -92,7 +90,6 @@
         }
 
         .btn:hover { opacity: 0.9; transform: translateY(-2px); }
-        
         .btn-success { background: var(--success); }
         .btn-warning { background: var(--warning); }
         .btn-danger { background: var(--danger); }
@@ -112,30 +109,19 @@
             margin-bottom: 20px;
         }
         
-        .token-input-group input {
-            flex: 1;
-        }
-        
-        .token-input-group .btn {
-            flex-shrink: 0;
-        }
-        
-        .format-hint {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
+        .notification {
+            padding: 12px 15px;
             border-radius: 8px;
-            padding: 12px;
-            margin: 15px 0;
-            font-size: 0.9em;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
         }
         
-        .format-hint code {
-            background: #2d3436;
-            color: #dfe6e9;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-        }
+        .notification-success { background: #d4edda; color: #155724; border-left: 4px solid var(--success); }
+        .notification-warning { background: #fff3cd; color: #856404; border-left: 4px solid var(--warning); }
+        .notification-error { background: #f8d7da; color: #721c24; border-left: 4px solid var(--danger); }
 
         #loading-modal {
             display: none;
@@ -165,66 +151,9 @@
             transition: width 0.3s;
         }
 
-        #results-section { display: none; padding: 40px; text-align: center; }
-        .stat-box { background: #f8f9fa; padding: 20px; border-radius: 10px; border: 1px solid #ddd; }
-        .stat-value { font-size: 40px; font-weight: bold; color: var(--primary); }
-        
-        .notification {
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: slideIn 0.3s ease-out;
-        }
-        
-        .notification-success {
-            background: #d4edda;
-            color: #155724;
-            border-left: 4px solid var(--success);
-        }
-        
-        .notification-warning {
-            background: #fff3cd;
-            color: #856404;
-            border-left: 4px solid var(--warning);
-        }
-        
-        .notification-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border-left: 4px solid var(--primary);
-        }
-        
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
-        }
-        
-        .tab-preview {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            overflow-x: auto;
-        }
-        
-        .tab-preview .tab {
-            display: inline-block;
-            width: 40px;
-            text-align: center;
-            color: #666;
-            font-size: 0.8em;
-        }
-        
-        .tab-preview .tab:after {
-            content: '→';
-            margin-left: 5px;
-            color: #999;
         }
     </style>
 </head>
@@ -232,812 +161,210 @@
 
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-database"></i> Panel Admin Upload & Edit Soal Ujian</h1>
-            <p style="margin-top: 5px; opacity: 0.9;">Format TAB - Token Manual - Sistem Lengkap</p>
+            <h1><i class="fas fa-database"></i> Panel Admin Upload Soal</h1>
+            <p>Sistem Input Format TAB - Versi Stabil</p>
         </div>
 
         <div id="setup-step" class="content-padding">
-            <h3 style="margin-bottom: 15px; color: var(--primary);">
-                <i class="fas fa-key"></i> Input Token Ujian
-            </h3>
-            
+            <h3 style="margin-bottom: 15px;"><i class="fas fa-key"></i> Token Ujian</h3>
             <div class="token-input-group">
-                <input type="text" id="input-token" placeholder="Masukkan Token Ujian (Contoh: MTK2024)" maxlength="50">
-                <button class="btn btn-warning" onclick="loadExistingData()">
-                    <i class="fas fa-edit"></i> Edit Ujian
-                </button>
-                <button class="btn btn-success" onclick="createNewExam()">
-                    <i class="fas fa-plus"></i> Buat Ujian Baru
-                </button>
+                <input type="text" id="input-token" placeholder="Masukkan Token (Contoh: MTK2024)">
+                <button class="btn btn-warning" onclick="loadExistingData()">Edit Ujian</button>
+                <button class="btn btn-success" onclick="createNewExam()">Buat Baru</button>
             </div>
-            
             <div id="notification-area"></div>
-            
-            <div class="format-hint">
-                <p><strong><i class="fas fa-info-circle"></i> Petunjuk:</strong></p>
-                <ul style="margin: 10px 0; padding-left: 20px;">
-                    <li>Token harus diinput <strong>manual</strong> oleh guru (Contoh: MTK2024, IPAXI, dll)</li>
-                    <li>Untuk membuat ujian baru: Masukkan token baru lalu klik <strong>Buat Ujian Baru</strong></li>
-                    <li>Untuk mengedit ujian yang ada: Masukkan token lama lalu klik <strong>Edit Ujian</strong></li>
-                    <li>Token yang sama akan mengupdate data ujian yang sudah ada</li>
-                </ul>
-            </div>
-            
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid var(--primary);">
-                <p style="margin-bottom: 10px; color: #666;">
-                    <i class="fas fa-exclamation-circle"></i> <strong>Format Soal Baru (TAB):</strong>
-                </p>
-                <div class="tab-preview">
-                    Soal 1<span class="tab"></span>A<span class="tab"></span>B<span class="tab"></span>C<span class="tab"></span>D<span class="tab"></span>E<span class="tab"></span>Kunci<span class="tab"></span>Link_Gambar
-                </div>
-                <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
-                    Gunakan <strong>TAB</strong> (tekan tombol Tab di keyboard) sebagai pemisah antar kolom
-                </p>
-            </div>
         </div>
 
         <div id="main-content" class="content-padding" style="display: none;">
             <div class="token-display">
-                <small>TOKEN UJIAN:</small>
-                <h2 id="display-token" style="letter-spacing: 5px; color: #1a73e8;">-</h2>
-                <p id="edit-mode-indicator" style="color: #666; font-size: 0.9em; margin-top: 5px;">
-                    <i class="fas fa-sync-alt"></i> Mode: <span id="mode-text">Buat Baru</span>
-                </p>
+                <small>TOKEN AKTIF:</small>
+                <h2 id="display-token">-</h2>
+                <p id="mode-text">Mode: Buat Baru</p>
             </div>
 
             <div class="form-grid">
-                <div class="input-group">
-                    <label>Mata Pelajaran *</label>
-                    <input type="text" id="input-mapel" placeholder="Contoh: Matematika" required>
-                </div>
-                <div class="input-group">
-                    <label>Nama Guru *</label>
-                    <input type="text" id="input-guru" placeholder="Contoh: Budi Santoso, S.Pd" required>
-                </div>
-                <div class="input-group">
-                    <label>Durasi (Menit) *</label>
-                    <input type="number" id="input-durasi" min="1" max="300" value="90" required>
-                </div>
-                <div class="input-group">
-                    <label>Jumlah Soal yang Tampil *</label>
-                    <input type="number" id="input-jml-soal" min="1" max="200" placeholder="Contoh: 40" required>
-                    <small style="color: #666;">*Hanya soal ini yang akan dilihat siswa</small>
-                </div>
-                <div class="input-group">
-                    <label>Status Ujian</label>
-                    <select id="input-aktif">
-                        <option value="1">Aktif</option>
-                        <option value="0">Tidak Aktif</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Bank Soal: <span id="bank-soal-count">0</span> soal</label>
-                    <div style="padding: 10px; background: #f8f9fa; border-radius: 8px; color: #666;">
-                        <i class="fas fa-database"></i> Total soal yang diupload akan disimpan di bank soal
-                    </div>
-                </div>
+                <div class="input-group"><label>Mata Pelajaran</label><input type="text" id="input-mapel"></div>
+                <div class="input-group"><label>Nama Guru</label><input type="text" id="input-guru"></div>
+                <div class="input-group"><label>Durasi (Menit)</label><input type="number" id="input-durasi" value="90"></div>
+                <div class="input-group"><label>Jumlah Tampil</label><input type="number" id="input-jml-soal"></div>
             </div>
 
             <div class="input-group">
-                <label>
-                    Input Soal (Format: Soal [TAB] A [TAB] B [TAB] C [TAB] D [TAB] E [TAB] Kunci [TAB] Link_Gambar)
-                    <button class="btn" onclick="showFormatExample()" style="padding: 5px 10px; font-size: 12px; margin-left: 10px;">
-                        <i class="fas fa-question-circle"></i> Contoh & Cara
-                    </button>
-                </label>
-                <textarea id="input-soal" placeholder="Soal 1→A→B→C→D→E→A→https://example.com/gambar.jpg
-Soal 2→A→B→C→D→→B→
-Soal 3→A→B→C→D→E→C" rows="12"></textarea>
+                <label>Input Soal (Copy dari Excel)</label>
+                <textarea id="input-soal" placeholder="Paste data Excel di sini..." oninput="updateSoalCount()"></textarea>
                 <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                    <div>
-                        <small style="color: #666;">
-                            *Gunakan <strong>TAB</strong> sebagai pemisah. Kunci harus huruf A-E.
-                        </small>
-                    </div>
-                    <div>
-                        <small id="soal-count" style="color: var(--primary); font-weight: bold;">0 soal</small>
-                    </div>
-                </div>
-                
-                <div class="format-hint" style="margin-top: 15px;">
-                    <p><strong><i class="fas fa-lightbulb"></i> Tips:</strong></p>
-                    <ul style="margin: 10px 0; padding-left: 20px; font-size: 0.9em;">
-                        <li>Salin data dari Excel/Google Sheets dengan format kolom yang sesuai</li>
-                        <li>Gunakan <code>Ctrl+V</code> untuk paste data dengan TAB separator</li>
-                        <li>Kolom E dan Link_Gambar bisa dikosongkan</li>
-                        <li>Simbol → dalam preview menunjukkan posisi TAB</li>
-                    </ul>
+                    <small>Gunakan tombol TAB sebagai pemisah antar kolom.</small>
+                    <small id="soal-count" style="font-weight: bold; color: var(--primary);">0 soal</small>
                 </div>
             </div>
 
-            <div style="display: flex; gap: 15px; margin-top: 30px;">
-                <button class="btn btn-danger" onclick="resetForm()" style="flex: 1;">
-                    <i class="fas fa-trash-alt"></i> Reset Form
-                </button>
-                <button class="btn btn-success" onclick="uploadData()" style="flex: 2;">
-                    <i class="fas fa-cloud-upload-alt"></i> Simpan ke Database
-                </button>
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button class="btn btn-danger" onclick="location.reload()">Batal</button>
+                <button class="btn btn-success" onclick="uploadData()" style="flex: 2;">Simpan ke Database</button>
             </div>
         </div>
 
-        <div id="results-section">
+        <div id="results-section" class="content-padding" style="display: none; text-align: center;">
             <div id="results-container"></div>
-            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
-                <button class="btn btn-warning" onclick="continueEditing()" style="max-width: 200px;">
-                    <i class="fas fa-edit"></i> Edit Lagi
-                </button>
-                <button class="btn" onclick="location.reload()" style="max-width: 200px;">
-                    <i class="fas fa-redo"></i> Buat Baru
-                </button>
-            </div>
+            <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 20px;">Kembali ke Menu Utama</button>
         </div>
     </div>
 
     <div id="loading-modal">
         <i class="fas fa-spinner fa-spin fa-3x"></i>
-        <p style="margin-top: 20px;" id="progress-text">Sedang memproses...</p>
-        <div class="progress-container">
-            <div class="progress-fill" id="progress-fill"></div>
-        </div>
+        <p id="progress-text" style="margin-top: 20px;">Memproses...</p>
+        <div class="progress-container"><div class="progress-fill" id="progress-fill"></div></div>
     </div>
 
     <script>
-        // KONFIGURASI API
-        const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev/"; 
+        const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev"; 
         let adminToken = localStorage.getItem('adminToken') || "";
         let currentToken = "";
         let isEditMode = false;
-        let originalToken = "";
 
-        // Fungsi awal saat halaman dimuat
         window.onload = () => {
             if (!adminToken) {
-                adminToken = prompt("Masukkan Admin Token untuk melanjutkan:");
-                if (adminToken) {
-                    localStorage.setItem('adminToken', adminToken);
-                    showNotification("Admin token disimpan", "info");
-                } else {
-                    location.reload();
-                }
+                adminToken = prompt("Masukkan Password Admin:");
+                if (adminToken) localStorage.setItem('adminToken', adminToken);
+                else location.reload();
             }
-            
-            // Setup event listeners
-            document.getElementById('input-soal').addEventListener('input', updateSoalCount);
-            document.getElementById('input-token').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    loadExistingData();
-                }
-            });
-            
-            // Visualize TAB in textarea
-            document.getElementById('input-soal').addEventListener('paste', function(e) {
-                // Process pasted content
-                setTimeout(() => {
-                    visualizeTabs();
-                }, 10);
-            });
-            
-            // Convert TAB to visible arrow for display
-            document.getElementById('input-soal').addEventListener('input', function() {
-                setTimeout(() => {
-                    visualizeTabs();
-                }, 10);
-            });
         };
-        
-        // Fungsi untuk menampilkan TAB sebagai panah
-        function visualizeTabs() {
-            const textarea = document.getElementById('input-soal');
-            const originalValue = textarea.value;
-            
-            // Simpan cursor position
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            
-            // Replace tabs with arrow for display only
-            const displayValue = originalValue.replace(/\t/g, '→');
-            
-            // Update display if different
-            if (textarea.value !== displayValue) {
-                textarea.value = displayValue;
-                
-                // Restore cursor position
-                setTimeout(() => {
-                    textarea.setSelectionRange(start, end);
-                }, 0);
-            }
-        }
 
-        function showNotification(message, type = 'info') {
-            const notificationArea = document.getElementById('notification-area');
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.innerHTML = `
-                <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
-                <span>${message}</span>
-            `;
-            
-            notificationArea.innerHTML = '';
-            notificationArea.appendChild(notification);
-            
-            // Auto remove setelah 5 detik
-            setTimeout(() => {
-                notification.style.animation = 'slideIn 0.3s ease-out reverse';
-                setTimeout(() => notification.remove(), 300);
-            }, 5000);
+        function showNotification(msg, type) {
+            const area = document.getElementById('notification-area');
+            area.innerHTML = `<div class="notification notification-${type}">${msg}</div>`;
         }
 
         function createNewExam() {
             const token = document.getElementById('input-token').value.trim().toUpperCase();
-            
-            if (!token) {
-                showNotification('Masukkan token untuk membuat ujian baru', 'warning');
-                return;
-            }
-            
-            if (token.length < 3) {
-                showNotification('Token minimal 3 karakter', 'error');
-                return;
-            }
+            if (token.length < 3) return showNotification("Token minimal 3 karakter", "error");
             
             currentToken = token;
             isEditMode = false;
-            originalToken = "";
-            
-            document.getElementById('display-token').textContent = currentToken;
-            document.getElementById('mode-text').textContent = 'Buat Ujian Baru';
-            document.getElementById('mode-text').style.color = '#28a745';
-            
-            // Clear form for new exam
-            document.getElementById('input-mapel').value = '';
-            document.getElementById('input-guru').value = '';
-            document.getElementById('input-durasi').value = '90';
-            document.getElementById('input-jml-soal').value = '';
-            document.getElementById('input-aktif').value = '1';
-            document.getElementById('input-soal').value = '';
-            updateSoalCount();
-            
+            document.getElementById('display-token').textContent = token;
             document.getElementById('setup-step').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
-            
-            showNotification(`Siap membuat ujian baru dengan token: ${currentToken}`, 'success');
         }
 
         async function loadExistingData() {
             const token = document.getElementById('input-token').value.trim().toUpperCase();
-            
-            if (!token) {
-                showNotification('Masukkan token untuk mengedit', 'warning');
-                return;
-            }
-            
-            if (!adminToken) {
-                showNotification('Admin token tidak ditemukan', 'error');
-                return;
-            }
-            
-            showLoading('Mengambil data ujian...');
-            
+            if (!token) return;
+
+            showLoading("Mengambil data...");
             try {
-                // Get exam data with answers
-                const response = await fetch(`${API_URL}/api/admin/get-ujian?token=${encodeURIComponent(token)}`, {
-                    headers: { 
-                        'X-Admin-Token': adminToken 
-                    }
+                const res = await fetch(`${API_URL}/api/admin/get-ujian?token=${token}`, {
+                    headers: { 'X-Admin-Token': adminToken }
                 });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error);
+
+                document.getElementById('input-mapel').value = data.ujian.mapel;
+                document.getElementById('input-guru').value = data.ujian.nama_guru;
+                document.getElementById('input-durasi').value = data.ujian.durasi;
+                document.getElementById('input-jml-soal').value = data.ujian.jml_soal;
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: Gagal mengambil data`);
-                }
+                // Kembalikan format Pipe ke TAB agar bisa diedit di textarea
+                document.getElementById('input-soal').value = data.soal_text.replace(/\|/g, '\t');
                 
-                const data = await response.json();
-                
-                if (!data.success) {
-                    throw new Error(data.error || 'Data tidak ditemukan');
-                }
-                
-                // Set mode to edit
                 currentToken = token;
-                originalToken = token;
                 isEditMode = true;
-                
-                // Fill form with existing data
-                document.getElementById('display-token').textContent = currentToken;
-                document.getElementById('input-mapel').value = data.ujian.mapel || '';
-                document.getElementById('input-guru').value = data.ujian.nama_guru || '';
-                document.getElementById('input-durasi').value = data.ujian.durasi || 90;
-                document.getElementById('input-jml-soal').value = data.ujian.jml_soal || '';
-                document.getElementById('input-aktif').value = data.ujian.aktif || '1';
-                
-                // Convert soal_text back to TAB format
-                let soalText = data.soal_text || '';
-                // Replace pipe with TAB and clean up
-                soalText = soalText.replace(/\s*\|\s*/g, '\t');
-                document.getElementById('input-soal').value = soalText;
-                visualizeTabs();
-                
-                // Update UI
-                document.getElementById('mode-text').textContent = 'Mode Edit';
-                document.getElementById('mode-text').style.color = '#ff9800';
-                document.getElementById('bank-soal-count').textContent = data.ujian.jumlah_soal_di_bank || 0;
-                updateSoalCount();
-                
+                document.getElementById('mode-text').textContent = "Mode: Edit Ujian";
+                document.getElementById('display-token').textContent = token;
                 document.getElementById('setup-step').style.display = 'none';
                 document.getElementById('main-content').style.display = 'block';
-                
-                showNotification(`Data ujian "${data.ujian.mapel}" berhasil dimuat`, 'success');
-                
-            } catch (error) {
-                console.error('Load data error:', error);
-                
-                // Check if it's a 404 error (exam not found)
-                if (error.message.includes('404') || error.message.includes('tidak ditemukan')) {
-                    showNotification(`Token "${token}" tidak ditemukan. Buat ujian baru dengan token ini?`, 'warning');
-                    
-                    // Offer to create new exam
-                    if (confirm(`Token "${token}" tidak ditemukan. Ingin membuat ujian baru dengan token ini?`)) {
-                        createNewExam();
-                    }
-                } else {
-                    showNotification(`Gagal memuat data: ${error.message}`, 'error');
-                }
+                updateSoalCount();
+            } catch (e) {
+                showNotification(e.message, "error");
             } finally {
                 hideLoading();
             }
         }
 
         function updateSoalCount() {
-            const text = document.getElementById('input-soal').value;
-            const lines = text.split('\n').filter(line => line.trim() !== '');
-            const count = lines.length;
+            const text = document.getElementById('input-soal').value.trim();
+            const count = text ? text.split('\n').length : 0;
             document.getElementById('soal-count').textContent = `${count} soal`;
         }
 
-    async function uploadData() {
-        const mapel = document.getElementById('input-mapel').value.trim();
-        const guru = document.getElementById('input-guru').value.trim();
-        const durasi = document.getElementById('input-durasi').value;
-        const jmlSoal = document.getElementById('input-jml-soal').value;
-        const aktif = document.getElementById('input-aktif').value;
-        
-        // Get soal text and convert arrows back to tabs
-        let soalText = document.getElementById('input-soal').value;
-        soalText = soalText.replace(/→/g, '\t').trim();
+        async function uploadData() {
+            const soalRaw = document.getElementById('input-soal').value.trim();
+            if (!soalRaw) return alert("Soal tidak boleh kosong!");
 
-        // Validation
-        if (!mapel || !guru || !durasi || !jmlSoal || !soalText) {
-            showNotification('Lengkapi semua data sebelum upload!', 'error');
-            return;
-        }
+            const lines = soalRaw.split('\n');
+            showLoading("Memulai proses simpan...");
+            document.getElementById('progress-fill').style.backgroundColor = "var(--success)";
 
-        if (currentToken.length < 3) {
-            showNotification('Token minimal 3 karakter', 'error');
-            return;
-        }
-
-        const lines = soalText.split('\n').filter(line => line.trim() !== "");
-        if (lines.length === 0) {
-            showNotification('Masukkan minimal 1 soal', 'error');
-            return;
-        }
-
-        // Validate each line (TAB separated)
-        let validationErrors = [];
-        for (let i = 0; i < lines.length; i++) {
-            const parts = lines[i].split('\t');
-            
-            // Minimal 7 parts (soal, A, B, C, D, E, kunci)
-            // Link gambar (part ke-8) optional
-            if (parts.length < 7) {
-                validationErrors.push(`Soal ${i+1}: Format tidak valid (minimal 7 kolom dipisah TAB)`);
-                continue;
-            }
-            
-            const kunci = parts[6].trim().toUpperCase();
-            if (!['A', 'B', 'C', 'D', 'E'].includes(kunci)) {
-                validationErrors.push(`Soal ${i+1}: Kunci harus A, B, C, D, atau E (ditemukan: ${kunci})`);
-            }
-            
-            // Validate required columns
-            const requiredColumns = [0, 1, 2, 3, 4]; // soal, A, B, C, D
-            for (const col of requiredColumns) {
-                if (!parts[col] || parts[col].trim() === '') {
-                    validationErrors.push(`Soal ${i+1}: Kolom ${col === 0 ? 'Soal' : String.fromCharCode(64 + col)} tidak boleh kosong`);
-                }
-            }
-        }
-        
-        if (validationErrors.length > 0) {
-            showNotification('Ada kesalahan dalam format soal:', 'error');
-            setTimeout(() => {
-                alert('KESALAHAN FORMAT:\n\n' + validationErrors.join('\n'));
-            }, 100);
-            return;
-        }
-
-        showLoading('Menyimpan data ujian...');
-
-        try {
-            // 1. Save/Update exam metadata
-            document.getElementById('progress-text').textContent = 'Menyimpan metadata ujian...';
-            
-            const resUjian = await fetch(`${API_URL}/api/admin/ujian`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Admin-Token': adminToken 
-                },
-                body: JSON.stringify({
-                    token: currentToken,
-                    mapel: mapel,
-                    nama_guru: guru,
-                    durasi: parseInt(durasi),
-                    jml_soal: parseInt(jmlSoal),
-                    aktif: parseInt(aktif)
-                })
-            });
-
-            const ujianResult = await resUjian.json();
-            
-            if (!resUjian.ok) {
-                throw new Error(ujianResult.error || "Gagal menyimpan metadata ujian.");
-            }
-
-            showNotification(`Metadata ujian berhasil ${ujianResult.action === 'created' ? 'dibuat' : 'diperbarui'}`, 'success');
-
-            // 2. Delete old questions if in edit mode
-            if (isEditMode) {
-                document.getElementById('progress-text').textContent = 'Menghapus soal lama...';
-                
-                // First upload a dummy question with DELETE_OLD flag
-                const deleteRes = await fetch(`${API_URL}/api/admin/soal`, {
+            try {
+                // 1. Simpan Metadata
+                const metaRes = await fetch(`${API_URL}/api/admin/ujian`, {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'X-Admin-Token': adminToken 
-                    },
+                    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
                     body: JSON.stringify({
                         token: currentToken,
-                        soal: "TEMP_DELETE",
-                        opsi_a: "A",
-                        opsi_b: "B",
-                        opsi_c: "C",
-                        opsi_d: "D",
-                        kunci: "A",
-                        DELETE_OLD: true
+                        mapel: document.getElementById('input-mapel').value,
+                        nama_guru: document.getElementById('input-guru').value,
+                        durasi: parseInt(document.getElementById('input-durasi').value),
+                        jml_soal: parseInt(document.getElementById('input-jml-soal').value),
+                        aktif: 1
                     })
                 });
-                
-                const deleteResult = await deleteRes.json();
-                if (deleteRes.ok) {
-                    console.log(`Soal lama berhasil dihapus: ${deleteResult.message || 'OK'}`);
-                }
-            }
+                if (!metaRes.ok) throw new Error("Gagal simpan metadata");
 
-            // 3. Upload questions one by one with detailed tracking
-            let successCount = 0;
-            let failedCount = 0;
-            let detailedResults = [];
-            
-            for (let i = 0; i < lines.length; i++) {
-                const parts = lines[i].split('\t');
-                
-                const soalObj = {
-                    token: currentToken,
-                    soal: parts[0].trim(),
-                    opsi_a: parts[1].trim(),
-                    opsi_b: parts[2].trim(),
-                    opsi_c: parts[3].trim(),
-                    opsi_d: parts[4].trim(),
-                    opsi_e: parts[5] ? parts[5].trim() : "",
-                    kunci: parts[6].trim().toUpperCase(),
-                    img_link: parts[7] ? parts[7].trim() : ""
-                };
-
-                // Update progress UI
-                let pc = Math.round(((i + 1) / lines.length) * 100);
-                document.getElementById('progress-fill').style.width = pc + '%';
-                document.getElementById('progress-text').textContent = `Mengupload soal ke-${i+1}/${lines.length}...`;
-                
-                try {
-                    const resSoal = await fetch(`${API_URL}/api/admin/soal`, {
+                // 2. Hapus soal lama jika edit
+                if (isEditMode) {
+                    await fetch(`${API_URL}/api/admin/soal`, {
                         method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'X-Admin-Token': adminToken 
-                        },
-                        body: JSON.stringify(soalObj)
-                    });
-
-                    const result = await resSoal.json();
-                    
-                    if (resSoal.ok) {
-                        successCount++;
-                        detailedResults.push({
-                            soal: i + 1,
-                            status: 'BERHASIL',
-                            message: 'Soal berhasil disimpan',
-                            id: result.id || 'N/A'
-                        });
-                    } else {
-                        failedCount++;
-                        detailedResults.push({
-                            soal: i + 1,
-                            status: 'GAGAL',
-                            message: result.error || `HTTP ${resSoal.status}`,
-                            detail: result.details || 'Tidak ada detail'
-                        });
-                    }
-                    
-                } catch (fetchError) {
-                    failedCount++;
-                    detailedResults.push({
-                        soal: i + 1,
-                        status: 'GAGAL',
-                        message: 'Error jaringan',
-                        detail: fetchError.message
+                        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
+                        body: JSON.stringify({ token: currentToken, DELETE_OLD: true, soal: "CLEANUP" })
                     });
                 }
-            }
 
-            // Show detailed results
-            showDetailedResults(successCount, failedCount, lines.length, detailedResults, isEditMode);
+                // 3. Upload Soal per baris
+                let success = 0;
+                for (let i = 0; i < lines.length; i++) {
+                    const cols = lines[i].split('\t');
+                    if (cols.length < 7) continue;
 
-        } catch (e) {
-            console.error('Upload error:', e);
-            showNotification("Kesalahan Sistem: " + e.message, 'error');
-            
-            // Show error in modal
-            document.getElementById('progress-text').textContent = 'Terjadi kesalahan!';
-            document.getElementById('progress-fill').style.background = '#e74c3c';
-            
-            setTimeout(() => {
+                    const payload = {
+                        token: currentToken,
+                        soal: cols[0].trim(),
+                        opsi_a: cols[1].trim(),
+                        opsi_b: cols[2].trim(),
+                        opsi_c: cols[3].trim(),
+                        opsi_d: cols[4].trim(),
+                        opsi_e: cols[5] ? cols[5].trim() : "",
+                        kunci: cols[6].trim().toUpperCase(),
+                        img_link: cols[7] ? cols[7].trim() : ""
+                    };
+
+                    await fetch(`${API_URL}/api/admin/soal`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
+                        body: JSON.stringify(payload)
+                    });
+
+                    success++;
+                    let pct = Math.round(((i + 1) / lines.length) * 100);
+                    document.getElementById('progress-fill').style.width = pct + '%';
+                    document.getElementById('progress-text').textContent = `Mengunggah: ${success}/${lines.length}`;
+                }
+
+                document.getElementById('main-content').style.display = 'none';
+                document.getElementById('results-section').style.display = 'block';
+                document.getElementById('results-container').innerHTML = `
+                    <h2 style="color: var(--success)">Berhasil!</h2>
+                    <p>${success} soal telah tersimpan untuk token <b>${currentToken}</b></p>
+                `;
+            } catch (e) {
+                document.getElementById('progress-fill').style.backgroundColor = "var(--danger)";
+                alert("Terjadi kesalahan: " + e.message);
+            } finally {
                 hideLoading();
-                alert(`KESALAHAN SISTEM:\n\n${e.message}\n\nSilakan coba lagi atau hubungi administrator.`);
-            }, 1000);
-        }
-    }
-
-    function showDetailedResults(success, failed, total, details, isEdit) {
-        document.getElementById('main-content').style.display = 'none';
-        document.getElementById('results-section').style.display = 'block';
-        
-        const jmlSoal = document.getElementById('input-jml-soal').value;
-        const mapel = document.getElementById('input-mapel').value;
-        
-        // Create detailed results table
-        let detailsTable = '';
-        if (details.length > 0) {
-            detailsTable = `
-                <div style="margin-top: 20px; max-height: 300px; overflow-y: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
-                        <thead>
-                            <tr style="background: #f8f9fa;">
-                                <th style="padding: 8px; border: 1px solid #dee2e6; text-align: left;">No</th>
-                                <th style="padding: 8px; border: 1px solid #dee2e6; text-align: left;">Status</th>
-                                <th style="padding: 8px; border: 1px solid #dee2e6; text-align: left;">Pesan</th>
-                                <th style="padding: 8px; border: 1px solid #dee2e6; text-align: left;">Detail</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${details.map(item => `
-                                <tr style="${item.status === 'GAGAL' ? 'background: #ffebee;' : 'background: #e8f5e9;'}">
-                                    <td style="padding: 8px; border: 1px solid #dee2e6;">${item.soal}</td>
-                                    <td style="padding: 8px; border: 1px solid #dee2e6;">
-                                        <span style="color: ${item.status === 'BERHASIL' ? '#2e7d32' : '#c62828'}; font-weight: bold;">
-                                            ${item.status}
-                                        </span>
-                                    </td>
-                                    <td style="padding: 8px; border: 1px solid #dee2e6;">${item.message}</td>
-                                    <td style="padding: 8px; border: 1px solid #dee2e6; font-size: 0.85em; color: #666;">
-                                        ${item.detail || item.id || '-'}
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-        
-        // Summary message
-        let summaryMessage = '';
-        let summaryColor = '#28a745';
-        
-        if (success === total) {
-            summaryMessage = `✅ Semua ${total} soal berhasil disimpan ke database!`;
-        } else if (success === 0) {
-            summaryMessage = `❌ Gagal menyimpan semua soal. Silakan periksa koneksi dan coba lagi.`;
-            summaryColor = '#e74c3c';
-        } else {
-            summaryMessage = `⚠️ ${success} dari ${total} soal berhasil disimpan. ${failed} soal gagal.`;
-            summaryColor = '#ff9800';
-        }
-        
-        document.getElementById('results-container').innerHTML = `
-            <div class="stat-box">
-                <h3 style="color: ${isEdit ? '#ff9800' : '#28a745'}; margin-bottom: 20px;">
-                    <i class="fas fa-${isEdit ? 'edit' : 'check-circle'}"></i> 
-                    ${isEdit ? 'Hasil Update Ujian' : 'Hasil Buat Ujian Baru'}
-                </h3>
-                
-                <div style="text-align: center; margin: 20px 0;">
-                    <div style="display: inline-flex; gap: 30px;">
-                        <div style="text-align: center;">
-                            <div style="font-size: 48px; font-weight: bold; color: #28a745;">${success}</div>
-                            <div style="font-size: 0.9em; color: #666;">Berhasil</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 48px; font-weight: bold; color: ${failed > 0 ? '#e74c3c' : '#666'};">${failed}</div>
-                            <div style="font-size: 0.9em; color: #666;">Gagal</div>
-                        </div>
-                        <div style="text-align: center;">
-                            <div style="font-size: 48px; font-weight: bold; color: #1a73e8;">${total}</div>
-                            <div style="font-size: 0.9em; color: #666;">Total</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="padding: 15px; background: ${failed > 0 ? '#fff3e0' : '#e8f5e9'}; 
-                    border-radius: 8px; margin: 20px 0; border-left: 4px solid ${summaryColor};">
-                    <p style="margin: 0; font-weight: bold; color: ${failed > 0 ? '#e65100' : '#2e7d32'};">
-                        ${summaryMessage}
-                    </p>
-                </div>
-                
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left;">
-                    <p><strong><i class="fas fa-info-circle"></i> Detail Ujian:</strong></p>
-                    <ul style="margin-top: 10px; padding-left: 20px;">
-                        <li><strong>Token:</strong> ${currentToken}</li>
-                        <li><strong>Mapel:</strong> ${mapel}</li>
-                        <li><strong>Bank Soal:</strong> ${success} soal (dari ${total} yang diupload)</li>
-                        <li><strong>Limit Tampil Siswa:</strong> ${jmlSoal} soal</li>
-                        <li><strong>Status Ujian:</strong> ${document.getElementById('input-aktif').value === '1' ? 'Aktif' : 'Tidak Aktif'}</li>
-                    </ul>
-                </div>
-                
-                ${failed > 0 ? `
-                <div style="background: #ffebee; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #c62828;">
-                    <p style="margin: 0 0 10px 0; color: #c62828; font-weight: bold;">
-                        <i class="fas fa-exclamation-triangle"></i> Perhatian: ${failed} soal gagal disimpan
-                    </p>
-                    <p style="margin: 0; font-size: 0.9em; color: #666;">
-                        Soal yang gagal mungkin karena: format tidak valid, koneksi terputus, 
-                        atau kesalahan server. Periksa tabel detail di bawah.
-                    </p>
-                </div>
-                ` : ''}
-                
-                ${detailsTable}
-                
-                <div style="margin-top: 25px; padding: 15px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196f3;">
-                    <p style="margin: 0 0 10px 0; color: #0d47a1; font-weight: bold;">
-                        <i class="fas fa-clipboard-check"></i> Token untuk Siswa:
-                    </p>
-                    <div style="background: white; padding: 15px; border-radius: 6px; border: 2px dashed #2196f3; text-align: center;">
-                        <h2 style="color: #1a73e8; letter-spacing: 3px; margin: 5px 0; font-family: monospace;">
-                            ${currentToken}
-                        </h2>
-                        <p style="color: #666; font-size: 0.9em; margin: 5px 0;">
-                            Berikan token ini kepada siswa untuk mengikuti ujian
-                        </p>
-                    </div>
-                </div>
-                
-                ${failed > 0 ? `
-                <div style="margin-top: 20px; padding: 12px; background: #fff8e1; border-radius: 8px;">
-                    <p style="margin: 0; font-size: 0.9em; color: #e65100;">
-                        <i class="fas fa-lightbulb"></i> <strong>Saran:</strong> 
-                        Untuk soal yang gagal, coba periksa format dan upload ulang. 
-                        Atau hubungi administrator jika masalah berlanjut.
-                    </p>
-                </div>
-                ` : ''}
-            </div>
-        `;
-    }
-
-        function showFinalResults(success, total, isEdit) {
-            document.getElementById('main-content').style.display = 'none';
-            document.getElementById('results-section').style.display = 'block';
-            
-            const jmlSoal = document.getElementById('input-jml-soal').value;
-            const mapel = document.getElementById('input-mapel').value;
-            
-            document.getElementById('results-container').innerHTML = `
-                <div class="stat-box">
-                    <h3 style="color: ${isEdit ? '#ff9800' : '#28a745'}; margin-bottom: 20px;">
-                        <i class="fas fa-${isEdit ? 'edit' : 'check-circle'}"></i> 
-                        ${isEdit ? 'Ujian Berhasil Diperbarui' : 'Ujian Berhasil Dibuat'}
-                    </h3>
-                    <div class="stat-value">${success}/${total}</div>
-                    <p style="margin-top:10px; font-size: 1.2em;">Soal berhasil disimpan</p>
-                    
-                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: left;">
-                        <p><strong>Detail Ujian:</strong></p>
-                        <ul style="margin-top: 10px; padding-left: 20px;">
-                            <li><strong>Token:</strong> ${currentToken}</li>
-                            <li><strong>Mapel:</strong> ${mapel}</li>
-                            <li><strong>Jumlah Soal di Bank:</strong> ${total} soal</li>
-                            <li><strong>Limit Tampil Siswa:</strong> ${jmlSoal} soal</li>
-                            <li><strong>Status:</strong> ${document.getElementById('input-aktif').value === '1' ? 'Aktif' : 'Tidak Aktif'}</li>
-                        </ul>
-                    </div>
-                    
-                    <p style="color:#666; font-size:14px; margin-top:20px;">
-                        <i class="fas fa-info-circle"></i> 
-                        Siswa akan melihat <b>${jmlSoal} soal acak</b> dari total ${total} soal di bank.
-                    </p>
-                    
-                    <div style="margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #4caf50;">
-                        <p><strong><i class="fas fa-clipboard-check"></i> Token untuk siswa:</strong></p>
-                        <h2 style="color: #1a73e8; letter-spacing: 3px; margin: 10px 0;">${currentToken}</h2>
-                        <p style="color: #666; font-size: 0.9em;">
-                            Berikan token ini kepada siswa untuk mengikuti ujian
-                        </p>
-                    </div>
-                </div>
-            `;
-        }
-
-        function resetForm() {
-            if (confirm('Apakah Anda yakin ingin mereset form? Semua data yang belum disimpan akan hilang.')) {
-                document.getElementById('input-mapel').value = '';
-                document.getElementById('input-guru').value = '';
-                document.getElementById('input-durasi').value = '90';
-                document.getElementById('input-jml-soal').value = '';
-                document.getElementById('input-aktif').value = '1';
-                document.getElementById('input-soal').value = '';
-                updateSoalCount();
-                
-                showNotification('Form telah direset', 'info');
             }
         }
 
-        function continueEditing() {
-            document.getElementById('results-section').style.display = 'none';
-            document.getElementById('main-content').style.display = 'block';
-        }
-
-        function showFormatExample() {
-            const example = `CONTOH FORMAT SOAL (TAB-SEPARATED):
-
-Apa ibu kota Indonesia?	Jakarta	Bandung	Surabaya	Medan	Yogyakarta	A	https://example.com/gambar.jpg
-2 + 2 = ?	3	4	5	6	7	B	
-Siapa penemu bola lampu?	Newton	Edison	Einstein	Galileo	Copsen	B	https://drive.google.com/file/d/abc123
-
-CARA MENGGUNAKAN:
-
-1. SALIN DATA DARI EXCEL:
-   - Siapkan data di Excel/Google Sheets dengan 8 kolom:
-     Kolom 1: Soal
-     Kolom 2: Opsi A
-     Kolom 3: Opsi B  
-     Kolom 4: Opsi C
-     Kolom 5: Opsi D
-     Kolom 6: Opsi E (bisa kosong)
-     Kolom 7: Kunci (A-E)
-     Kolom 8: Link Gambar (bisa kosong)
-
-2. PASTE KE TEXTAREA:
-   - Select semua data di Excel
-   - Ctrl+C untuk copy
-   - Klik textarea di atas
-   - Ctrl+V untuk paste
-   - Data akan otomatis dalam format TAB
-
-3. FORMAT YANG DITERIMA:
-   - Minimal 7 kolom (Soal, A, B, C, D, Kunci)
-   - Opsi E dan Link Gambar opsional
-   - Kunci harus huruf A, B, C, D, atau E
-   - Simbol → menunjukkan posisi TAB`;
-
-            alert(example);
-        }
-
-        function showLoading(message) {
-            document.getElementById('progress-text').textContent = message;
-            document.getElementById('progress-fill').style.width = '0%';
+        function showLoading(msg) {
+            document.getElementById('progress-text').textContent = msg;
             document.getElementById('loading-modal').style.display = 'flex';
         }
 
@@ -1047,4 +374,3 @@ CARA MENGGUNAKAN:
     </script>
 </body>
 </html>
-
