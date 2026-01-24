@@ -123,48 +123,48 @@
             </div>
             
             <!-- SCREEN 4: RESULT -->
-<div class="screen" id="screen-result">
-    <div class="result-container">
-        <div class="result-icon">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <h2 class="result-title">Hasil Ujian</h2>
-        
-        <div class="result-details">
-            <div class="result-row">
-                <span class="result-label">Nama Siswa:</span>
-                <span class="result-value" id="result-nama">-</span>
+            <div class="screen" id="screen-result">
+                <div class="result-container">
+                    <div class="result-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="result-title">Hasil Ujian</h2>
+                    
+                    <div class="result-details">
+                        <div class="result-row">
+                            <span class="result-label">Nama Siswa:</span>
+                            <span class="result-value" id="result-nama">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Kelas:</span>
+                            <span class="result-value" id="result-kelas">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Mata Pelajaran:</span>
+                            <span class="result-value" id="result-mapel">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Jumlah Soal:</span>
+                            <span class="result-value" id="result-total-soal">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Soal Dijawab:</span>
+                            <span class="result-value" id="result-dijawab">-</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Waktu Pengerjaan:</span>
+                            <span class="result-value" id="result-waktu">-</span>
+                        </div>
+                        
+                        <!-- Div untuk limit info -->
+                        <div id="result-limit-info" style="display: none;"></div>
+                    </div>
+                    
+                    <button class="btn btn-success" onclick="showPenutup()" style="width: auto; padding: 15px 40px;">
+                        <i class="fas fa-eye"></i> Lihat Bukti Ujian
+                    </button>
+                </div>
             </div>
-            <div class="result-row">
-                <span class="result-label">Kelas:</span>
-                <span class="result-value" id="result-kelas">-</span>
-            </div>
-            <div class="result-row">
-                <span class="result-label">Mata Pelajaran:</span>
-                <span class="result-value" id="result-mapel">-</span>
-            </div>
-            <div class="result-row">
-                <span class="result-label">Jumlah Soal:</span>
-                <span class="result-value" id="result-total-soal">-</span>
-            </div>
-            <div class="result-row">
-                <span class="result-label">Soal Dijawab:</span>
-                <span class="result-value" id="result-dijawab">-</span>
-            </div>
-            <div class="result-row">
-                <span class="result-label">Waktu Pengerjaan:</span>
-                <span class="result-value" id="result-waktu">-</span>
-            </div>
-            
-            <!-- Tambahkan div untuk limit info -->
-            <div id="result-limit-info" style="display: none;"></div>
-        </div>
-        
-        <button class="btn btn-success" onclick="showPenutup()" style="width: auto; padding: 15px 40px;">
-            <i class="fas fa-eye"></i> Lihat Bukti Ujian
-        </button>
-    </div>
-</div>
             
             <!-- SCREEN 5: PENUTUP -->
             <div class="screen" id="screen-penutup">
@@ -198,4 +198,3 @@
     <script src="app.js"></script>
 </body>
 </html>
-
