@@ -184,256 +184,215 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ==================== LOGIN HANDLER ====================
 async function handleLogin() {
-    const nama = document.getElementById('nama').value.trim();
-    const jenjang = document.getElementById('jenjang').value;
-    const kelas = document.getElementById('kelas').value;
-    const token = document.getElementById('token').value.trim().toUpperCase();
+  const nama = document.getElementById('nama').value.trim();
+  const jenjang = document.getElementById('jenjang').value;
+  const kelas = document.getElementById('kelas').value;
+  const token = document.getElementById('token').value.trim().toUpperCase();
+  
+  // Validasi input
+  if (!nama || !jenjang || !kelas || !token) {
+    showError('Harap isi semua data dengan lengkap');
+    return;
+  }
+  
+  // PERBAIKAN: Validasi token minimal 3 karakter
+  if (token.length < 3) {
+    showError('Token minimal 3 karakter');
+    return;
+  }
+  
+  state.student = { 
+    nama: nama, 
+    jenjang: jenjang,
+    kelas: kelas,
+    token: token 
+  };
+  
+  showScreen('screen-loading');
+  document.getElementById('loading-message').textContent = 'Memeriksa token...';
+  
+  try {
+    // 1. Check token (optional, bisa skip jika mau langsung login)
+    const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
     
-    if (!nama || !jenjang || !kelas || !token) {
-        showError('Harap isi semua data dengan lengkap');
-        return;
+    if (!checkRes.ok) {
+      throw new Error(`HTTP ${checkRes.status}: Gagal memeriksa token`);
     }
     
-    if (nama.length < 3) {
-        showError('Nama minimal 3 karakter');
-        return;
+    const checkData = await checkRes.json();
+    
+    // PERBAIKAN: Worker return {success, exists, active, message}
+    if (!checkData.success) {
+      throw new Error(checkData.message || 'Gagal memeriksa token');
     }
     
-    state.student = { 
-        nama: nama, 
-        jenjang: jenjang,
-        kelas: kelas,
-        token: token 
-    };
-    
-    showScreen('screen-loading');
-    
-    try {
-        // Check token
-        document.getElementById('loading-message').textContent = 'Memeriksa token ujian...';
-        
-        const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
-        
-        if (!checkRes.ok) {
-            throw new Error(`HTTP ${checkRes.status}: Gagal memeriksa token`);
-        }
-        
-        const checkData = await checkRes.json();
-        
-        if (!checkData.success || !checkData.exists) {
-            throw new Error('Token ujian tidak ditemukan atau sudah kadaluarsa');
-        }
-        
-        // Login - PERBAIKAN: Sesuai dengan struktur di worker
-        document.getElementById('loading-message').textContent = 'Login ke sistem...';
-        
-        // PERHATIAN: Sesuaikan dengan struktur yang diharapkan oleh worker
-        // Worker mengharapkan: { nama, kelas, rombel, token }
-        // Dimana: 'kelas' = jenjang (X/XI/XII), 'rombel' = kelas (X-A/XI-B/XI-C)
-        
-        const loginRes = await fetch(`${API_URL}/api/login`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                nama: nama,
-                kelas: jenjang,     // PERBAIKAN: Field 'kelas' diisi dengan jenjang
-                rombel: kelas,      // PERBAIKAN: Field 'rombel' diisi dengan kelas
-                token: token
-            })
-        });
-        
-        if (!loginRes.ok) {
-            // Coba dapatkan detail error
-            let errorText = '';
-            try {
-                const errorData = await loginRes.json();
-                errorText = JSON.stringify(errorData, null, 2);
-                
-                // Jika error spesifik tentang field yang dibutuhkan
-                if (errorData.error === "Data tidak lengkap" && errorData.required) {
-                    errorText = `Field yang diperlukan: ${errorData.required.join(', ')}`;
-                }
-            } catch (e) {
-                errorText = await loginRes.text();
-            }
-            
-            throw new Error(`HTTP ${loginRes.status}: Gagal login ke sistem\n${errorText}`);
-        }
-        
-        const loginData = await loginRes.json();
-        
-        if (!loginData.success) {
-            throw new Error(loginData.error || 'Gagal login ke sistem');
-        }
-        
-        state.sessionId = loginData.session_id;
-        state.sessionSeed = loginData.session_seed;
-        state.examData = loginData.ujian;
-        state.waktuMulai = new Date();
-        
-        // Get questions WITH LIMIT
-        document.getElementById('loading-message').textContent = 'Mengambil soal ujian...';
-        
-        const soalRes = await fetch(
-            `${API_URL}/api/soal?token=${encodeURIComponent(token)}&session_id=${encodeURIComponent(state.sessionId)}`
-        );
-        
-        if (!soalRes.ok) {
-            throw new Error(`HTTP ${soalRes.status}: Gagal mengambil soal`);
-        }
-        
-        const soalData = await soalRes.json();
-        
-        if (!soalData.success || !soalData.soal || soalData.soal.length === 0) {
-            throw new Error('Tidak ada soal yang tersedia untuk ujian ini');
-        }
-        
-        state.questions = soalData.soal;
-        state.limitSoal = soalData.limit_soal || soalData.soal.length;
-        state.totalSoalDiBank = soalData.jumlah_soal_total || soalData.soal.length;
-        state.startTime = new Date();
-        state.remainingTime = state.examData.durasi * 60;
-        state.isExamActive = true;
-        
-        // Setup exam screen
-        setupExamScreen();
-        showScreen('screen-exam');
-        startTimer();
-        showQuestion(0);
-        
-        // Enter fullscreen
-        setTimeout(() => {
-            enterFullscreen();
-        }, 500);
-        
-        // Start tab switch tracking
-        startTabSwitchTracking();
-        
-        // Show limit information
-        if (state.limitSoal < state.totalSoalDiBank) {
-            showNotification(
-                `Ujian ini menampilkan ${state.limitSoal} soal acak dari total ${state.totalSoalDiBank} soal di bank.`,
-                'info'
-            );
-        }
-        
-        showNotification('Ujian dimulai. Selamat mengerjakan!', 'success');
-        
-    } catch (error) {
-        console.error('Login error:', error);
-        
-        let errorMessage = error.message;
-        
-        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-            errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
-        }
-        
-        if (errorMessage.includes('Token') || errorMessage.includes('token')) {
-            errorMessage = 'Token ujian tidak valid. Pastikan token yang dimasukkan benar.';
-        }
-        
-        showScreen('screen-login');
-        showError(errorMessage);
+    if (!checkData.exists) {
+      throw new Error('Token tidak ditemukan');
     }
-}
-// ==================== FUNCTION UNTUK TEST LOGIN REQUEST ====================
-async function testLoginRequest() {
-    const nama = document.getElementById('nama').value.trim() || 'Nama Siswa Test';
-    const jenjang = document.getElementById('jenjang').value || 'X';
-    const kelas = document.getElementById('kelas').value || 'X-A';
-    const token = document.getElementById('token').value.trim().toUpperCase() || 'TEST123';
     
-    showNotification('Menguji request login...', 'info');
+    if (checkData.exists && !checkData.active) {
+      throw new Error('Ujian tidak aktif');
+    }
     
-    const requestData = {
+    // 2. Login
+    document.getElementById('loading-message').textContent = 'Login ke sistem...';
+    
+    // PERBAIKAN: Struktur yang benar sesuai Worker
+    const loginRes = await fetch(`${API_URL}/api/login`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
         nama: nama,
-        kelas: jenjang,    // PERBAIKAN: 'kelas' = jenjang
-        rombel: kelas,     // PERBAIKAN: 'rombel' = kelas
+        kelas: jenjang,     // PERHATIAN: 'kelas' = jenjang (X/XI/XII)
+        rombel: kelas,      // 'rombel' = kelas (X-A/XI-B/XI-C)
         token: token
-    };
+      })
+    });
     
-    console.log('Request Data untuk test:', requestData);
-    
-    try {
-        const response = await fetch(`${API_URL}/api/login`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        });
-        
-        let result = `Status: ${response.status}\n`;
-        result += `Status Text: ${response.statusText}\n`;
-        result += `URL: ${API_URL}/api/login\n`;
-        result += `Request Body:\n${JSON.stringify(requestData, null, 2)}\n\n`;
-        
-        if (response.ok) {
-            try {
-                const data = await response.json();
-                result += `Response Success: ${JSON.stringify(data, null, 2)}`;
-                showNotification('Login request berhasil!', 'success');
-            } catch (jsonError) {
-                result += `Error parsing JSON: ${jsonError.message}`;
-                showNotification('Response bukan JSON valid', 'warning');
-            }
-        } else {
-            try {
-                const errorData = await response.json();
-                result += `Error Response:\n${JSON.stringify(errorData, null, 2)}`;
-            } catch (e) {
-                const textResponse = await response.text();
-                result += `Error Response (text):\n${textResponse}`;
-            }
-            showNotification(`Login failed: ${response.status}`, 'error');
-        }
-        
-        console.log('Login Test Result:', result);
-        alert('Hasil test login:\n\n' + result);
-        
-    } catch (error) {
-        console.error('Test Login Error:', error);
-        alert('Error testing login:\n\n' + error.message);
+    // PERBAIKAN: Handle error response dengan benar
+    if (!loginRes.ok) {
+      const errorText = await loginRes.text();
+      let errorDetail;
+      
+      try {
+        errorDetail = JSON.parse(errorText);
+      } catch (e) {
+        errorDetail = { error: errorText };
+      }
+      
+      throw new Error(errorDetail.error || `HTTP ${loginRes.status}: Gagal login`);
     }
+    
+    const loginData = await loginRes.json();
+    
+    // PERBAIKAN: Validasi response sesuai struktur Worker
+    if (!loginData.success) {
+      throw new Error(loginData.error || 'Gagal login ke sistem');
+    }
+    
+    // PERBAIKAN: Simpan data dengan nama field yang benar
+    state.sessionId = loginData.session_id;
+    state.sessionSeed = loginData.session_seed;
+    state.examData = loginData.ujian;  // PERHATIAN: fieldnya 'ujian' bukan 'examData'
+    state.waktuMulai = new Date();
+    
+    // 3. Get questions
+    document.getElementById('loading-message').textContent = 'Mengambil soal ujian...';
+    
+    const soalRes = await fetch(
+      `${API_URL}/api/soal?token=${encodeURIComponent(token)}&session_id=${encodeURIComponent(state.sessionId)}`
+    );
+    
+    if (!soalRes.ok) {
+      throw new Error(`HTTP ${soalRes.status}: Gagal mengambil soal`);
+    }
+    
+    const soalData = await soalRes.json();
+    
+    if (!soalData.success || !soalData.soal || soalData.soal.length === 0) {
+      throw new Error('Tidak ada soal yang tersedia untuk ujian ini');
+    }
+    
+    // PERBAIKAN: Simpan data soal dengan field yang benar
+    state.questions = soalData.soal;
+    state.limitSoal = soalData.limit_soal || soalData.soal.length;
+    state.totalSoalDiBank = soalData.jumlah_soal_total || soalData.soal.length;
+    state.startTime = new Date();
+    state.remainingTime = (state.examData?.durasi || 90) * 60; // Default 90 menit
+    state.isExamActive = true;
+    
+    // 4. Setup exam screen
+    setupExamScreen();
+    showScreen('screen-exam');
+    startTimer();
+    showQuestion(0);
+    
+    // 5. Enter fullscreen
+    setTimeout(() => {
+      enterFullscreen();
+    }, 500);
+    
+    // 6. Start tracking
+    startTabSwitchTracking();
+    
+    // 7. Show notifications
+    if (state.limitSoal < state.totalSoalDiBank) {
+      showNotification(
+        `Ujian ini menampilkan ${state.limitSoal} soal acak dari total ${state.totalSoalDiBank} soal di bank.`,
+        'info'
+      );
+    }
+    
+    showNotification('Ujian dimulai. Selamat mengerjakan!', 'success');
+    
+  } catch (error) {
+    console.error('Login error details:', error);
+    
+    let errorMessage = error.message;
+    
+    // PERBAIKAN: User-friendly error messages
+    if (errorMessage.includes('Token tidak ditemukan')) {
+      errorMessage = 'Token ujian tidak ditemukan. Pastikan token yang dimasukkan benar.';
+    } else if (errorMessage.includes('Ujian tidak aktif')) {
+      errorMessage = 'Ujian ini tidak aktif. Silakan hubungi guru.';
+    } else if (errorMessage.includes('sudah mengikuti ujian')) {
+      errorMessage = 'Anda sudah mengikuti ujian ini dalam 24 jam terakhir.';
+    } else if (errorMessage.includes('Failed to fetch')) {
+      errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
+    } else if (errorMessage.includes('Tidak ada soal')) {
+      errorMessage = 'Belum ada soal untuk ujian ini.';
+    }
+    
+    showScreen('screen-login');
+    showError(errorMessage);
+  }
 }
 // ==================== EXAM SETUP ====================
 function setupExamScreen() {
-    // Update exam info with limit data
-    document.getElementById('exam-kelas').textContent = state.student.kelas;
-    document.getElementById('exam-mapel').textContent = state.examData?.mapel || '-';
-    document.getElementById('exam-guru').textContent = state.examData?.nama_guru || '-';
-    
-    // Show limit info if applicable
-    const limitInfo = document.getElementById('limit-info');
+  // PERBAIKAN: Tambah null checking untuk semua elemen
+  const safeSetText = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text || '-';
+  };
+  
+  safeSetText('exam-kelas', state.student?.kelas);
+  safeSetText('exam-mapel', state.examData?.mapel);
+  safeSetText('exam-guru', state.examData?.nama_guru);
+  
+  // PERBAIKAN: Limit info
+  const limitInfo = document.getElementById('limit-info');
+  if (limitInfo) {
     if (state.limitSoal < state.totalSoalDiBank) {
-        limitInfo.innerHTML = `
-            <span style="background: #e3f2fd; padding: 3px 8px; border-radius: 4px; font-size: 0.8em;">
-                <i class="fas fa-info-circle"></i> 
-                ${state.limitSoal} soal dari ${state.totalSoalDiBank} soal di bank
-            </span>
-        `;
-        limitInfo.style.display = 'inline';
+      limitInfo.innerHTML = `
+        <span style="background: #e3f2fd; padding: 3px 8px; border-radius: 4px; font-size: 0.8em;">
+          <i class="fas fa-info-circle"></i> 
+          ${state.limitSoal} soal dari ${state.totalSoalDiBank} soal di bank
+        </span>
+      `;
+      limitInfo.style.display = 'inline';
     } else {
-        limitInfo.style.display = 'none';
+      limitInfo.style.display = 'none';
     }
-    
-    // Setup question grid - only for displayed questions
-    const grid = document.getElementById('question-grid');
+  }
+  
+  // Setup question grid
+  const grid = document.getElementById('question-grid');
+  if (grid) {
     grid.innerHTML = '';
     
     for (let i = 0; i < state.questions.length; i++) {
-        const item = document.createElement('div');
-        item.className = 'grid-item';
-        item.textContent = i + 1;
-        item.onclick = () => showQuestion(i);
-        grid.appendChild(item);
+      const item = document.createElement('div');
+      item.className = 'grid-item';
+      item.textContent = i + 1;
+      item.onclick = () => showQuestion(i);
+      grid.appendChild(item);
     }
-    
-    updateProgress();
+  }
+  
+  updateProgress();
 }
 
 function updateProgress() {
@@ -1026,5 +985,6 @@ if (typeof window !== 'undefined') {
     window.debugAPI = debugAPI;
     window.appState = state;
 }
+
 
 
