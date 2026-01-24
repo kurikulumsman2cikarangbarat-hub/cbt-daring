@@ -1,5 +1,5 @@
 // ==================== KONFIGURASI ====================
-const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev/";
+const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev";
 
 // ==================== STATE MANAGEMENT ====================
 let state = {
@@ -928,3 +928,4 @@ document.addEventListener('drop', function(e) {
     }
 
 });
+
