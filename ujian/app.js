@@ -1,6 +1,48 @@
 // ==================== KONFIGURASI ====================
-// PERBAIKAN: Hapus slash di akhir URL
 const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev";
+
+// ==================== DEBUG CHECK ====================
+function checkRequiredElements() {
+    console.log('🔍 Checking required elements...');
+    
+    const requiredIds = [
+        // Login screen
+        'nama', 'jenjang', 'kelas', 'token', 'login-error',
+        'btn-login', 'screen-login',
+        
+        // Loading screen
+        'screen-loading', 'loading-message',
+        
+        // Exam screen
+        'screen-exam', 'exam-kelas', 'exam-mapel', 'exam-guru',
+        'limit-info', 'exam-timer', 'exam-progress',
+        'question-text', 'question-image', 'options-container',
+        'question-grid', 'btn-prev', 'btn-next', 'btn-submit',
+        
+        // Result screen
+        'screen-result', 'result-nama', 'result-kelas', 
+        'result-mapel', 'result-total-soal', 'result-dijawab',
+        'result-waktu', 'result-limit-info',
+        
+        // Penutup screen
+        'screen-penutup', 'penutup-message', 'tab-switch-info'
+    ];
+    
+    const missing = [];
+    requiredIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) {
+            missing.push(id);
+            console.error(`❌ Missing element: ${id}`);
+        }
+    });
+    
+    if (missing.length > 0) {
+        console.error(`Total ${missing.length} missing elements:`, missing);
+    } else {
+        console.log('✅ All elements found!');
+    }
+}
 
 // ==================== STATE MANAGEMENT ====================
 let state = {
@@ -37,25 +79,47 @@ const kelasData = {
 
 // ==================== HELPER FUNCTIONS ====================
 function showScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(screen => {
+    console.log(`🖥️ Switching to screen: ${screenId}`);
+    
+    // Cek apakah screen ada
+    const targetScreen = document.getElementById(screenId);
+    if (!targetScreen) {
+        console.error(`❌ Screen ${screenId} not found in DOM!`);
+        return;
+    }
+    
+    // Hide all screens
+    const allScreens = document.querySelectorAll('.screen');
+    if (allScreens.length === 0) {
+        console.error('❌ No elements with class "screen" found!');
+        return;
+    }
+    
+    allScreens.forEach(screen => {
         screen.classList.remove('active');
     });
-    document.getElementById(screenId).classList.add('active');
+    
+    // Show target screen
+    targetScreen.classList.add('active');
+    console.log(`✅ Screen ${screenId} is now active`);
 }
 
 function showError(message, isLoginError = true) {
     if (isLoginError) {
         const errorBox = document.getElementById('login-error');
-        errorBox.textContent = message;
-        errorBox.style.display = 'block';
-        errorBox.style.animation = 'none';
-        setTimeout(() => {
-            errorBox.style.animation = '';
-        }, 10);
-        
-        // Hapus tombol test sebelumnya jika ada
-        const existingBtn = errorBox.querySelector('button');
-        if (existingBtn) existingBtn.remove();
+        if (errorBox) {
+            errorBox.textContent = message;
+            errorBox.style.display = 'block';
+            errorBox.style.animation = 'none';
+            setTimeout(() => {
+                errorBox.style.animation = '';
+            }, 10);
+            
+            const existingBtn = errorBox.querySelector('button');
+            if (existingBtn) existingBtn.remove();
+        } else {
+            console.warn('login-error element not found');
+        }
     } else {
         showNotification(message, 'error');
     }
@@ -77,10 +141,13 @@ function showNotification(message, type = 'info') {
     
     document.body.appendChild(notification);
     
-    notification.querySelector('.notification-close').onclick = () => {
-        notification.style.animation = 'slideIn 0.3s ease-out reverse';
-        setTimeout(() => notification.remove(), 300);
-    };
+    const closeBtn = notification.querySelector('.notification-close');
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            notification.style.animation = 'slideIn 0.3s ease-out reverse';
+            setTimeout(() => notification.remove(), 300);
+        };
+    }
     
     setTimeout(() => {
         if (notification.parentNode) {
@@ -92,6 +159,10 @@ function showNotification(message, type = 'info') {
 
 function updateKelasDropdown(jenjang) {
     const kelasSelect = document.getElementById('kelas');
+    if (!kelasSelect) {
+        console.warn('kelas element not found');
+        return;
+    }
     
     if (!jenjang) {
         kelasSelect.innerHTML = '<option value="">Pilih Jenjang terlebih dahulu</option>';
@@ -159,20 +230,30 @@ function getViewableImageUrl(imageId) {
 
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM Content Loaded');
+    
+    // Debug check elements
+    checkRequiredElements();
+    
+    // Initialize dropdown
     const jenjangSelect = document.getElementById('jenjang');
     if (jenjangSelect) {
         jenjangSelect.addEventListener('change', function() {
             updateKelasDropdown(this.value);
         });
+        console.log('✅ Jenjang dropdown initialized');
+    } else {
+        console.error('❌ Jenjang select element not found');
     }
     
-    // PERBAIKAN: Tambah enter key untuk semua input
+    // Add enter key for login
     const loginInputs = ['nama', 'jenjang', 'kelas', 'token'];
     loginInputs.forEach(inputId => {
         const input = document.getElementById(inputId);
         if (input) {
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
+                    console.log('Enter pressed on', inputId);
                     handleLogin();
                 }
             });
@@ -180,219 +261,250 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     clearExamData();
+    console.log('✅ Application initialized');
 });
 
 // ==================== LOGIN HANDLER ====================
 async function handleLogin() {
-  const nama = document.getElementById('nama').value.trim();
-  const jenjang = document.getElementById('jenjang').value;
-  const kelas = document.getElementById('kelas').value;
-  const token = document.getElementById('token').value.trim().toUpperCase();
-  
-  // Validasi input
-  if (!nama || !jenjang || !kelas || !token) {
-    showError('Harap isi semua data dengan lengkap');
-    return;
-  }
-  
-  // PERBAIKAN: Validasi token minimal 3 karakter
-  if (token.length < 3) {
-    showError('Token minimal 3 karakter');
-    return;
-  }
-  
-  state.student = { 
-    nama: nama, 
-    jenjang: jenjang,
-    kelas: kelas,
-    token: token 
-  };
-  
-  showScreen('screen-loading');
-  document.getElementById('loading-message').textContent = 'Memeriksa token...';
-  
-  try {
-    // 1. Check token (optional, bisa skip jika mau langsung login)
-    const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
+    const nama = document.getElementById('nama')?.value.trim() || '';
+    const jenjang = document.getElementById('jenjang')?.value || '';
+    const kelas = document.getElementById('kelas')?.value || '';
+    const token = document.getElementById('token')?.value.trim().toUpperCase() || '';
     
-    if (!checkRes.ok) {
-      throw new Error(`HTTP ${checkRes.status}: Gagal memeriksa token`);
+    console.log('Login attempt:', { nama, jenjang, kelas, token });
+    
+    // Validasi input
+    if (!nama || !jenjang || !kelas || !token) {
+        showError('Harap isi semua data dengan lengkap');
+        return;
     }
     
-    const checkData = await checkRes.json();
-    
-    // PERBAIKAN: Worker return {success, exists, active, message}
-    if (!checkData.success) {
-      throw new Error(checkData.message || 'Gagal memeriksa token');
+    if (token.length < 3) {
+        showError('Token minimal 3 karakter');
+        return;
     }
     
-    if (!checkData.exists) {
-      throw new Error('Token tidak ditemukan');
+    state.student = { 
+        nama: nama, 
+        jenjang: jenjang,
+        kelas: kelas,
+        token: token 
+    };
+    
+    showScreen('screen-loading');
+    
+    const loadingMessage = document.getElementById('loading-message');
+    if (loadingMessage) {
+        loadingMessage.textContent = 'Memeriksa token...';
     }
     
-    if (checkData.exists && !checkData.active) {
-      throw new Error('Ujian tidak aktif');
+    try {
+        // 1. Check token
+        console.log('Checking token...');
+        const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
+        
+        if (!checkRes.ok) {
+            throw new Error(`HTTP ${checkRes.status}: Gagal memeriksa token`);
+        }
+        
+        const checkData = await checkRes.json();
+        
+        if (!checkData.success) {
+            throw new Error(checkData.message || 'Gagal memeriksa token');
+        }
+        
+        if (!checkData.exists) {
+            throw new Error('Token tidak ditemukan');
+        }
+        
+        if (checkData.exists && !checkData.active) {
+            throw new Error('Ujian tidak aktif');
+        }
+        
+        // 2. Login
+        if (loadingMessage) {
+            loadingMessage.textContent = 'Login ke sistem...';
+        }
+        
+        console.log('Logging in...');
+        const loginRes = await fetch(`${API_URL}/api/login`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                nama: nama,
+                kelas: jenjang,
+                rombel: kelas,
+                token: token
+            })
+        });
+        
+        if (!loginRes.ok) {
+            const errorText = await loginRes.text();
+            let errorDetail;
+            
+            try {
+                errorDetail = JSON.parse(errorText);
+            } catch (e) {
+                errorDetail = { error: errorText };
+            }
+            
+            throw new Error(errorDetail.error || `HTTP ${loginRes.status}: Gagal login`);
+        }
+        
+        const loginData = await loginRes.json();
+        
+        if (!loginData.success) {
+            throw new Error(loginData.error || 'Gagal login ke sistem');
+        }
+        
+        console.log('Login successful:', loginData);
+        
+        // Simpan data
+        state.sessionId = loginData.session_id;
+        state.sessionSeed = loginData.session_seed;
+        state.examData = loginData.ujian;
+        state.waktuMulai = new Date();
+        
+        // 3. Get questions
+        if (loadingMessage) {
+            loadingMessage.textContent = 'Mengambil soal ujian...';
+        }
+        
+        console.log('Getting questions...');
+        const soalRes = await fetch(
+            `${API_URL}/api/soal?token=${encodeURIComponent(token)}&session_id=${encodeURIComponent(state.sessionId)}`
+        );
+        
+        if (!soalRes.ok) {
+            throw new Error(`HTTP ${soalRes.status}: Gagal mengambil soal`);
+        }
+        
+        const soalData = await soalRes.json();
+        
+        if (!soalData.success || !soalData.soal || soalData.soal.length === 0) {
+            throw new Error('Tidak ada soal yang tersedia untuk ujian ini');
+        }
+        
+        console.log(`Got ${soalData.soal.length} questions`);
+        
+        // Simpan data soal
+        state.questions = soalData.soal;
+        state.limitSoal = soalData.limit_soal || soalData.soal.length;
+        state.totalSoalDiBank = soalData.jumlah_soal_total || soalData.soal.length;
+        state.startTime = new Date();
+        state.remainingTime = (state.examData?.durasi || 90) * 60;
+        state.isExamActive = true;
+        
+        // 4. Setup exam screen
+        setupExamScreen();
+        showScreen('screen-exam');
+        startTimer();
+        showQuestion(0);
+        
+        // 5. Enter fullscreen
+        setTimeout(() => {
+            enterFullscreen();
+        }, 500);
+        
+        // 6. Start tracking
+        startTabSwitchTracking();
+        
+        // 7. Show notifications
+        if (state.limitSoal < state.totalSoalDiBank) {
+            showNotification(
+                `Ujian ini menampilkan ${state.limitSoal} soal acak dari total ${state.totalSoalDiBank} soal di bank.`,
+                'info'
+            );
+        }
+        
+        showNotification('Ujian dimulai. Selamat mengerjakan!', 'success');
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        
+        let errorMessage = error.message;
+        
+        if (errorMessage.includes('Token tidak ditemukan')) {
+            errorMessage = 'Token ujian tidak ditemukan. Pastikan token yang dimasukkan benar.';
+        } else if (errorMessage.includes('Ujian tidak aktif')) {
+            errorMessage = 'Ujian ini tidak aktif. Silakan hubungi guru.';
+        } else if (errorMessage.includes('sudah mengikuti ujian')) {
+            errorMessage = 'Anda sudah mengikuti ujian ini dalam 24 jam terakhir.';
+        } else if (errorMessage.includes('Failed to fetch')) {
+            errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
+        } else if (errorMessage.includes('Tidak ada soal')) {
+            errorMessage = 'Belum ada soal untuk ujian ini.';
+        }
+        
+        showScreen('screen-login');
+        showError(errorMessage);
     }
-    
-    // 2. Login
-    document.getElementById('loading-message').textContent = 'Login ke sistem...';
-    
-    // PERBAIKAN: Struktur yang benar sesuai Worker
-    const loginRes = await fetch(`${API_URL}/api/login`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        nama: nama,
-        kelas: jenjang,     // PERHATIAN: 'kelas' = jenjang (X/XI/XII)
-        rombel: kelas,      // 'rombel' = kelas (X-A/XI-B/XI-C)
-        token: token
-      })
-    });
-    
-    // PERBAIKAN: Handle error response dengan benar
-    if (!loginRes.ok) {
-      const errorText = await loginRes.text();
-      let errorDetail;
-      
-      try {
-        errorDetail = JSON.parse(errorText);
-      } catch (e) {
-        errorDetail = { error: errorText };
-      }
-      
-      throw new Error(errorDetail.error || `HTTP ${loginRes.status}: Gagal login`);
-    }
-    
-    const loginData = await loginRes.json();
-    
-    // PERBAIKAN: Validasi response sesuai struktur Worker
-    if (!loginData.success) {
-      throw new Error(loginData.error || 'Gagal login ke sistem');
-    }
-    
-    // PERBAIKAN: Simpan data dengan nama field yang benar
-    state.sessionId = loginData.session_id;
-    state.sessionSeed = loginData.session_seed;
-    state.examData = loginData.ujian;  // PERHATIAN: fieldnya 'ujian' bukan 'examData'
-    state.waktuMulai = new Date();
-    
-    // 3. Get questions
-    document.getElementById('loading-message').textContent = 'Mengambil soal ujian...';
-    
-    const soalRes = await fetch(
-      `${API_URL}/api/soal?token=${encodeURIComponent(token)}&session_id=${encodeURIComponent(state.sessionId)}`
-    );
-    
-    if (!soalRes.ok) {
-      throw new Error(`HTTP ${soalRes.status}: Gagal mengambil soal`);
-    }
-    
-    const soalData = await soalRes.json();
-    
-    if (!soalData.success || !soalData.soal || soalData.soal.length === 0) {
-      throw new Error('Tidak ada soal yang tersedia untuk ujian ini');
-    }
-    
-    // PERBAIKAN: Simpan data soal dengan field yang benar
-    state.questions = soalData.soal;
-    state.limitSoal = soalData.limit_soal || soalData.soal.length;
-    state.totalSoalDiBank = soalData.jumlah_soal_total || soalData.soal.length;
-    state.startTime = new Date();
-    state.remainingTime = (state.examData?.durasi || 90) * 60; // Default 90 menit
-    state.isExamActive = true;
-    
-    // 4. Setup exam screen
-    setupExamScreen();
-    showScreen('screen-exam');
-    startTimer();
-    showQuestion(0);
-    
-    // 5. Enter fullscreen
-    setTimeout(() => {
-      enterFullscreen();
-    }, 500);
-    
-    // 6. Start tracking
-    startTabSwitchTracking();
-    
-    // 7. Show notifications
-    if (state.limitSoal < state.totalSoalDiBank) {
-      showNotification(
-        `Ujian ini menampilkan ${state.limitSoal} soal acak dari total ${state.totalSoalDiBank} soal di bank.`,
-        'info'
-      );
-    }
-    
-    showNotification('Ujian dimulai. Selamat mengerjakan!', 'success');
-    
-  } catch (error) {
-    console.error('Login error details:', error);
-    
-    let errorMessage = error.message;
-    
-    // PERBAIKAN: User-friendly error messages
-    if (errorMessage.includes('Token tidak ditemukan')) {
-      errorMessage = 'Token ujian tidak ditemukan. Pastikan token yang dimasukkan benar.';
-    } else if (errorMessage.includes('Ujian tidak aktif')) {
-      errorMessage = 'Ujian ini tidak aktif. Silakan hubungi guru.';
-    } else if (errorMessage.includes('sudah mengikuti ujian')) {
-      errorMessage = 'Anda sudah mengikuti ujian ini dalam 24 jam terakhir.';
-    } else if (errorMessage.includes('Failed to fetch')) {
-      errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
-    } else if (errorMessage.includes('Tidak ada soal')) {
-      errorMessage = 'Belum ada soal untuk ujian ini.';
-    }
-    
-    showScreen('screen-login');
-    showError(errorMessage);
-  }
 }
+
 // ==================== EXAM SETUP ====================
 function setupExamScreen() {
-  // PERBAIKAN: Tambah null checking untuk semua elemen
-  const safeSetText = (id, text) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = text || '-';
-  };
-  
-  safeSetText('exam-kelas', state.student?.kelas);
-  safeSetText('exam-mapel', state.examData?.mapel);
-  safeSetText('exam-guru', state.examData?.nama_guru);
-  
-  // PERBAIKAN: Limit info
-  const limitInfo = document.getElementById('limit-info');
-  if (limitInfo) {
-    if (state.limitSoal < state.totalSoalDiBank) {
-      limitInfo.innerHTML = `
-        <span style="background: #e3f2fd; padding: 3px 8px; border-radius: 4px; font-size: 0.8em;">
-          <i class="fas fa-info-circle"></i> 
-          ${state.limitSoal} soal dari ${state.totalSoalDiBank} soal di bank
-        </span>
-      `;
-      limitInfo.style.display = 'inline';
-    } else {
-      limitInfo.style.display = 'none';
-    }
-  }
-  
-  // Setup question grid
-  const grid = document.getElementById('question-grid');
-  if (grid) {
-    grid.innerHTML = '';
+    console.log('🔄 Setting up exam screen...');
+    console.log('State:', {
+        student: state.student,
+        examData: state.examData,
+        questions: state.questions?.length
+    });
     
-    for (let i = 0; i < state.questions.length; i++) {
-      const item = document.createElement('div');
-      item.className = 'grid-item';
-      item.textContent = i + 1;
-      item.onclick = () => showQuestion(i);
-      grid.appendChild(item);
+    // Helper functions
+    const setTextSafe = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = text || '-';
+            console.log(`Set ${id}: ${text}`);
+        } else {
+            console.warn(`Element ${id} not found`);
+        }
+    };
+    
+    // Update exam info
+    setTextSafe('exam-kelas', state.student?.kelas);
+    setTextSafe('exam-mapel', state.examData?.mapel);
+    setTextSafe('exam-guru', state.examData?.nama_guru);
+    
+    // Update limit info
+    const limitInfo = document.getElementById('limit-info');
+    if (limitInfo) {
+        if (state.limitSoal < state.totalSoalDiBank) {
+            limitInfo.innerHTML = `
+                <span style="background: #e3f2fd; padding: 3px 8px; border-radius: 4px; font-size: 0.8em;">
+                    <i class="fas fa-info-circle"></i> 
+                    ${state.limitSoal} soal dari ${state.totalSoalDiBank} soal di bank
+                </span>
+            `;
+            limitInfo.style.display = 'inline';
+        } else {
+            limitInfo.style.display = 'none';
+        }
+    } else {
+        console.warn('limit-info element not found');
     }
-  }
-  
-  updateProgress();
+    
+    // Setup question grid
+    const grid = document.getElementById('question-grid');
+    if (grid) {
+        grid.innerHTML = '';
+        
+        for (let i = 0; i < state.questions.length; i++) {
+            const item = document.createElement('div');
+            item.className = 'grid-item';
+            item.textContent = i + 1;
+            item.onclick = () => showQuestion(i);
+            grid.appendChild(item);
+        }
+        console.log(`Created ${state.questions.length} grid items`);
+    } else {
+        console.error('question-grid element not found!');
+    }
+    
+    updateProgress();
 }
 
 function updateProgress() {
@@ -400,12 +512,20 @@ function updateProgress() {
     const current = state.currentIndex + 1;
     const answered = Object.keys(state.answers).length;
     
-    document.getElementById('exam-progress').textContent = `${current}/${total}`;
+    // Update progress text
+    const progressEl = document.getElementById('exam-progress');
+    if (progressEl) {
+        progressEl.textContent = `${current}/${total}`;
+    }
     
-    // Update button visibility
-    document.getElementById('btn-prev').classList.toggle('hidden', state.currentIndex === 0);
-    document.getElementById('btn-next').classList.toggle('hidden', state.currentIndex === total - 1);
-    document.getElementById('btn-submit').classList.toggle('hidden', answered !== total);
+    // Update buttons
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const btnSubmit = document.getElementById('btn-submit');
+    
+    if (btnPrev) btnPrev.classList.toggle('hidden', state.currentIndex === 0);
+    if (btnNext) btnNext.classList.toggle('hidden', state.currentIndex === total - 1);
+    if (btnSubmit) btnSubmit.classList.toggle('hidden', answered !== total);
     
     // Update grid items
     const gridItems = document.querySelectorAll('.grid-item');
@@ -422,76 +542,98 @@ function updateProgress() {
     });
     
     // Update progress bar
-    const progressPercent = total > 0 ? (answered / total) * 100 : 0;
-    document.getElementById('exam-progress-bar').style.width = `${progressPercent}%`;
+    const progressBar = document.getElementById('exam-progress-bar');
+    if (progressBar) {
+        const progressPercent = total > 0 ? (answered / total) * 100 : 0;
+        progressBar.style.width = `${progressPercent}%`;
+    }
 }
 
 function showQuestion(index) {
-    if (index < 0 || index >= state.questions.length) return;
+    if (index < 0 || index >= state.questions.length) {
+        console.error(`Invalid index: ${index}, questions length: ${state.questions.length}`);
+        return;
+    }
     
     state.currentIndex = index;
     const question = state.questions[index];
+    console.log(`Showing question ${index + 1}`);
     
     // Update question text
-    document.getElementById('question-text').textContent = question.soal || '[Tidak ada teks soal]';
+    const questionTextEl = document.getElementById('question-text');
+    if (questionTextEl) {
+        questionTextEl.textContent = question?.soal || '[Tidak ada teks soal]';
+    } else {
+        console.error('question-text element not found!');
+    }
     
     // Update image
     const imgElement = document.getElementById('question-image');
-    if (question.img_link && question.img_link.trim() !== '') {
-        const imageId = question.img_link.trim();
-        const viewableUrl = getViewableImageUrl(imageId);
-        
-        imgElement.src = viewableUrl;
-        imgElement.style.display = 'block';
-        imgElement.alt = "Gambar Soal " + (index + 1);
-        
-        imgElement.onerror = function() {
-            const alternativeUrl = `https://drive.google.com/thumbnail?id=${imageId}&sz=w1000`;
-            imgElement.src = alternativeUrl;
+    if (imgElement) {
+        if (question?.img_link && question.img_link.trim() !== '') {
+            const imageId = question.img_link.trim();
+            const viewableUrl = getViewableImageUrl(imageId);
+            
+            imgElement.src = viewableUrl;
+            imgElement.style.display = 'block';
+            imgElement.alt = "Gambar Soal " + (index + 1);
             
             imgElement.onerror = function() {
-                imgElement.style.display = 'none';
-                showNotification('Gambar soal tidak dapat dimuat', 'info');
+                const alternativeUrl = `https://drive.google.com/thumbnail?id=${imageId}&sz=w1000`;
+                imgElement.src = alternativeUrl;
+                
+                imgElement.onerror = function() {
+                    imgElement.style.display = 'none';
+                    showNotification('Gambar soal tidak dapat dimuat', 'info');
+                };
             };
-        };
+        } else {
+            imgElement.style.display = 'none';
+        }
     } else {
-        imgElement.style.display = 'none';
+        console.warn('question-image element not found');
     }
     
     // Update options
     const container = document.getElementById('options-container');
-    container.innerHTML = '';
-    
-    const options = [
-        { letter: 'A', text: question.opsi_a || '' },
-        { letter: 'B', text: question.opsi_b || '' },
-        { letter: 'C', text: question.opsi_c || '' },
-        { letter: 'D', text: question.opsi_d || '' }
-    ];
-    
-    if (question.opsi_e && question.opsi_e.trim() !== '') {
-        options.push({ letter: 'E', text: question.opsi_e });
-    }
-    
-    options.forEach(opt => {
-        const optionDiv = document.createElement('div');
-        optionDiv.className = 'option';
+    if (container) {
+        container.innerHTML = '';
         
-        if (state.answers[index] === opt.letter) {
-            optionDiv.classList.add('selected');
+        const options = [
+            { letter: 'A', text: question?.opsi_a || '' },
+            { letter: 'B', text: question?.opsi_b || '' },
+            { letter: 'C', text: question?.opsi_c || '' },
+            { letter: 'D', text: question?.opsi_d || '' }
+        ];
+        
+        if (question?.opsi_e && question.opsi_e.trim() !== '') {
+            options.push({ letter: 'E', text: question.opsi_e });
         }
         
-        optionDiv.onclick = () => {
-            selectAnswer(opt.letter);
-        };
+        options.forEach(opt => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option';
+            
+            if (state.answers[index] === opt.letter) {
+                optionDiv.classList.add('selected');
+            }
+            
+            optionDiv.onclick = () => {
+                selectAnswer(opt.letter);
+            };
+            
+            optionDiv.innerHTML = `
+                <div class="option-letter">${opt.letter}</div>
+                <div class="option-text">${opt.text || '[Tidak ada teks]'}</div>
+            `;
+            
+            container.appendChild(optionDiv);
+        });
         
-        optionDiv.innerHTML = `
-            <div class="option-letter">${opt.letter}</div>
-            <div class="option-text">${opt.text || '[Tidak ada teks]'}</div>
-        `;
-        
-        container.appendChild(optionDiv);
-    });
+        console.log(`Created ${options.length} options`);
+    } else {
+        console.error('options-container element not found!');
+    }
     
     updateProgress();
 }
@@ -543,26 +685,28 @@ function startTimer() {
         const seconds = state.remainingTime % 60;
         
         const timerElement = document.getElementById('exam-timer');
-        timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        
-        // Change color when time is running out
-        if (state.remainingTime <= 300) {
-            timerElement.style.background = '#e74c3c';
-            if (state.remainingTime === 300) {
-                showNotification('Waktu tersisa 5 menit!', 'error');
+        if (timerElement) {
+            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Change color when time is running out
+            if (state.remainingTime <= 300) {
+                timerElement.style.background = '#e74c3c';
+                if (state.remainingTime === 300) {
+                    showNotification('Waktu tersisa 5 menit!', 'error');
+                }
+            } else if (state.remainingTime <= 600) {
+                timerElement.style.background = '#ff9800';
+            } else {
+                timerElement.style.background = '#4caf50';
             }
-        } else if (state.remainingTime <= 600) {
-            timerElement.style.background = '#ff9800';
-        } else {
-            timerElement.style.background = '#4caf50';
-        }
-        
-        // Time's up
-        if (state.remainingTime <= 0) {
-            clearInterval(state.timerInterval);
-            timerElement.textContent = '00:00';
-            timerElement.style.background = '#e74c3c';
-            submitExam();
+            
+            // Time's up
+            if (state.remainingTime <= 0) {
+                clearInterval(state.timerInterval);
+                timerElement.textContent = '00:00';
+                timerElement.style.background = '#e74c3c';
+                submitExam();
+            }
         }
     }, 1000);
 }
@@ -618,7 +762,11 @@ async function submitExam() {
     exitFullscreen();
     
     showScreen('screen-loading');
-    document.getElementById('loading-message').textContent = 'Mengirim jawaban...';
+    
+    const loadingMessage = document.getElementById('loading-message');
+    if (loadingMessage) {
+        loadingMessage.textContent = 'Mengirim jawaban...';
+    }
     
     try {
         // Siapkan jawaban
@@ -628,6 +776,8 @@ async function submitExam() {
             const answer = state.answers[i] || '-';
             jawabanArray.push(answer);
         }
+        
+        console.log('Submitting answers:', jawabanArray);
         
         // Submit jawaban
         const submitRes = await fetch(`${API_URL}/api/nilai`, {
@@ -653,12 +803,13 @@ async function submitExam() {
             throw new Error(submitData.error || 'Gagal mengirim jawaban');
         }
         
+        console.log('Submit successful:', submitData);
+        
         // Show result
         showResult(submitData);
         
     } catch (error) {
         console.error('Submit error:', error);
-        // Beri opsi retry jika gagal
         if (confirm('Gagal mengirim jawaban ke server. Coba lagi?')) {
             state.examSubmitted = false;
             state.isExamActive = true;
@@ -670,6 +821,8 @@ async function submitExam() {
 }
 
 function showResult(resultData) {
+    console.log('Showing result:', resultData);
+    
     // Hitung waktu pengerjaan
     let waktuPengerjaan = 0;
     if (state.waktuMulai && state.waktuSelesai) {
@@ -679,13 +832,22 @@ function showResult(resultData) {
         waktuPengerjaan = Math.max(0, (state.examData?.durasi || 0) - Math.floor(state.remainingTime / 60));
     }
     
-    // PERBAIKAN: Perbaiki ID elemen untuk waktu pengerjaan
-    document.getElementById('result-nama').textContent = state.student.nama;
-    document.getElementById('result-kelas').textContent = state.student.kelas;
-    document.getElementById('result-mapel').textContent = state.examData?.mapel || '-';
-    document.getElementById('result-total-soal').textContent = `${state.questions.length} soal (dari ${state.totalSoalDiBank} soal di bank)`;
-    document.getElementById('result-dijawab').textContent = `${Object.keys(state.answers).length} soal`;
-    // PERBAIKAN: Ganti result-nilai menjadi result-waktu
+    // Helper function
+    const setTextSafe = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = text || '-';
+        }
+    };
+    
+    // Update result screen
+    setTextSafe('result-nama', state.student.nama);
+    setTextSafe('result-kelas', state.student.kelas);
+    setTextSafe('result-mapel', state.examData?.mapel || '-');
+    setTextSafe('result-total-soal', `${state.questions.length} soal (dari ${state.totalSoalDiBank} soal di bank)`);
+    setTextSafe('result-dijawab', `${Object.keys(state.answers).length} soal`);
+    
+    // Waktu pengerjaan
     const waktuElement = document.getElementById('result-waktu') || document.getElementById('result-nilai');
     if (waktuElement) {
         waktuElement.textContent = `${waktuPengerjaan} menit`;
@@ -693,16 +855,18 @@ function showResult(resultData) {
     
     // Add limit info if applicable
     const limitInfoElement = document.getElementById('result-limit-info');
-    if (state.limitSoal < state.totalSoalDiBank) {
-        limitInfoElement.innerHTML = `
-            <div style="background: #e3f2fd; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #2196f3;">
-                <i class="fas fa-info-circle"></i> 
-                Anda mengerjakan ${state.limitSoal} soal acak dari total ${state.totalSoalDiBank} soal di bank.
-            </div>
-        `;
-        limitInfoElement.style.display = 'block';
-    } else {
-        limitInfoElement.style.display = 'none';
+    if (limitInfoElement) {
+        if (state.limitSoal < state.totalSoalDiBank) {
+            limitInfoElement.innerHTML = `
+                <div style="background: #e3f2fd; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #2196f3;">
+                    <i class="fas fa-info-circle"></i> 
+                    Anda mengerjakan ${state.limitSoal} soal acak dari total ${state.totalSoalDiBank} soal di bank.
+                </div>
+            `;
+            limitInfoElement.style.display = 'block';
+        } else {
+            limitInfoElement.style.display = 'none';
+        }
     }
     
     showScreen('screen-result');
@@ -720,56 +884,56 @@ function showPenutup() {
     const message = document.getElementById('penutup-message');
     const tabInfo = document.getElementById('tab-switch-info');
     
-    // Update message dengan info limit
-    message.innerHTML = `
-        <div style="text-align: center; padding: 20px;">
-            <h3 style="color: #1a73e8; margin-bottom: 20px;">
-                <i class="fas fa-certificate"></i> Bukti Penyelesaian Ujian
-            </h3>
-            
-            <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-                <p style="margin-bottom: 15px; font-size: 1.1rem; color: #333;">
-                    <strong>${state.student.nama}</strong><br>
-                    <span style="color: #666;">${state.student.kelas}</span>
-                </p>
+    if (message) {
+        message.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <h3 style="color: #1a73e8; margin-bottom: 20px;">
+                    <i class="fas fa-certificate"></i> Bukti Penyelesaian Ujian
+                </h3>
                 
-                <div style="border-top: 1px solid #e0e0e0; padding-top: 15px; margin-top: 15px;">
-                    <p style="margin-bottom: 10px;">
-                        <strong>Mata Pelajaran:</strong><br>
-                        ${state.examData?.mapel || '-'}
+                <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <p style="margin-bottom: 15px; font-size: 1.1rem; color: #333;">
+                        <strong>${state.student.nama}</strong><br>
+                        <span style="color: #666;">${state.student.kelas}</span>
                     </p>
                     
-                    <p style="margin-bottom: 10px;">
-                        <strong>Jumlah Soal:</strong><br>
-                        ${state.questions.length} soal (dari ${state.totalSoalDiBank} soal di bank)
-                    </p>
-                    
-                    <p style="margin-bottom: 10px;">
-                        <strong>Waktu Pengerjaan:</strong><br>
-                        ${waktuPengerjaan} menit
-                    </p>
-                    
-                    <p style="color: #666; font-size: 0.95rem; margin-top: 15px;">
-                        <i class="fas fa-clock"></i> Selesai: ${state.waktuSelesai ? state.waktuSelesai.toLocaleString('id-ID') : new Date().toLocaleString('id-ID')}
-                    </p>
+                    <div style="border-top: 1px solid #e0e0e0; padding-top: 15px; margin-top: 15px;">
+                        <p style="margin-bottom: 10px;">
+                            <strong>Mata Pelajaran:</strong><br>
+                            ${state.examData?.mapel || '-'}
+                        </p>
+                        
+                        <p style="margin-bottom: 10px;">
+                            <strong>Jumlah Soal:</strong><br>
+                            ${state.questions.length} soal (dari ${state.totalSoalDiBank} soal di bank)
+                        </p>
+                        
+                        <p style="margin-bottom: 10px;">
+                            <strong>Waktu Pengerjaan:</strong><br>
+                            ${waktuPengerjaan} menit
+                        </p>
+                        
+                        <p style="color: #666; font-size: 0.95rem; margin-top: 15px;">
+                            <i class="fas fa-clock"></i> Selesai: ${state.waktuSelesai ? state.waktuSelesai.toLocaleString('id-ID') : new Date().toLocaleString('id-ID')}
+                        </p>
+                    </div>
                 </div>
+                
+                ${state.limitSoal < state.totalSoalDiBank ? `
+                <div style="background: #e8f5e9; padding: 10px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4caf50;">
+                    <i class="fas fa-random"></i> 
+                    <strong>Catatan:</strong> Soal diacak dari bank ${state.totalSoalDiBank} soal
+                </div>
+                ` : ''}
+                
+                <p style="color: #2e7d32; font-weight: 600; padding: 15px; background: #e8f5e9; border-radius: 8px;">
+                    <i class="fas fa-check-circle"></i> Tunjukkan bukti ini kepada pengawas ujian
+                </p>
             </div>
-            
-            ${state.limitSoal < state.totalSoalDiBank ? `
-            <div style="background: #e8f5e9; padding: 10px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4caf50;">
-                <i class="fas fa-random"></i> 
-                <strong>Catatan:</strong> Soal diacak dari bank ${state.totalSoalDiBank} soal
-            </div>
-            ` : ''}
-            
-            <p style="color: #2e7d32; font-weight: 600; padding: 15px; background: #e8f5e9; border-radius: 8px;">
-                <i class="fas fa-check-circle"></i> Tunjukkan bukti ini kepada pengawas ujian
-            </p>
-        </div>
-    `;
+        `;
+    }
     
-    // Update tab switch info
-    if (state.tabSwitchCount > 0) {
+    if (tabInfo && state.tabSwitchCount > 0) {
         tabInfo.innerHTML = `
             <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #ff9800;">
                 <i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i> 
@@ -778,7 +942,7 @@ function showPenutup() {
             </div>
         `;
         tabInfo.style.display = 'block';
-    } else {
+    } else if (tabInfo) {
         tabInfo.style.display = 'none';
     }
     
@@ -786,7 +950,6 @@ function showPenutup() {
 }
 
 function keluarAplikasi() {
-    // Tambah konfirmasi sebelum keluar
     if (state.isExamActive && !state.examSubmitted) {
         if (!confirm('Ujian belum selesai. Yakin ingin keluar?')) {
             return;
@@ -796,14 +959,22 @@ function keluarAplikasi() {
     clearExamData();
     
     // Reset form
-    document.getElementById('nama').value = '';
-    document.getElementById('jenjang').value = '';
-    document.getElementById('kelas').innerHTML = '<option value="">Pilih Jenjang terlebih dahulu</option>';
-    document.getElementById('kelas').disabled = true;
-    document.getElementById('token').value = '';
+    const namaInput = document.getElementById('nama');
+    const jenjangSelect = document.getElementById('jenjang');
+    const kelasSelect = document.getElementById('kelas');
+    const tokenInput = document.getElementById('token');
+    
+    if (namaInput) namaInput.value = '';
+    if (jenjangSelect) jenjangSelect.value = '';
+    if (kelasSelect) {
+        kelasSelect.innerHTML = '<option value="">Pilih Jenjang terlebih dahulu</option>';
+        kelasSelect.disabled = true;
+    }
+    if (tokenInput) tokenInput.value = '';
     
     // Reset error message
-    document.getElementById('login-error').style.display = 'none';
+    const errorBox = document.getElementById('login-error');
+    if (errorBox) errorBox.style.display = 'none';
     
     // Go back to login
     showScreen('screen-login');
@@ -848,7 +1019,6 @@ window.addEventListener('beforeunload', function(e) {
 // Handler untuk fullscreen
 document.addEventListener('fullscreenchange', function() {
     if (state.isExamActive && !state.examSubmitted && !document.fullscreenElement) {
-        // Delay sedikit sebelum kembali ke fullscreen
         setTimeout(() => {
             if (state.isExamActive && !state.examSubmitted && !document.fullscreenElement) {
                 enterFullscreen();
@@ -968,7 +1138,7 @@ document.addEventListener('drop', function(e) {
     }
 });
 
-// PERBAIKAN TAMBAHAN: Debug fungsi
+// Debug fungsi
 function debugAPI() {
     console.log('=== DEBUG API ===');
     console.log('API_URL:', API_URL);
@@ -985,6 +1155,3 @@ if (typeof window !== 'undefined') {
     window.debugAPI = debugAPI;
     window.appState = state;
 }
-
-
-
