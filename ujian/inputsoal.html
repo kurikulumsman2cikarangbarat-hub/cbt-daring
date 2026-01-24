@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin CBT - Input & Edit Soal Ujian</title>
+    <title>Admin CBT - Login & Input Soal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -22,24 +22,46 @@
             min-height: 100vh;
             padding: 20px;
             color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
+        /* Login Style */
+        #login-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        /* Panel Admin Style */
         .container {
+            width: 100%;
             max-width: 1000px;
-            margin: 0 auto;
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             overflow: hidden;
+            display: none; /* Hidden before login */
+            margin-top: auto;
+            margin-bottom: auto;
         }
 
-        .header {
-            background: var(--primary);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
+        .header { background: var(--primary); color: white; padding: 20px; text-align: center; }
         .content-padding { padding: 30px; }
 
         .form-grid {
@@ -61,223 +83,193 @@
             transition: border-color 0.3s;
         }
 
-        input:focus, textarea:focus {
-            border-color: var(--primary);
-            outline: none;
-        }
-
-        textarea { 
-            height: 300px; 
-            resize: vertical; 
-            font-family: 'Courier New', monospace;
-            line-height: 1.5;
-        }
+        input:focus, textarea:focus { border-color: var(--primary); outline: none; }
+        textarea { height: 250px; resize: vertical; font-family: 'Courier New', monospace; }
 
         .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 15px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-            transition: 0.3s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            background: var(--primary); color: white; border: none;
+            padding: 15px 25px; border-radius: 8px; cursor: pointer;
+            font-weight: bold; font-size: 16px; transition: 0.3s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
         }
 
         .btn:hover { opacity: 0.9; transform: translateY(-2px); }
         .btn-success { background: var(--success); }
         .btn-warning { background: var(--warning); }
         .btn-danger { background: var(--danger); }
+        .btn-block { width: 100%; margin-top: 10px; }
 
         .token-display {
-            background: #e8f0fe;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            margin-bottom: 20px;
-            border: 2px dashed var(--primary);
+            background: #e8f0fe; padding: 15px; border-radius: 8px;
+            text-align: center; margin-bottom: 20px; border: 2px dashed var(--primary);
         }
-        
-        .token-input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .notification {
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: slideIn 0.3s ease-out;
-        }
-        
-        .notification-success { background: #d4edda; color: #155724; border-left: 4px solid var(--success); }
-        .notification-warning { background: #fff3cd; color: #856404; border-left: 4px solid var(--warning); }
-        .notification-error { background: #f8d7da; color: #721c24; border-left: 4px solid var(--danger); }
 
         #loading-modal {
-            display: none;
-            position: fixed;
+            display: none; position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            flex-direction: column;
+            background: rgba(0,0,0,0.8); z-index: 3000;
+            justify-content: center; align-items: center; color: white; flex-direction: column;
         }
 
-        .progress-container {
-            width: 300px;
-            background: #444;
-            height: 10px;
-            border-radius: 5px;
-            margin: 15px 0;
-            overflow: hidden;
-        }
+        .progress-container { width: 300px; background: #444; height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
+        .progress-fill { width: 0%; height: 100%; background: var(--success); transition: width 0.3s; }
 
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: var(--success);
-            transition: width 0.3s;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
+        .notification { padding: 12px; border-radius: 8px; margin: 10px 0; display: flex; align-items: center; gap: 10px; }
+        .notification-error { background: #f8d7da; color: #721c24; border-left: 4px solid var(--danger); }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div id="login-overlay">
+        <div class="login-card">
+            <i class="fas fa-user-shield fa-4x" style="color: var(--primary); margin-bottom: 20px;"></i>
+            <h2>Admin Login</h2>
+            <p style="color: #666; margin-bottom: 25px;">Masukkan token admin untuk mengelola ujian</p>
+            <div class="input-group">
+                <input type="password" id="admin-password" placeholder="Admin Token / Password" style="text-align: center;">
+            </div>
+            <button class="btn btn-block" onclick="attemptLogin()">Login <i class="fas fa-sign-in-alt"></i></button>
+            <div id="login-notif"></div>
+        </div>
+    </div>
+
+    <div class="container" id="admin-panel">
         <div class="header">
-            <h1><i class="fas fa-database"></i> Panel Admin Upload Soal</h1>
-            <p>Sistem Input Format TAB - Versi Stabil</p>
+            <h1><i class="fas fa-database"></i> Panel Kontrol Ujian</h1>
+            <button onclick="logout()" style="position: absolute; right: 20px; top: 20px; background: rgba(0,0,0,0.2); border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
+                Logout <i class="fas fa-sign-out-alt"></i>
+            </button>
         </div>
 
         <div id="setup-step" class="content-padding">
-            <h3 style="margin-bottom: 15px;"><i class="fas fa-key"></i> Token Ujian</h3>
-            <div class="token-input-group">
-                <input type="text" id="input-token" placeholder="Masukkan Token (Contoh: MTK2024)">
+            <h3><i class="fas fa-edit"></i> Pilih Token Ujian</h3>
+            <div style="display: flex; gap: 10px; margin: 15px 0;">
+                <input type="text" id="input-token" placeholder="Contoh: MTK2024" style="text-transform: uppercase;">
                 <button class="btn btn-warning" onclick="loadExistingData()">Edit Ujian</button>
                 <button class="btn btn-success" onclick="createNewExam()">Buat Baru</button>
             </div>
-            <div id="notification-area"></div>
+            <div id="action-notif"></div>
         </div>
 
         <div id="main-content" class="content-padding" style="display: none;">
             <div class="token-display">
-                <small>TOKEN AKTIF:</small>
+                <small>TOKEN UJIAN AKTIF</small>
                 <h2 id="display-token">-</h2>
-                <p id="mode-text">Mode: Buat Baru</p>
+                <p id="mode-text" style="font-size: 0.8em; color: #666;"></p>
             </div>
 
             <div class="form-grid">
                 <div class="input-group"><label>Mata Pelajaran</label><input type="text" id="input-mapel"></div>
                 <div class="input-group"><label>Nama Guru</label><input type="text" id="input-guru"></div>
                 <div class="input-group"><label>Durasi (Menit)</label><input type="number" id="input-durasi" value="90"></div>
-                <div class="input-group"><label>Jumlah Tampil</label><input type="number" id="input-jml-soal"></div>
+                <div class="input-group"><label>Jumlah Soal Tampil</label><input type="number" id="input-jml-soal"></div>
             </div>
 
             <div class="input-group">
-                <label>Input Soal (Copy dari Excel)</label>
+                <label>Input Soal (TAB Separated)</label>
                 <textarea id="input-soal" placeholder="Paste data Excel di sini..." oninput="updateSoalCount()"></textarea>
                 <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                    <small>Gunakan tombol TAB sebagai pemisah antar kolom.</small>
+                    <small>Format: Soal [TAB] A [TAB] B [TAB] C [TAB] D [TAB] E [TAB] Kunci [TAB] Gambar</small>
                     <small id="soal-count" style="font-weight: bold; color: var(--primary);">0 soal</small>
                 </div>
             </div>
 
             <div style="display: flex; gap: 15px; margin-top: 20px;">
                 <button class="btn btn-danger" onclick="location.reload()">Batal</button>
-                <button class="btn btn-success" onclick="uploadData()" style="flex: 2;">Simpan ke Database</button>
+                <button class="btn btn-success" onclick="uploadData()" style="flex: 2;">Simpan Database</button>
             </div>
-        </div>
-
-        <div id="results-section" class="content-padding" style="display: none; text-align: center;">
-            <div id="results-container"></div>
-            <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 20px;">Kembali ke Menu Utama</button>
         </div>
     </div>
 
     <div id="loading-modal">
         <i class="fas fa-spinner fa-spin fa-3x"></i>
-        <p id="progress-text" style="margin-top: 20px;">Memproses...</p>
+        <p id="progress-text" style="margin-top: 20px;">Menyambung ke server...</p>
         <div class="progress-container"><div class="progress-fill" id="progress-fill"></div></div>
     </div>
 
     <script>
-        const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev"; 
-        let adminToken = localStorage.getItem('adminToken') || "";
-        let currentToken = "";
-        let isEditMode = false;
+        const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev";
+        let adminToken = sessionStorage.getItem('adminToken') || "";
 
-        window.onload = () => {
-            if (!adminToken) {
-                adminToken = prompt("Masukkan Password Admin:");
-                if (adminToken) localStorage.setItem('adminToken', adminToken);
-                else location.reload();
+        // Auto-login jika token sudah ada di session
+        if (adminToken) {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+        }
+
+        function attemptLogin() {
+            const pass = document.getElementById('admin-password').value;
+            if (!pass) return;
+            
+            // Simpan sementara untuk testing akses
+            adminToken = pass;
+            checkAdminAccess();
+        }
+
+        async function checkAdminAccess() {
+            showLoading("Memverifikasi token...");
+            try {
+                // Mencoba hit salah satu endpoint admin untuk tes token
+                const res = await fetch(`${API_URL}/api/admin/get-ujian?token=TEST_PING`, {
+                    headers: { 'X-Admin-Token': adminToken }
+                });
+                
+                // Jika tidak 401/403, berarti token diterima (meskipun data mungkin 404 Not Found)
+                if (res.status === 401 || res.status === 403) throw new Error("Token Admin Salah!");
+
+                sessionStorage.setItem('adminToken', adminToken);
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+            } catch (e) {
+                document.getElementById('login-notif').innerHTML = `<div class="notification notification-error">${e.message}</div>`;
+            } finally {
+                hideLoading();
             }
-        };
+        }
 
-        function showNotification(msg, type) {
-            const area = document.getElementById('notification-area');
-            area.innerHTML = `<div class="notification notification-${type}">${msg}</div>`;
+        function logout() {
+            sessionStorage.removeItem('adminToken');
+            location.reload();
         }
 
         function createNewExam() {
-            const token = document.getElementById('input-token').value.trim().toUpperCase();
-            if (token.length < 3) return showNotification("Token minimal 3 karakter", "error");
-            
-            currentToken = token;
+            const t = document.getElementById('input-token').value.trim().toUpperCase();
+            if (t.length < 3) return alert("Token minimal 3 karakter");
+            currentToken = t;
             isEditMode = false;
-            document.getElementById('display-token').textContent = token;
+            document.getElementById('display-token').textContent = t;
+            document.getElementById('mode-text').textContent = "BUAT UJIAN BARU";
             document.getElementById('setup-step').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
         }
 
         async function loadExistingData() {
-            const token = document.getElementById('input-token').value.trim().toUpperCase();
-            if (!token) return;
-
+            const t = document.getElementById('input-token').value.trim().toUpperCase();
+            if (!t) return;
             showLoading("Mengambil data...");
             try {
-                const res = await fetch(`${API_URL}/api/admin/get-ujian?token=${token}`, {
+                const res = await fetch(`${API_URL}/api/admin/get-ujian?token=${t}`, {
                     headers: { 'X-Admin-Token': adminToken }
                 });
                 const data = await res.json();
-                if (!data.success) throw new Error(data.error);
+                if (!data.success) throw new Error(data.error || "Ujian tidak ditemukan");
 
                 document.getElementById('input-mapel').value = data.ujian.mapel;
                 document.getElementById('input-guru').value = data.ujian.nama_guru;
                 document.getElementById('input-durasi').value = data.ujian.durasi;
                 document.getElementById('input-jml-soal').value = data.ujian.jml_soal;
-                
-                // Kembalikan format Pipe ke TAB agar bisa diedit di textarea
                 document.getElementById('input-soal').value = data.soal_text.replace(/\|/g, '\t');
                 
-                currentToken = token;
+                currentToken = t;
                 isEditMode = true;
-                document.getElementById('mode-text').textContent = "Mode: Edit Ujian";
-                document.getElementById('display-token').textContent = token;
+                document.getElementById('display-token').textContent = t;
+                document.getElementById('mode-text').textContent = "MODE EDIT (Update Data)";
                 document.getElementById('setup-step').style.display = 'none';
                 document.getElementById('main-content').style.display = 'block';
                 updateSoalCount();
             } catch (e) {
-                showNotification(e.message, "error");
-            } finally {
-                hideLoading();
-            }
+                alert(e.message);
+            } finally { hideLoading(); }
         }
 
         function updateSoalCount() {
@@ -288,83 +280,70 @@
 
         async function uploadData() {
             const soalRaw = document.getElementById('input-soal').value.trim();
-            if (!soalRaw) return alert("Soal tidak boleh kosong!");
+            const mapel = document.getElementById('input-mapel').value.trim();
+            const guru = document.getElementById('input-guru').value.trim();
+            const jml = document.getElementById('input-jml-soal').value;
+
+            if (!soalRaw || !mapel || !guru || !jml) return alert("Lengkapi semua data!");
 
             const lines = soalRaw.split('\n');
-            showLoading("Memulai proses simpan...");
-            document.getElementById('progress-fill').style.backgroundColor = "var(--success)";
+            showLoading("Menyimpan Metadata...");
+            document.getElementById('progress-fill').style.width = '10%';
 
             try {
-                // 1. Simpan Metadata
-                const metaRes = await fetch(`${API_URL}/api/admin/ujian`, {
+                // 1. Simpan Ujian
+                const uRes = await fetch(`${API_URL}/api/admin/ujian`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
                     body: JSON.stringify({
                         token: currentToken,
-                        mapel: document.getElementById('input-mapel').value,
-                        nama_guru: document.getElementById('input-guru').value,
+                        mapel: mapel,
+                        nama_guru: guru,
                         durasi: parseInt(document.getElementById('input-durasi').value),
-                        jml_soal: parseInt(document.getElementById('input-jml-soal').value),
+                        jml_soal: parseInt(jml),
                         aktif: 1
                     })
                 });
-                if (!metaRes.ok) throw new Error("Gagal simpan metadata");
+                if (!uRes.ok) throw new Error("Gagal simpan metadata ujian (Cek Token Admin)");
 
-                // 2. Hapus soal lama jika edit
+                // 2. Jika edit, hapus soal lama
                 if (isEditMode) {
                     await fetch(`${API_URL}/api/admin/soal`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
-                        body: JSON.stringify({ token: currentToken, DELETE_OLD: true, soal: "CLEANUP" })
+                        body: JSON.stringify({ token: currentToken, DELETE_OLD: true, soal: "DEL" })
                     });
                 }
 
-                // 3. Upload Soal per baris
-                let success = 0;
+                // 3. Upload Soal
                 for (let i = 0; i < lines.length; i++) {
-                    const cols = lines[i].split('\t');
-                    if (cols.length < 7) continue;
-
-                    const payload = {
-                        token: currentToken,
-                        soal: cols[0].trim(),
-                        opsi_a: cols[1].trim(),
-                        opsi_b: cols[2].trim(),
-                        opsi_c: cols[3].trim(),
-                        opsi_d: cols[4].trim(),
-                        opsi_e: cols[5] ? cols[5].trim() : "",
-                        kunci: cols[6].trim().toUpperCase(),
-                        img_link: cols[7] ? cols[7].trim() : ""
-                    };
+                    const c = lines[i].split('\t');
+                    if (c.length < 7) continue;
 
                     await fetch(`${API_URL}/api/admin/soal`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify({
+                            token: currentToken,
+                            soal: c[0].trim(), opsi_a: c[1].trim(), opsi_b: c[2].trim(),
+                            opsi_c: c[3].trim(), opsi_d: c[4].trim(), opsi_e: c[5] ? c[5].trim() : "",
+                            kunci: c[6].trim().toUpperCase(), img_link: c[7] ? c[7].trim() : ""
+                        })
                     });
-
-                    success++;
-                    let pct = Math.round(((i + 1) / lines.length) * 100);
+                    let pct = 10 + Math.round(((i + 1) / lines.length) * 90);
                     document.getElementById('progress-fill').style.width = pct + '%';
-                    document.getElementById('progress-text').textContent = `Mengunggah: ${success}/${lines.length}`;
+                    document.getElementById('progress-text').textContent = `Mengunggah Soal: ${i+1}/${lines.length}`;
                 }
-
-                document.getElementById('main-content').style.display = 'none';
-                document.getElementById('results-section').style.display = 'block';
-                document.getElementById('results-container').innerHTML = `
-                    <h2 style="color: var(--success)">Berhasil!</h2>
-                    <p>${success} soal telah tersimpan untuk token <b>${currentToken}</b></p>
-                `;
+                alert("Sukses! Data telah diperbarui.");
+                location.reload();
             } catch (e) {
-                document.getElementById('progress-fill').style.backgroundColor = "var(--danger)";
-                alert("Terjadi kesalahan: " + e.message);
-            } finally {
-                hideLoading();
-            }
+                alert(e.message);
+            } finally { hideLoading(); }
         }
 
         function showLoading(msg) {
             document.getElementById('progress-text').textContent = msg;
+            document.getElementById('progress-fill').style.width = '0%';
             document.getElementById('loading-modal').style.display = 'flex';
         }
 
