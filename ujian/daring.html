@@ -22,7 +22,7 @@ function checkRequiredElements() {
         // Result screen
         'screen-result', 'result-nama', 'result-kelas', 
         'result-mapel', 'result-total-soal', 'result-dijawab',
-        'result-waktu', 'result-limit-info', // TIDAK ADA 'result-nilai'
+        'result-waktu', 'result-limit-info',
         
         // Penutup screen
         'screen-penutup', 'penutup-message', 'tab-switch-info'
@@ -195,7 +195,7 @@ function enterFullscreen() {
 }
 
 function exitFullscreen() {
-    // Cek apakah dalam mode fullscreen sebelum exit
+    // Hanya exit jika dalam mode fullscreen
     if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
         if (document.exitFullscreen) {
             document.exitFullscreen().catch(err => {
@@ -452,11 +452,15 @@ function setupExamScreen() {
         }
     };
     
+    // Update exam info
     setTextSafe('exam-kelas', state.student?.kelas);
     setTextSafe('exam-mapel', state.examData?.mapel);
     setTextSafe('exam-guru', state.examData?.nama_guru);
     
-    // HAPUS limit-info karena tidak ada di HTML
+    // HAPUS bagian limit-info karena tidak ada di HTML
+    // limit-info element tidak ada, jadi hapus kode yang mencoba mengaksesnya
+    
+    // Setup question grid
     const grid = document.getElementById('question-grid');
     if (grid) {
         grid.innerHTML = '';
@@ -698,7 +702,7 @@ function startTabSwitchTracking() {
             state.tabSwitchCount++;
             showNotification(`Anda meninggalkan halaman ujian! (${state.tabSwitchCount}x). Aktivitas telah dicatat.`, 'error');
             
-            // Log ke console saja karena endpoint /log-tab-switch tidak ada
+            // Catat di console saja, tidak perlu API call
             console.log(`Tab switched ${state.tabSwitchCount} times`);
         }
     });
@@ -718,10 +722,8 @@ async function submitExam() {
     
     clearInterval(state.timerInterval);
     
-    // Cek dulu apakah dalam fullscreen sebelum exit
-    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
-        exitFullscreen();
-    }
+    // Keluar dari fullscreen hanya jika masih dalam fullscreen
+    exitFullscreen();
     
     showScreen('screen-loading');
     
@@ -777,10 +779,10 @@ async function submitExam() {
     } catch (error) {
         console.error('Submit error:', error);
         
-        // Jika error 500, tampilkan hasil lokal saja
-        if (error.message.includes('500')) {
-            showNotification('Koneksi ke server bermasalah, menampilkan hasil lokal...', 'warning');
-            showResult({ success: true }); // Tampilkan hasil lokal
+        // Jika error 500, tampilkan hasil lokal saja tanpa konfirmasi
+        if (error.message.includes('500') || error.message.includes('404')) {
+            console.log('Server error, showing local result...');
+            showResult({ success: false, serverError: true, message: 'Tampilan hasil lokal (server error)' });
         } else {
             if (confirm(`Gagal mengirim jawaban ke server: ${error.message}\n\nCoba lagi?`)) {
                 state.examSubmitted = false;
@@ -832,19 +834,44 @@ function showResult(resultData) {
         limitInfoElement.style.display = 'none';
     }
     
-    // Tampilkan status server
-    const resultStatus = document.createElement('div');
-    resultStatus.className = 'result-row';
-    resultStatus.innerHTML = `
-        <span class="result-label">Status Server:</span>
-        <span class="result-value" style="color: ${resultData.success ? '#27ae60' : '#e74c3c'}">
-            ${resultData.success ? 'Berhasil' : 'Gagal'} Terhubung
-        </span>
-    `;
+    // Tambahkan status server ke tampilan
+    const serverStatusDiv = document.createElement('div');
+    serverStatusDiv.className = 'result-row';
+    serverStatusDiv.style.marginTop = '10px';
+    serverStatusDiv.style.paddingTop = '10px';
+    serverStatusDiv.style.borderTop = '1px dashed #ccc';
+    
+    if (resultData.serverError) {
+        serverStatusDiv.innerHTML = `
+            <span class="result-label">Status Server:</span>
+            <span class="result-value" style="color: #ff9800;">
+                <i class="fas fa-exclamation-triangle"></i> Tampilan Hasil Lokal
+            </span>
+        `;
+    } else if (resultData.success) {
+        serverStatusDiv.innerHTML = `
+            <span class="result-label">Status Server:</span>
+            <span class="result-value" style="color: #27ae60;">
+                <i class="fas fa-check-circle"></i> Terhubung ke Server
+            </span>
+        `;
+    } else {
+        serverStatusDiv.innerHTML = `
+            <span class="result-label">Status Server:</span>
+            <span class="result-value" style="color: #e74c3c;">
+                <i class="fas fa-times-circle"></i> Gagal Terhubung
+            </span>
+        `;
+    }
     
     const resultDetails = document.querySelector('.result-details');
     if (resultDetails) {
-        resultDetails.appendChild(resultStatus);
+        // Cek apakah sudah ada status server
+        const existingStatus = resultDetails.querySelector('.result-row:last-child');
+        if (existingStatus && existingStatus.textContent.includes('Status Server')) {
+            existingStatus.remove();
+        }
+        resultDetails.appendChild(serverStatusDiv);
     }
     
     showScreen('screen-result');
