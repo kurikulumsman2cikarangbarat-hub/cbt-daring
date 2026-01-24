@@ -295,7 +295,7 @@ select.form-control {
 
 /* Remove old exam-progress styles */
 .exam-progress {
-    display: none;
+    display: none !important;
 }
 
 /* QUESTION AREA (Gambar di bawah soal, di atas pilihan) */
