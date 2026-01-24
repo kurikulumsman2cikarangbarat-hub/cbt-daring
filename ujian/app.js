@@ -8,14 +8,14 @@ function checkRequiredElements() {
     const requiredIds = [
         // Login screen
         'nama', 'jenjang', 'kelas', 'token', 'login-error',
-        'btn-login', 'screen-login',
+        'screen-login',
         
         // Loading screen
         'screen-loading', 'loading-message',
         
         // Exam screen
         'screen-exam', 'exam-kelas', 'exam-mapel', 'exam-guru',
-        'limit-info', 'exam-timer', 'exam-progress',
+        'exam-timer', 'exam-progress-bar', 'exam-progress-text',
         'question-text', 'question-image', 'options-container',
         'question-grid', 'btn-prev', 'btn-next', 'btn-submit',
         
@@ -81,14 +81,12 @@ const kelasData = {
 function showScreen(screenId) {
     console.log(`🖥️ Switching to screen: ${screenId}`);
     
-    // Cek apakah screen ada
     const targetScreen = document.getElementById(screenId);
     if (!targetScreen) {
         console.error(`❌ Screen ${screenId} not found in DOM!`);
         return;
     }
     
-    // Hide all screens
     const allScreens = document.querySelectorAll('.screen');
     if (allScreens.length === 0) {
         console.error('❌ No elements with class "screen" found!');
@@ -99,7 +97,6 @@ function showScreen(screenId) {
         screen.classList.remove('active');
     });
     
-    // Show target screen
     targetScreen.classList.add('active');
     console.log(`✅ Screen ${screenId} is now active`);
 }
@@ -232,10 +229,8 @@ function getViewableImageUrl(imageId) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 DOM Content Loaded');
     
-    // Debug check elements
     checkRequiredElements();
     
-    // Initialize dropdown
     const jenjangSelect = document.getElementById('jenjang');
     if (jenjangSelect) {
         jenjangSelect.addEventListener('change', function() {
@@ -246,7 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('❌ Jenjang select element not found');
     }
     
-    // Add enter key for login
     const loginInputs = ['nama', 'jenjang', 'kelas', 'token'];
     loginInputs.forEach(inputId => {
         const input = document.getElementById(inputId);
@@ -273,7 +267,6 @@ async function handleLogin() {
     
     console.log('Login attempt:', { nama, jenjang, kelas, token });
     
-    // Validasi input
     if (!nama || !jenjang || !kelas || !token) {
         showError('Harap isi semua data dengan lengkap');
         return;
@@ -299,7 +292,6 @@ async function handleLogin() {
     }
     
     try {
-        // 1. Check token
         console.log('Checking token...');
         const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
         
@@ -321,7 +313,6 @@ async function handleLogin() {
             throw new Error('Ujian tidak aktif');
         }
         
-        // 2. Login
         if (loadingMessage) {
             loadingMessage.textContent = 'Login ke sistem...';
         }
@@ -362,13 +353,11 @@ async function handleLogin() {
         
         console.log('Login successful:', loginData);
         
-        // Simpan data
         state.sessionId = loginData.session_id;
         state.sessionSeed = loginData.session_seed;
         state.examData = loginData.ujian;
         state.waktuMulai = new Date();
         
-        // 3. Get questions
         if (loadingMessage) {
             loadingMessage.textContent = 'Mengambil soal ujian...';
         }
@@ -390,7 +379,6 @@ async function handleLogin() {
         
         console.log(`Got ${soalData.soal.length} questions`);
         
-        // Simpan data soal
         state.questions = soalData.soal;
         state.limitSoal = soalData.limit_soal || soalData.soal.length;
         state.totalSoalDiBank = soalData.jumlah_soal_total || soalData.soal.length;
@@ -398,21 +386,17 @@ async function handleLogin() {
         state.remainingTime = (state.examData?.durasi || 90) * 60;
         state.isExamActive = true;
         
-        // 4. Setup exam screen
         setupExamScreen();
         showScreen('screen-exam');
         startTimer();
         showQuestion(0);
         
-        // 5. Enter fullscreen
         setTimeout(() => {
             enterFullscreen();
         }, 500);
         
-        // 6. Start tracking
         startTabSwitchTracking();
         
-        // 7. Show notifications
         if (state.limitSoal < state.totalSoalDiBank) {
             showNotification(
                 `Ujian ini menampilkan ${state.limitSoal} soal acak dari total ${state.totalSoalDiBank} soal di bank.`,
@@ -453,7 +437,6 @@ function setupExamScreen() {
         questions: state.questions?.length
     });
     
-    // Helper functions
     const setTextSafe = (id, text) => {
         const el = document.getElementById(id);
         if (el) {
@@ -464,12 +447,10 @@ function setupExamScreen() {
         }
     };
     
-    // Update exam info
     setTextSafe('exam-kelas', state.student?.kelas);
     setTextSafe('exam-mapel', state.examData?.mapel);
     setTextSafe('exam-guru', state.examData?.nama_guru);
     
-    // Update limit info
     const limitInfo = document.getElementById('limit-info');
     if (limitInfo) {
         if (state.limitSoal < state.totalSoalDiBank) {
@@ -487,7 +468,6 @@ function setupExamScreen() {
         console.warn('limit-info element not found');
     }
     
-    // Setup question grid
     const grid = document.getElementById('question-grid');
     if (grid) {
         grid.innerHTML = '';
@@ -507,15 +487,36 @@ function setupExamScreen() {
     updateProgress();
 }
 
+// ==================== PROGRESS BAR FUNCTION ====================
 function updateProgress() {
     const total = state.questions.length;
     const current = state.currentIndex + 1;
     const answered = Object.keys(state.answers).length;
     
-    // Update progress text
-    const progressEl = document.getElementById('exam-progress');
-    if (progressEl) {
-        progressEl.textContent = `${current}/${total}`;
+    // Update progress text di progress bar
+    const progressText = document.getElementById('exam-progress-text');
+    if (progressText) {
+        progressText.textContent = `${answered}/${total}`;
+    }
+    
+    // Update progress bar visual
+    const progressBar = document.getElementById('exam-progress-bar');
+    if (progressBar) {
+        const progressPercent = total > 0 ? (answered / total) * 100 : 0;
+        progressBar.style.width = `${progressPercent}%`;
+        
+        // Ubah warna berdasarkan progress
+        if (progressPercent === 100) {
+            progressBar.style.background = 'linear-gradient(90deg, #27ae60 0%, #219653 100%)';
+        } else if (progressPercent >= 75) {
+            progressBar.style.background = 'linear-gradient(90deg, #3498db 0%, #2980b9 100%)';
+        } else if (progressPercent >= 50) {
+            progressBar.style.background = 'linear-gradient(90deg, #1a73e8 0%, #0d47a1 100%)';
+        } else if (progressPercent >= 25) {
+            progressBar.style.background = 'linear-gradient(90deg, #2196f3 0%, #1976d2 100%)';
+        } else {
+            progressBar.style.background = 'linear-gradient(90deg, #64b5f6 0%, #42a5f5 100%)';
+        }
     }
     
     // Update buttons
@@ -540,13 +541,6 @@ function updateProgress() {
             item.classList.add('current');
         }
     });
-    
-    // Update progress bar
-    const progressBar = document.getElementById('exam-progress-bar');
-    if (progressBar) {
-        const progressPercent = total > 0 ? (answered / total) * 100 : 0;
-        progressBar.style.width = `${progressPercent}%`;
-    }
 }
 
 function showQuestion(index) {
@@ -559,7 +553,6 @@ function showQuestion(index) {
     const question = state.questions[index];
     console.log(`Showing question ${index + 1}`);
     
-    // Update question text
     const questionTextEl = document.getElementById('question-text');
     if (questionTextEl) {
         questionTextEl.textContent = question?.soal || '[Tidak ada teks soal]';
@@ -567,7 +560,6 @@ function showQuestion(index) {
         console.error('question-text element not found!');
     }
     
-    // Update image
     const imgElement = document.getElementById('question-image');
     if (imgElement) {
         if (question?.img_link && question.img_link.trim() !== '') {
@@ -594,7 +586,6 @@ function showQuestion(index) {
         console.warn('question-image element not found');
     }
     
-    // Update options
     const container = document.getElementById('options-container');
     if (container) {
         container.innerHTML = '';
@@ -642,7 +633,6 @@ function selectAnswer(answer) {
     const currentIndex = state.currentIndex;
     state.answers[currentIndex] = answer;
     
-    // Update UI
     const options = document.querySelectorAll('.option');
     options.forEach(opt => opt.classList.remove('selected'));
     
@@ -654,7 +644,6 @@ function selectAnswer(answer) {
     
     updateProgress();
     
-    // Auto-next setelah 500ms
     setTimeout(() => {
         if (currentIndex < state.questions.length - 1) {
             showQuestion(currentIndex + 1);
@@ -688,7 +677,6 @@ function startTimer() {
         if (timerElement) {
             timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
-            // Change color when time is running out
             if (state.remainingTime <= 300) {
                 timerElement.style.background = '#e74c3c';
                 if (state.remainingTime === 300) {
@@ -700,7 +688,6 @@ function startTimer() {
                 timerElement.style.background = '#4caf50';
             }
             
-            // Time's up
             if (state.remainingTime <= 0) {
                 clearInterval(state.timerInterval);
                 timerElement.textContent = '00:00';
@@ -722,7 +709,6 @@ function startTabSwitchTracking() {
             state.tabSwitchCount++;
             showNotification(`Anda meninggalkan halaman ujian! (${state.tabSwitchCount}x). Aktivitas telah dicatat.`, 'error');
             
-            // Log tab switch to server
             logTabSwitch();
         }
     });
@@ -747,7 +733,6 @@ async function logTabSwitch() {
 async function submitExam() {
     if (state.examSubmitted) return;
     
-    // Tambah konfirmasi sebelum submit
     if (!confirm('Apakah Anda yakin ingin mengirim jawaban? Pastikan semua soal sudah dijawab.')) {
         return;
     }
@@ -758,7 +743,6 @@ async function submitExam() {
     
     clearInterval(state.timerInterval);
     
-    // Keluar dari fullscreen
     exitFullscreen();
     
     showScreen('screen-loading');
@@ -769,7 +753,6 @@ async function submitExam() {
     }
     
     try {
-        // Siapkan jawaban
         let jawabanArray = [];
         
         for (let i = 0; i < state.questions.length; i++) {
@@ -779,7 +762,6 @@ async function submitExam() {
         
         console.log('Submitting answers:', jawabanArray);
         
-        // Submit jawaban
         const submitRes = await fetch(`${API_URL}/api/nilai`, {
             method: 'POST',
             headers: { 
@@ -805,7 +787,6 @@ async function submitExam() {
         
         console.log('Submit successful:', submitData);
         
-        // Show result
         showResult(submitData);
         
     } catch (error) {
@@ -823,7 +804,6 @@ async function submitExam() {
 function showResult(resultData) {
     console.log('Showing result:', resultData);
     
-    // Hitung waktu pengerjaan
     let waktuPengerjaan = 0;
     if (state.waktuMulai && state.waktuSelesai) {
         const diffMs = state.waktuSelesai - state.waktuMulai;
@@ -832,7 +812,6 @@ function showResult(resultData) {
         waktuPengerjaan = Math.max(0, (state.examData?.durasi || 0) - Math.floor(state.remainingTime / 60));
     }
     
-    // Helper function
     const setTextSafe = (id, text) => {
         const el = document.getElementById(id);
         if (el) {
@@ -840,20 +819,17 @@ function showResult(resultData) {
         }
     };
     
-    // Update result screen
     setTextSafe('result-nama', state.student.nama);
     setTextSafe('result-kelas', state.student.kelas);
     setTextSafe('result-mapel', state.examData?.mapel || '-');
     setTextSafe('result-total-soal', `${state.questions.length} soal (dari ${state.totalSoalDiBank} soal di bank)`);
     setTextSafe('result-dijawab', `${Object.keys(state.answers).length} soal`);
     
-    // Waktu pengerjaan
     const waktuElement = document.getElementById('result-waktu') || document.getElementById('result-nilai');
     if (waktuElement) {
         waktuElement.textContent = `${waktuPengerjaan} menit`;
     }
     
-    // Add limit info if applicable
     const limitInfoElement = document.getElementById('result-limit-info');
     if (limitInfoElement) {
         if (state.limitSoal < state.totalSoalDiBank) {
@@ -874,7 +850,6 @@ function showResult(resultData) {
 }
 
 function showPenutup() {
-    // Hitung waktu pengerjaan
     let waktuPengerjaan = 0;
     if (state.waktuMulai && state.waktuSelesai) {
         const diffMs = state.waktuSelesai - state.waktuMulai;
@@ -958,7 +933,6 @@ function keluarAplikasi() {
     
     clearExamData();
     
-    // Reset form
     const namaInput = document.getElementById('nama');
     const jenjangSelect = document.getElementById('jenjang');
     const kelasSelect = document.getElementById('kelas');
@@ -972,11 +946,9 @@ function keluarAplikasi() {
     }
     if (tokenInput) tokenInput.value = '';
     
-    // Reset error message
     const errorBox = document.getElementById('login-error');
     if (errorBox) errorBox.style.display = 'none';
     
-    // Go back to login
     showScreen('screen-login');
 }
 
@@ -1016,7 +988,6 @@ window.addEventListener('beforeunload', function(e) {
     }
 });
 
-// Handler untuk fullscreen
 document.addEventListener('fullscreenchange', function() {
     if (state.isExamActive && !state.examSubmitted && !document.fullscreenElement) {
         setTimeout(() => {
@@ -1028,7 +999,6 @@ document.addEventListener('fullscreenchange', function() {
     }
 });
 
-// Prevent context menu selama ujian
 document.addEventListener('contextmenu', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
@@ -1037,7 +1007,6 @@ document.addEventListener('contextmenu', function(e) {
     }
 });
 
-// Prevent copy-paste selama ujian
 document.addEventListener('copy', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
@@ -1062,10 +1031,8 @@ document.addEventListener('cut', function(e) {
     }
 });
 
-// Prevent keyboard shortcuts
 document.addEventListener('keydown', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
-        // Block F5, Ctrl+R, Ctrl+Shift+R, Ctrl+F5 (refresh)
         if (e.key === 'F5' || 
             e.key === 'F12' ||
             (e.ctrlKey && e.key === 'r') || 
@@ -1076,28 +1043,24 @@ document.addEventListener('keydown', function(e) {
             return false;
         }
         
-        // Block print (Ctrl+P, Ctrl+Shift+P)
         if ((e.ctrlKey && e.key === 'p') || (e.ctrlKey && e.shiftKey && e.key === 'P')) {
             e.preventDefault();
             showNotification('Print tidak diizinkan selama ujian!', 'error');
             return false;
         }
         
-        // Block save (Ctrl+S)
         if (e.ctrlKey && e.key === 's') {
             e.preventDefault();
             showNotification('Save tidak diizinkan selama ujian!', 'error');
             return false;
         }
         
-        // Block view source (Ctrl+U)
         if (e.ctrlKey && e.key === 'u') {
             e.preventDefault();
             showNotification('View source tidak diizinkan selama ujian!', 'error');
             return false;
         }
         
-        // Block inspect element (Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C)
         if ((e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) ||
             (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')) ||
             (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c'))) {
@@ -1106,7 +1069,6 @@ document.addEventListener('keydown', function(e) {
             return false;
         }
         
-        // Block escape key untuk keluar fullscreen
         if (e.key === 'Escape' && document.fullscreenElement) {
             e.preventDefault();
             showNotification('Tidak dapat keluar dari fullscreen selama ujian!', 'error');
@@ -1115,7 +1077,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Prevent selection selama ujian
 document.addEventListener('selectstart', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
@@ -1123,7 +1084,6 @@ document.addEventListener('selectstart', function(e) {
     }
 });
 
-// Prevent drag and drop
 document.addEventListener('dragstart', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
