@@ -1,5 +1,5 @@
 // ==================== KONFIGURASI ====================
-const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev";
+const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev/";
 
 // ==================== STATE MANAGEMENT ====================
 let state = {
@@ -23,8 +23,8 @@ let state = {
     },
     waktuMulai: null,
     waktuSelesai: null,
-    limitSoal: 0, // NEW: Store the question limit
-    totalSoalDiBank: 0 // NEW: Store total questions in bank
+    limitSoal: 0,
+    totalSoalDiBank: 0
 };
 
 // ==================== KELAS DATA ====================
@@ -166,15 +166,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Setup enter key for login
-    const tokenInput = document.getElementById('token');
-    if (tokenInput) {
-        tokenInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                handleLogin();
-            }
-        });
-    }
+    // Setup enter key for login - PERBAIKAN: tambah event listener untuk semua input login
+    const loginInputs = ['nama', 'jenjang', 'kelas', 'token'];
+    loginInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleLogin();
+                }
+            });
+        }
+    });
     
     // Clear any existing exam data
     clearExamData();
@@ -213,40 +216,17 @@ async function handleLogin() {
         const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
         
         if (!checkRes.ok) {
-            const errorText = await checkRes.text();
-            console.error('Check token error:', errorText);
-            throw new Error(`Gagal memeriksa token (HTTP ${checkRes.status})`);
+            throw new Error(`HTTP ${checkRes.status}: Gagal memeriksa token`);
         }
         
         const checkData = await checkRes.json();
-        console.log('Check token response:', checkData);
         
-        // PERBAIKAN 1: Response dari server punya field 'exists' bukan 'success'
-        if (!checkData.success) {
-            throw new Error(checkData.error || 'Gagal memeriksa token');
+        if (!checkData.success || !checkData.exists) {
+            throw new Error('Token ujian tidak ditemukan atau sudah kadaluarsa');
         }
         
-        // PERBAIKAN 2: Cek apakah token ada
-        if (!checkData.exists) {
-            throw new Error('Token ujian tidak ditemukan');
-        }
-        
-        // PERBAIKAN 3: Cek apakah token aktif
-        if (!checkData.active) {
-            throw new Error('Token ujian tidak aktif. Hubungi guru.');
-        }
-        
-        // Login
+        // Login - PERBAIKAN: tambah error handling yang lebih spesifik
         document.getElementById('loading-message').textContent = 'Login ke sistem...';
-        
-        // PERBAIKAN 4: Pastikan parameter sesuai dengan yang diharapkan server
-        const loginBody = {
-            nama: nama,
-            kelas: jenjang,  // Server mengharapkan 'kelas' = jenjang
-            rombel: kelas,   // Server mengharapkan 'rombel' = kelas
-            token: token
-        };
-        console.log('Login body:', loginBody);
         
         const loginRes = await fetch(`${API_URL}/api/login`, {
             method: 'POST',
@@ -254,31 +234,28 @@ async function handleLogin() {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify(loginBody)
+            body: JSON.stringify({
+                nama: nama,
+                kelas: jenjang, // PERBAIKAN: ini mungkin perlu diubah sesuai field di server
+                rombel: kelas,
+                token: token
+            })
         });
         
-        console.log('Login response status:', loginRes.status);
-        
         if (!loginRes.ok) {
-            const loginError = await loginRes.text();
-            console.error('Login error text:', loginError);
+            const errorText = await loginRes.text();
+            console.error('Login response error:', errorText);
             throw new Error(`HTTP ${loginRes.status}: Gagal login ke sistem`);
         }
         
         const loginData = await loginRes.json();
-        console.log('Login data:', loginData);
         
-        // PERBAIKAN 5: Validasi response login
         if (!loginData.success) {
             throw new Error(loginData.error || 'Gagal login ke sistem');
         }
         
-        if (!loginData.session_id) {
-            throw new Error('Session ID tidak diterima dari server');
-        }
-        
         state.sessionId = loginData.session_id;
-        state.sessionSeed = loginData.session_seed || 0;
+        state.sessionSeed = loginData.session_seed;
         state.examData = loginData.ujian;
         state.waktuMulai = new Date();
         
@@ -289,20 +266,13 @@ async function handleLogin() {
             `${API_URL}/api/soal?token=${encodeURIComponent(token)}&session_id=${encodeURIComponent(state.sessionId)}`
         );
         
-        console.log('Soal response status:', soalRes.status);
-        
         if (!soalRes.ok) {
             throw new Error(`HTTP ${soalRes.status}: Gagal mengambil soal`);
         }
         
         const soalData = await soalRes.json();
-        console.log('Soal data:', soalData);
         
-        if (!soalData.success) {
-            throw new Error(soalData.error || 'Gagal mengambil soal');
-        }
-        
-        if (!soalData.soal || soalData.soal.length === 0) {
+        if (!soalData.success || !soalData.soal || soalData.soal.length === 0) {
             throw new Error('Tidak ada soal yang tersedia untuk ujian ini');
         }
         
@@ -342,7 +312,6 @@ async function handleLogin() {
         
         let errorMessage = error.message;
         
-        // PERBAIKAN 6: Error handling yang lebih baik
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
             errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
         }
@@ -351,15 +320,11 @@ async function handleLogin() {
             errorMessage = 'Token ujian tidak valid. Pastikan token yang dimasukkan benar.';
         }
         
-        if (errorMessage.includes('Session ID')) {
-            errorMessage = 'Gagal membuat sesi ujian. Coba lagi atau hubungi admin.';
-        }
-        
-        console.error('Final error:', errorMessage);
         showScreen('screen-login');
         showError(errorMessage);
     }
 }
+
 // ==================== EXAM SETUP ====================
 function setupExamScreen() {
     // Update exam info with limit data
@@ -434,7 +399,7 @@ function showQuestion(index) {
     const question = state.questions[index];
     
     // Update question text
-    document.getElementById('question-text').textContent = question.soal;
+    document.getElementById('question-text').textContent = question.soal || '[Tidak ada teks soal]';
     
     // Update image
     const imgElement = document.getElementById('question-image');
@@ -513,12 +478,13 @@ function selectAnswer(answer) {
     
     updateProgress();
     
-    // Auto-next setelah 500ms
-    setTimeout(() => {
-        if (currentIndex < state.questions.length - 1) {
+    // Auto-next setelah 500ms - PERBAIKAN: tambah konfirmasi jika ingin auto-next
+    const shouldAutoNext = document.getElementById('auto-next-toggle')?.checked !== false;
+    if (shouldAutoNext && currentIndex < state.questions.length - 1) {
+        setTimeout(() => {
             showQuestion(currentIndex + 1);
-        }
-    }, 500);
+        }, 500);
+    }
 }
 
 function prevQuestion() {
@@ -543,20 +509,27 @@ function startTimer() {
         const minutes = Math.floor(state.remainingTime / 60);
         const seconds = state.remainingTime % 60;
         
-        document.getElementById('exam-timer').textContent = 
-            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const timerElement = document.getElementById('exam-timer');
+        timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         
         // Change color when time is running out
-        const timerElement = document.getElementById('exam-timer');
         if (state.remainingTime <= 300) {
             timerElement.style.background = '#e74c3c';
+            // Beri peringatan saat 5 menit terakhir
+            if (state.remainingTime === 300) {
+                showNotification('Waktu tersisa 5 menit!', 'error');
+            }
         } else if (state.remainingTime <= 600) {
             timerElement.style.background = '#ff9800';
+        } else {
+            timerElement.style.background = '#4caf50';
         }
         
         // Time's up
         if (state.remainingTime <= 0) {
             clearInterval(state.timerInterval);
+            timerElement.textContent = '00:00';
+            timerElement.style.background = '#e74c3c';
             submitExam();
         }
     }, 1000);
@@ -571,7 +544,7 @@ function startTabSwitchTracking() {
         
         if (document.hidden) {
             state.tabSwitchCount++;
-            showNotification('Anda meninggalkan halaman ujian! Aktivitas telah dicatat.', 'error');
+            showNotification(`Anda meninggalkan halaman ujian! (${state.tabSwitchCount}x). Aktivitas telah dicatat.`, 'error');
             
             // Log tab switch to server
             logTabSwitch();
@@ -597,6 +570,11 @@ async function logTabSwitch() {
 // ==================== SUBMIT EXAM ====================
 async function submitExam() {
     if (state.examSubmitted) return;
+    
+    // PERBAIKAN: Tambah konfirmasi sebelum submit
+    if (!confirm('Apakah Anda yakin ingin mengirim jawaban? Pastikan semua soal sudah dijawab.')) {
+        return;
+    }
     
     state.examSubmitted = true;
     state.isExamActive = false;
@@ -648,7 +626,14 @@ async function submitExam() {
         
     } catch (error) {
         console.error('Submit error:', error);
-        showResult({ success: true });
+        // PERBAIKAN: Jangan langsung showResult jika gagal, beri opsi retry
+        if (confirm('Gagal mengirim jawaban ke server. Coba lagi?')) {
+            state.examSubmitted = false;
+            state.isExamActive = true;
+            submitExam();
+        } else {
+            showResult({ success: false, error: error.message });
+        }
     }
 }
 
@@ -659,7 +644,6 @@ function showResult(resultData) {
         const diffMs = state.waktuSelesai - state.waktuMulai;
         waktuPengerjaan = Math.floor(diffMs / 1000 / 60); // dalam menit
     } else {
-        // Fallback: hitung dari timer
         waktuPengerjaan = Math.max(0, (state.examData?.durasi || 0) - Math.floor(state.remainingTime / 60));
     }
     
@@ -669,7 +653,8 @@ function showResult(resultData) {
     document.getElementById('result-mapel').textContent = state.examData?.mapel || '-';
     document.getElementById('result-total-soal').textContent = `${state.questions.length} soal (dari ${state.totalSoalDiBank} soal di bank)`;
     document.getElementById('result-dijawab').textContent = `${Object.keys(state.answers).length} soal`;
-    document.getElementById('result-nilai').textContent = `${waktuPengerjaan} menit`;
+    // PERBAIKAN: Label waktu pengerjaan salah (seharusnya bukan 'nilai')
+    document.getElementById('result-waktu').textContent = `${waktuPengerjaan} menit`;
     
     // Add limit info if applicable
     const limitInfoElement = document.getElementById('result-limit-info');
@@ -766,6 +751,13 @@ function showPenutup() {
 }
 
 function keluarAplikasi() {
+    // PERBAIKAN: Tambah konfirmasi sebelum keluar
+    if (state.isExamActive && !state.examSubmitted) {
+        if (!confirm('Ujian belum selesai. Yakin ingin keluar?')) {
+            return;
+        }
+    }
+    
     clearExamData();
     
     // Reset form
@@ -774,6 +766,9 @@ function keluarAplikasi() {
     document.getElementById('kelas').innerHTML = '<option value="">Pilih Jenjang terlebih dahulu</option>';
     document.getElementById('kelas').disabled = true;
     document.getElementById('token').value = '';
+    
+    // Reset error message
+    document.getElementById('login-error').style.display = 'none';
     
     // Go back to login
     showScreen('screen-login');
@@ -807,7 +802,6 @@ function clearExamData() {
 }
 
 // ==================== BROWSER PROTECTION ====================
-// [Semua fungsi keamanan tetap sama seperti sebelumnya]
 window.addEventListener('beforeunload', function(e) {
     if (state.isExamActive && !state.examSubmitted) {
         e.preventDefault();
@@ -819,9 +813,13 @@ window.addEventListener('beforeunload', function(e) {
 // Handler untuk fullscreen
 document.addEventListener('fullscreenchange', function() {
     if (state.isExamActive && !state.examSubmitted && !document.fullscreenElement) {
-        // Jika keluar fullscreen selama ujian, kembalikan ke fullscreen
-        enterFullscreen();
-        showNotification('Harap tetap dalam mode fullscreen selama ujian', 'error');
+        // PERBAIKAN: Delay sedikit sebelum kembali ke fullscreen
+        setTimeout(() => {
+            if (state.isExamActive && !state.examSubmitted && !document.fullscreenElement) {
+                enterFullscreen();
+                showNotification('Harap tetap dalam mode fullscreen selama ujian', 'error');
+            }
+        }, 100);
     }
 });
 
@@ -902,6 +900,13 @@ document.addEventListener('keydown', function(e) {
             showNotification('Developer tools tidak diizinkan selama ujian!', 'error');
             return false;
         }
+        
+        // PERBAIKAN: Tambah block untuk escape key (bisa keluar fullscreen)
+        if (e.key === 'Escape' && document.fullscreenElement) {
+            e.preventDefault();
+            showNotification('Tidak dapat keluar dari fullscreen selama ujian!', 'error');
+            return false;
+        }
     }
 });
 
@@ -926,6 +931,25 @@ document.addEventListener('drop', function(e) {
         e.preventDefault();
         return false;
     }
-
 });
 
+// PERBAIKAN TAMBAHAN: Tambah fungsi untuk debugging
+function debugState() {
+    console.log('State saat ini:', state);
+    return state;
+}
+
+// PERBAIKAN TAMBAHAN: Tambah fungsi untuk reset timer (jika diperlukan)
+function resetTimer() {
+    if (state.isExamActive && !state.examSubmitted) {
+        state.remainingTime = state.examData.durasi * 60;
+        startTimer();
+        showNotification('Timer direset ke waktu awal', 'info');
+    }
+}
+
+// PERBAIKAN TAMBAHAN: Export state untuk debugging (opsional)
+if (typeof window !== 'undefined') {
+    window.appState = state;
+    window.debugState = debugState;
+}
