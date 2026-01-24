@@ -97,6 +97,7 @@
         .btn-success { background: var(--success); }
         .btn-warning { background: var(--warning); }
         .btn-danger { background: var(--danger); }
+        .btn-info { background: #17a2b8; }
         .btn-block { width: 100%; margin-top: 10px; }
 
         .token-display {
@@ -116,6 +117,29 @@
 
         .notification { padding: 12px; border-radius: 8px; margin: 10px 0; display: flex; align-items: center; gap: 10px; }
         .notification-error { background: #f8d7da; color: #721c24; border-left: 4px solid var(--danger); }
+        
+        .advanced-settings {
+            margin-top: 30px; 
+            padding: 20px; 
+            background: #f8f9fa; 
+            border-radius: 10px; 
+            border: 1px solid #dee2e6;
+        }
+        
+        .info-box {
+            margin-top: 20px; 
+            padding: 15px; 
+            background: #e8f4fd; 
+            border-radius: 8px; 
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .status-indicator {
+            margin-top: 8px; 
+            padding: 8px; 
+            border-radius: 5px; 
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -174,9 +198,56 @@
                 </div>
             </div>
 
+            <!-- Pengaturan Lanjutan -->
+            <div class="advanced-settings">
+                <h4><i class="fas fa-cog"></i> Pengaturan Lanjutan</h4>
+                
+                <div class="form-grid" style="margin-top: 15px;">
+                    <div class="input-group">
+                        <label>Ubah Token Ujian</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="new-token" placeholder="Token baru" style="flex: 1;">
+                            <button class="btn btn-warning" onclick="updateToken()" style="white-space: nowrap;">
+                                <i class="fas fa-exchange-alt"></i> Ubah Token
+                            </button>
+                        </div>
+                        <small style="color: #666;">Token lama: <span id="current-token-display">-</span></small>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Status Ujian</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="ujian-status" style="flex: 1;">
+                                <option value="1">Aktif (Siswa bisa ujian)</option>
+                                <option value="0">Nonaktif (Tutup sementara)</option>
+                            </select>
+                            <button class="btn btn-info" onclick="updateStatus()" style="white-space: nowrap;">
+                                <i class="fas fa-save"></i> Simpan Status
+                            </button>
+                        </div>
+                        <div id="status-indicator" class="status-indicator">
+                            <i class="fas fa-circle" style="color: #28a745;"></i> 
+                            <span id="status-text">Aktif</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h5><i class="fas fa-info-circle"></i> Informasi:</h5>
+                    <ul style="margin: 10px 0 0 20px; color: #555;">
+                        <li>Ubah token akan mengupdate semua data terkait (soal, nilai, session)</li>
+                        <li>Status "Nonaktif" akan menutup akses siswa untuk ujian</li>
+                        <li>Status "Aktif" akan membuka akses siswa untuk ujian</li>
+                        <li>Pastikan token unik dan tidak duplikat dengan ujian lain</li>
+                    </ul>
+                </div>
+            </div>
+
             <div style="display: flex; gap: 15px; margin-top: 20px;">
                 <button class="btn btn-danger" onclick="location.reload()">Batal</button>
-                <button class="btn btn-success" onclick="uploadData()" style="flex: 2;">Simpan Database</button>
+                <button class="btn btn-success" onclick="uploadData()" style="flex: 2;">
+                    <i class="fas fa-database"></i> Simpan Database
+                </button>
             </div>
         </div>
     </div>
@@ -221,7 +292,7 @@
                     },
                     body: JSON.stringify({
                         username: 'admin',
-                        password: 'admin' // bisa dikosongkan, yang penting X-Admin-Token header
+                        password: 'admin'
                     })
                 });
                 
@@ -249,14 +320,20 @@
         function createNewExam() {
             const t = document.getElementById('input-token').value.trim().toUpperCase();
             if (t.length < 3) return alert("Token minimal 3 karakter");
+            
             currentToken = t;
             isEditMode = false;
+            
+            // Update display
             document.getElementById('display-token').textContent = t;
             document.getElementById('mode-text').textContent = "BUAT UJIAN BARU";
             document.getElementById('setup-step').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
             
-            // Reset form untuk mode baru
+            // Update pengaturan lanjutan
+            updateUjianDisplay(t, 1); // Default status aktif
+            
+            // Reset form
             document.getElementById('input-mapel').value = '';
             document.getElementById('input-guru').value = '';
             document.getElementById('input-durasi').value = '90';
@@ -265,31 +342,172 @@
             updateSoalCount();
         }
 
-        async function loadExistingData() {
-            const t = document.getElementById('input-token').value.trim().toUpperCase();
+        // Fungsi update tampilan ujian
+        function updateUjianDisplay(token, status = 1) {
+            currentToken = token;
+            document.getElementById('current-token-display').textContent = token;
+            document.getElementById('ujian-status').value = status;
+            
+            // Update status indicator
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            const icon = indicator.querySelector('i');
+            
+            if (status == 1) {
+                indicator.style.display = 'block';
+                indicator.style.background = '#d4edda';
+                indicator.style.border = '1px solid #c3e6cb';
+                icon.style.color = '#28a745';
+                statusText.textContent = 'Status: Aktif';
+            } else {
+                indicator.style.display = 'block';
+                indicator.style.background = '#f8d7da';
+                indicator.style.border = '1px solid #f5c6cb';
+                icon.style.color = '#dc3545';
+                statusText.textContent = 'Status: Nonaktif';
+            }
+        }
+
+        // Fungsi update token
+        async function updateToken() {
+            const newToken = document.getElementById('new-token').value.trim().toUpperCase();
+            
+            if (!newToken || newToken === currentToken) {
+                return alert('Token baru harus berbeda dari token lama!');
+            }
+            
+            if (newToken.length < 3) {
+                return alert('Token minimal 3 karakter');
+            }
+            
+            if (!confirm(`Apakah Anda yakin ingin mengubah token dari "${currentToken}" ke "${newToken}"?\n\nSemua data terkait (soal, nilai, session) akan diupdate.`)) {
+                return;
+            }
+            
+            showLoading('Mengupdate token...');
+            
+            try {
+                const res = await fetch(`${API_URL}/api/admin/ujian`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        old_token: currentToken,
+                        token: newToken,
+                        mapel: document.getElementById('input-mapel').value.trim(),
+                        nama_guru: document.getElementById('input-guru').value.trim(),
+                        durasi: parseInt(document.getElementById('input-durasi').value),
+                        jml_soal: parseInt(document.getElementById('input-jml-soal').value),
+                        status: parseInt(document.getElementById('ujian-status').value)
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || 'Gagal mengupdate token');
+                }
+                
+                // Update tampilan
+                updateUjianDisplay(newToken, document.getElementById('ujian-status').value);
+                document.getElementById('display-token').textContent = newToken;
+                document.getElementById('new-token').value = '';
+                
+                alert('Token berhasil diubah!');
+                
+                // Refresh data soal jika dalam mode edit
+                if (isEditMode) {
+                    await loadExistingData(newToken);
+                }
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Fungsi update status
+        async function updateStatus() {
+            const status = document.getElementById('ujian-status').value;
+            const statusText = status == 1 ? 'Aktif' : 'Nonaktif';
+            
+            if (!currentToken) {
+                return alert('Token belum dipilih!');
+            }
+            
+            if (!confirm(`Ubah status ujian menjadi "${statusText}"?`)) {
+                return;
+            }
+            
+            showLoading('Mengupdate status...');
+            
+            try {
+                const res = await fetch(`${API_URL}/api/admin/ujian/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: currentToken,
+                        status: parseInt(status)
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(data.error || 'Gagal mengupdate status');
+                }
+                
+                // Update tampilan
+                updateUjianDisplay(currentToken, status);
+                
+                alert(`Status berhasil diubah menjadi "${statusText}"`);
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function loadExistingData(token = null) {
+            const t = token || document.getElementById('input-token').value.trim().toUpperCase();
             if (!t) return;
+            
             showLoading("Mengambil data...");
             try {
                 const res = await fetch(`${API_URL}/api/admin/get-ujian?token=${t}`);
                 const data = await res.json();
+                
                 if (!data.success) throw new Error(data.error || "Ujian tidak ditemukan");
 
+                // Isi form
                 document.getElementById('input-mapel').value = data.ujian.mapel || '';
                 document.getElementById('input-guru').value = data.ujian.nama_guru || '';
                 document.getElementById('input-durasi').value = data.ujian.durasi || 90;
                 document.getElementById('input-jml-soal').value = data.ujian.jml_soal || '';
                 document.getElementById('input-soal').value = data.soal_text ? data.soal_text.replace(/\|/g, '\t') : '';
                 
+                // Set mode dan token
                 currentToken = t;
                 isEditMode = true;
+                
+                // Update display
                 document.getElementById('display-token').textContent = t;
-                document.getElementById('mode-text').textContent = "MODE EDIT (Update Data)";
+                document.getElementById('mode-text').textContent = "MODE EDIT";
                 document.getElementById('setup-step').style.display = 'none';
                 document.getElementById('main-content').style.display = 'block';
+                
+                // Update pengaturan lanjutan
+                // Gunakan status jika ada, jika tidak gunakan aktif (backward compatibility)
+                const status = data.ujian.status !== undefined ? data.ujian.status : (data.ujian.aktif || 1);
+                updateUjianDisplay(t, status);
                 updateSoalCount();
+                
             } catch (e) {
                 alert(e.message);
-            } finally { hideLoading(); }
+            } finally { 
+                hideLoading(); 
+            }
         }
 
         function updateSoalCount() {
@@ -298,118 +516,122 @@
             document.getElementById('soal-count').textContent = `${count} soal`;
         }
 
-async function uploadData() {
-  const soalRaw = document.getElementById('input-soal').value.trim();
-  const mapel = document.getElementById('input-mapel').value.trim();
-  const guru = document.getElementById('input-guru').value.trim();
-  const jml = document.getElementById('input-jml-soal').value;
-  const durasi = document.getElementById('input-durasi').value;
+        async function uploadData() {
+            const soalRaw = document.getElementById('input-soal').value.trim();
+            const mapel = document.getElementById('input-mapel').value.trim();
+            const guru = document.getElementById('input-guru').value.trim();
+            const jml = document.getElementById('input-jml-soal').value;
+            const durasi = document.getElementById('input-durasi').value;
+            const status = document.getElementById('ujian-status').value;
 
-  if (!currentToken) return alert("Token belum ditentukan!");
-  if (!soalRaw || !mapel || !guru || !jml || !durasi) {
-    return alert("Lengkapi semua data: mapel, guru, durasi, jumlah soal, dan soal!");
-  }
+            if (!currentToken) return alert("Token belum ditentukan!");
+            if (!soalRaw || !mapel || !guru || !jml || !durasi) {
+                return alert("Lengkapi semua data: mapel, guru, durasi, jumlah soal, dan soal!");
+            }
 
-  const lines = soalRaw.split('\n');
-  showLoading("Menyimpan Metadata...");
-  document.getElementById('progress-fill').style.width = '10%';
+            const lines = soalRaw.split('\n');
+            showLoading("Menyimpan Metadata...");
+            document.getElementById('progress-fill').style.width = '10%';
 
-  try {
-    // Debug: Tampilkan data yang akan dikirim
-    console.log("Data ujian yang akan dikirim:", {
-      token: currentToken,
-      mapel: mapel,
-      nama_guru: guru,
-      durasi: parseInt(durasi),
-      jml_soal: parseInt(jml),
-      aktif: 1
-    });
+            try {
+                // Debug: Tampilkan data yang akan dikirim
+                console.log("Data ujian yang akan dikirim:", {
+                    token: currentToken,
+                    mapel: mapel,
+                    nama_guru: guru,
+                    durasi: parseInt(durasi),
+                    jml_soal: parseInt(jml),
+                    status: parseInt(status)
+                });
 
-    // 1. Simpan Ujian
-    const uRes = await fetch(`${API_URL}/api/admin/ujian`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        token: currentToken,
-        mapel: mapel,
-        nama_guru: guru,
-        durasi: parseInt(durasi),
-        jml_soal: parseInt(jml),
-        aktif: 1
-      })
-    });
-    
-    const uData = await uRes.json();
-    console.log("Response simpan ujian:", uData);
-    
-    if (!uRes.ok) {
-      throw new Error(uData.error || `Gagal simpan metadata ujian (Status: ${uRes.status})`);
-    }
+                // 1. Simpan Ujian
+                const uRes = await fetch(`${API_URL}/api/admin/ujian`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: currentToken,
+                        mapel: mapel,
+                        nama_guru: guru,
+                        durasi: parseInt(durasi),
+                        jml_soal: parseInt(jml),
+                        status: parseInt(status)
+                    })
+                });
+                
+                const uData = await uRes.json();
+                console.log("Response simpan ujian:", uData);
+                
+                if (!uRes.ok) {
+                    throw new Error(uData.error || `Gagal simpan metadata ujian (Status: ${uRes.status})`);
+                }
 
-    // 2. Jika edit, hapus soal lama
-    if (isEditMode) {
-      console.log("Mode edit: Menghapus soal lama...");
-      await fetch(`${API_URL}/api/admin/soal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          token: currentToken, 
-          DELETE_OLD: true, 
-          soal: "DEL" 
-        })
-      });
-    }
+                // 2. Jika edit, hapus soal lama
+                if (isEditMode) {
+                    console.log("Mode edit: Menghapus soal lama...");
+                    await fetch(`${API_URL}/api/admin/soal`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            token: currentToken, 
+                            DELETE_OLD: true, 
+                            soal: "DEL" 
+                        })
+                    });
+                }
 
-    // 3. Upload Soal
-    console.log(`Mulai upload ${lines.length} soal...`);
-    for (let i = 0; i < lines.length; i++) {
-      const c = lines[i].split('\t');
-      if (c.length < 7) {
-        console.warn(`Baris ${i+1} diabaikan: format tidak valid`, c);
-        continue;
-      }
+                // 3. Upload Soal
+                console.log(`Mulai upload ${lines.length} soal...`);
+                let soalSukses = 0;
+                for (let i = 0; i < lines.length; i++) {
+                    const c = lines[i].split('\t');
+                    if (c.length < 7) {
+                        console.warn(`Baris ${i+1} diabaikan: format tidak valid`, c);
+                        continue;
+                    }
 
-      const soalData = {
-        token: currentToken,
-        soal: c[0].trim(), 
-        opsi_a: c[1].trim(), 
-        opsi_b: c[2].trim(),
-        opsi_c: c[3].trim(), 
-        opsi_d: c[4].trim(), 
-        opsi_e: c[5] ? c[5].trim() : "",
-        kunci: c[6].trim().toUpperCase(), 
-        img_link: c[7] ? c[7].trim() : "",
-        aktif: 1
-      };
-      
-      console.log(`Upload soal ${i+1}:`, soalData);
+                    const soalData = {
+                        token: currentToken,
+                        soal: c[0].trim(), 
+                        opsi_a: c[1].trim(), 
+                        opsi_b: c[2].trim(),
+                        opsi_c: c[3].trim(), 
+                        opsi_d: c[4].trim(), 
+                        opsi_e: c[5] ? c[5].trim() : "",
+                        kunci: c[6].trim().toUpperCase(), 
+                        img_link: c[7] ? c[7].trim() : "",
+                        aktif: 1
+                    };
+                    
+                    console.log(`Upload soal ${i+1}:`, soalData);
 
-      const sRes = await fetch(`${API_URL}/api/admin/soal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(soalData)
-      });
-      
-      const sData = await sRes.json();
-      
-      if (!sRes.ok) {
-        throw new Error(`Gagal upload soal baris ${i+1}: ${sData.error || 'Error server'}`);
-      }
-      
-      let pct = 10 + Math.round(((i + 1) / lines.length) * 90);
-      document.getElementById('progress-fill').style.width = pct + '%';
-      document.getElementById('progress-text').textContent = `Mengunggah Soal: ${i+1}/${lines.length}`;
-    }
-    
-    alert("Sukses! Data telah diperbarui.");
-    location.reload();
-  } catch (e) {
-    console.error("Upload error details:", e);
-    alert(`ERROR: ${e.message}\n\nCoba buka console (F12) untuk detail.`);
-  } finally { 
-    hideLoading(); 
-  }
-}
+                    const sRes = await fetch(`${API_URL}/api/admin/soal`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(soalData)
+                    });
+                    
+                    const sData = await sRes.json();
+                    
+                    if (!sRes.ok) {
+                        throw new Error(`Gagal upload soal baris ${i+1}: ${sData.error || 'Error server'}`);
+                    }
+                    
+                    soalSukses++;
+                    let pct = 10 + Math.round(((i + 1) / lines.length) * 90);
+                    document.getElementById('progress-fill').style.width = pct + '%';
+                    document.getElementById('progress-text').textContent = `Mengunggah Soal: ${i+1}/${lines.length}`;
+                }
+                
+                alert(`Sukses! Data telah diperbarui.\n\nTotal soal: ${soalSukses}/${lines.length}`);
+                location.reload();
+            } catch (e) {
+                console.error("Upload error details:", e);
+                alert(`ERROR: ${e.message}\n\nCoba buka console (F12) untuk detail.`);
+            } finally { 
+                hideLoading(); 
+            }
+        }
+
         function showLoading(msg) {
             document.getElementById('progress-text').textContent = msg;
             document.getElementById('progress-fill').style.width = '0%';
@@ -419,7 +641,11 @@ async function uploadData() {
         function hideLoading() {
             document.getElementById('loading-modal').style.display = 'none';
         }
+
+        // Fungsi bantu untuk validasi
+        function validateTokenFormat(token) {
+            return token && token.length >= 3 && token.length <= 50 && /^[a-zA-Z0-9_-]+$/.test(token);
+        }
     </script>
 </body>
 </html>
-
