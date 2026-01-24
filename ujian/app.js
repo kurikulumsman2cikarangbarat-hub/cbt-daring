@@ -195,7 +195,6 @@ function enterFullscreen() {
 }
 
 function exitFullscreen() {
-    // Hanya exit jika dalam mode fullscreen
     if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
         if (document.exitFullscreen) {
             document.exitFullscreen().catch(err => {
@@ -457,9 +456,6 @@ function setupExamScreen() {
     setTextSafe('exam-mapel', state.examData?.mapel);
     setTextSafe('exam-guru', state.examData?.nama_guru);
     
-    // HAPUS bagian limit-info karena tidak ada di HTML
-    // limit-info element tidak ada, jadi hapus kode yang mencoba mengaksesnya
-    
     // Setup question grid
     const grid = document.getElementById('question-grid');
     if (grid) {
@@ -702,7 +698,6 @@ function startTabSwitchTracking() {
             state.tabSwitchCount++;
             showNotification(`Anda meninggalkan halaman ujian! (${state.tabSwitchCount}x). Aktivitas telah dicatat.`, 'error');
             
-            // Catat di console saja, tidak perlu API call
             console.log(`Tab switched ${state.tabSwitchCount} times`);
         }
     });
@@ -722,7 +717,6 @@ async function submitExam() {
     
     clearInterval(state.timerInterval);
     
-    // Keluar dari fullscreen hanya jika masih dalam fullscreen
     exitFullscreen();
     
     showScreen('screen-loading');
@@ -761,7 +755,6 @@ async function submitExam() {
                 const errorData = await submitRes.json();
                 errorDetail = errorData.error || errorData.message || errorDetail;
             } catch (e) {
-                // Tetap gunakan error default
             }
             throw new Error(errorDetail);
         }
@@ -779,7 +772,6 @@ async function submitExam() {
     } catch (error) {
         console.error('Submit error:', error);
         
-        // Jika error 500, tampilkan hasil lokal saja tanpa konfirmasi
         if (error.message.includes('500') || error.message.includes('404')) {
             console.log('Server error, showing local result...');
             showResult({ success: false, serverError: true, message: 'Tampilan hasil lokal (server error)' });
@@ -866,7 +858,6 @@ function showResult(resultData) {
     
     const resultDetails = document.querySelector('.result-details');
     if (resultDetails) {
-        // Cek apakah sudah ada status server
         const existingStatus = resultDetails.querySelector('.result-row:last-child');
         if (existingStatus && existingStatus.textContent.includes('Status Server')) {
             existingStatus.remove();
