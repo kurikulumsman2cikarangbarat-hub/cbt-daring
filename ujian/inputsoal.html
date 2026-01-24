@@ -189,10 +189,13 @@
 
     <script>
         const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev";
-        let adminToken = sessionStorage.getItem('adminToken') || "";
+        let adminToken = "";
+        let currentToken = "";
+        let isEditMode = false;
 
         // Auto-login jika token sudah ada di session
-        if (adminToken) {
+        if (sessionStorage.getItem('adminToken')) {
+            adminToken = sessionStorage.getItem('adminToken');
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('admin-panel').style.display = 'block';
         }
@@ -209,13 +212,24 @@
         async function checkAdminAccess() {
             showLoading("Memverifikasi token...");
             try {
-                // Mencoba hit salah satu endpoint admin untuk tes token
-                const res = await fetch(`${API_URL}/api/admin/get-ujian?token=TEST_PING`, {
-                    headers: { 'X-Admin-Token': adminToken }
+                // Sekarang endpoint login adalah /api/admin/login dengan method POST
+                const res = await fetch(`${API_URL}/api/admin/login`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken 
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin' // bisa dikosongkan, yang penting X-Admin-Token header
+                    })
                 });
                 
-                // Jika tidak 401/403, berarti token diterima (meskipun data mungkin 404 Not Found)
-                if (res.status === 401 || res.status === 403) throw new Error("Token Admin Salah!");
+                const data = await res.json();
+                
+                if (!res.ok || !data.success) {
+                    throw new Error(data.error || "Token Admin Salah!");
+                }
 
                 sessionStorage.setItem('adminToken', adminToken);
                 document.getElementById('login-overlay').style.display = 'none';
@@ -241,6 +255,14 @@
             document.getElementById('mode-text').textContent = "BUAT UJIAN BARU";
             document.getElementById('setup-step').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
+            
+            // Reset form untuk mode baru
+            document.getElementById('input-mapel').value = '';
+            document.getElementById('input-guru').value = '';
+            document.getElementById('input-durasi').value = '90';
+            document.getElementById('input-jml-soal').value = '';
+            document.getElementById('input-soal').value = '';
+            updateSoalCount();
         }
 
         async function loadExistingData() {
@@ -248,17 +270,15 @@
             if (!t) return;
             showLoading("Mengambil data...");
             try {
-                const res = await fetch(`${API_URL}/api/admin/get-ujian?token=${t}`, {
-                    headers: { 'X-Admin-Token': adminToken }
-                });
+                const res = await fetch(`${API_URL}/api/admin/get-ujian?token=${t}`);
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error || "Ujian tidak ditemukan");
 
-                document.getElementById('input-mapel').value = data.ujian.mapel;
-                document.getElementById('input-guru').value = data.ujian.nama_guru;
-                document.getElementById('input-durasi').value = data.ujian.durasi;
-                document.getElementById('input-jml-soal').value = data.ujian.jml_soal;
-                document.getElementById('input-soal').value = data.soal_text.replace(/\|/g, '\t');
+                document.getElementById('input-mapel').value = data.ujian.mapel || '';
+                document.getElementById('input-guru').value = data.ujian.nama_guru || '';
+                document.getElementById('input-durasi').value = data.ujian.durasi || 90;
+                document.getElementById('input-jml-soal').value = data.ujian.jml_soal || '';
+                document.getElementById('input-soal').value = data.soal_text ? data.soal_text.replace(/\|/g, '\t') : '';
                 
                 currentToken = t;
                 isEditMode = true;
@@ -284,6 +304,7 @@
             const guru = document.getElementById('input-guru').value.trim();
             const jml = document.getElementById('input-jml-soal').value;
 
+            if (!currentToken) return alert("Token belum ditentukan!");
             if (!soalRaw || !mapel || !guru || !jml) return alert("Lengkapi semua data!");
 
             const lines = soalRaw.split('\n');
@@ -291,10 +312,10 @@
             document.getElementById('progress-fill').style.width = '10%';
 
             try {
-                // 1. Simpan Ujian
+                // 1. Simpan Ujian - TIDAK PERLU X-Admin-Token lagi
                 const uRes = await fetch(`${API_URL}/api/admin/ujian`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         token: currentToken,
                         mapel: mapel,
@@ -304,32 +325,53 @@
                         aktif: 1
                     })
                 });
-                if (!uRes.ok) throw new Error("Gagal simpan metadata ujian (Cek Token Admin)");
+                
+                const uData = await uRes.json();
+                
+                if (!uRes.ok) {
+                    throw new Error(uData.error || `Gagal simpan metadata ujian (Status: ${uRes.status})`);
+                }
 
-                // 2. Jika edit, hapus soal lama
+                // 2. Jika edit, hapus soal lama - TIDAK PERLU X-Admin-Token lagi
                 if (isEditMode) {
                     await fetch(`${API_URL}/api/admin/soal`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
-                        body: JSON.stringify({ token: currentToken, DELETE_OLD: true, soal: "DEL" })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            token: currentToken, 
+                            DELETE_OLD: true, 
+                            soal: "DEL" 
+                        })
                     });
                 }
 
-                // 3. Upload Soal
+                // 3. Upload Soal - TIDAK PERLU X-Admin-Token lagi
                 for (let i = 0; i < lines.length; i++) {
                     const c = lines[i].split('\t');
                     if (c.length < 7) continue;
 
-                    await fetch(`${API_URL}/api/admin/soal`, {
+                    const sRes = await fetch(`${API_URL}/api/admin/soal`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-Admin-Token': adminToken },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             token: currentToken,
-                            soal: c[0].trim(), opsi_a: c[1].trim(), opsi_b: c[2].trim(),
-                            opsi_c: c[3].trim(), opsi_d: c[4].trim(), opsi_e: c[5] ? c[5].trim() : "",
-                            kunci: c[6].trim().toUpperCase(), img_link: c[7] ? c[7].trim() : ""
+                            soal: c[0].trim(), 
+                            opsi_a: c[1].trim(), 
+                            opsi_b: c[2].trim(),
+                            opsi_c: c[3].trim(), 
+                            opsi_d: c[4].trim(), 
+                            opsi_e: c[5] ? c[5].trim() : "",
+                            kunci: c[6].trim().toUpperCase(), 
+                            img_link: c[7] ? c[7].trim() : "",
+                            aktif: 1
                         })
                     });
+                    
+                    if (!sRes.ok) {
+                        const sData = await sRes.json();
+                        throw new Error(`Gagal upload soal baris ${i+1}: ${sData.error || 'Error server'}`);
+                    }
+                    
                     let pct = 10 + Math.round(((i + 1) / lines.length) * 90);
                     document.getElementById('progress-fill').style.width = pct + '%';
                     document.getElementById('progress-text').textContent = `Mengunggah Soal: ${i+1}/${lines.length}`;
@@ -338,7 +380,10 @@
                 location.reload();
             } catch (e) {
                 alert(e.message);
-            } finally { hideLoading(); }
+                console.error("Upload error:", e);
+            } finally { 
+                hideLoading(); 
+            }
         }
 
         function showLoading(msg) {
