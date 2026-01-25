@@ -180,16 +180,23 @@ async function handleLogin() {
     const kelas = document.getElementById('kelas').value;
     const token = document.getElementById('token').value.trim();
     
+    // Validasi input
     if (!nama || !jenjang || !kelas || !token) {
         showError('Harap isi semua data dengan lengkap');
         return;
     }
     
-    if (nama.length < 3) {
-        showError('Nama minimal 3 karakter');
+    if (nama.length < 3 || nama.length > 100) {
+        showError('Nama harus 3-100 karakter');
         return;
     }
     
+    if (token.length < 3) {
+        showError('Token tidak valid');
+        return;
+    }
+    
+    // Simpan data siswa ke state
     state.student = { 
         nama: nama, 
         jenjang: jenjang,
@@ -200,7 +207,7 @@ async function handleLogin() {
     showScreen('screen-loading');
     
     try {
-        // Check token
+        // 1. Check token validity
         document.getElementById('loading-message').textContent = 'Memeriksa token ujian...';
         
         const checkRes = await fetch(`${API_URL}/api/check-token?token=${encodeURIComponent(token)}`);
@@ -211,11 +218,19 @@ async function handleLogin() {
         
         const checkData = await checkRes.json();
         
-        if (!checkData.success || !checkData.exists) {
-            throw new Error('Token ujian tidak ditemukan atau sudah kadaluarsa');
+        if (!checkData.success) {
+            throw new Error(checkData.error || 'Gagal memeriksa token');
         }
         
-        // Login
+        if (!checkData.exists) {
+            throw new Error('Token ujian tidak ditemukan');
+        }
+        
+        if (!checkData.active) {
+            throw new Error('Ujian tidak aktif. Silakan hubungi guru.');
+        }
+        
+        // 2. Login ke sistem
         document.getElementById('loading-message').textContent = 'Login ke sistem...';
         
         const loginRes = await fetch(`${API_URL}/api/login`, {
@@ -233,6 +248,19 @@ async function handleLogin() {
         });
         
         if (!loginRes.ok) {
+            // Coba parse error response
+            try {
+                const errorData = await loginRes.json();
+                if (errorData.error) {
+                    throw new Error(errorData.error);
+                }
+                if (errorData.details) {
+                    throw new Error(errorData.details);
+                }
+            } catch (parseError) {
+                // Jika gagal parse JSON, gunakan status code
+                throw new Error(`HTTP ${loginRes.status}: ${loginRes.statusText}`);
+            }
             throw new Error(`HTTP ${loginRes.status}: Gagal login ke sistem`);
         }
         
@@ -242,12 +270,43 @@ async function handleLogin() {
             throw new Error(loginData.error || 'Gagal login ke sistem');
         }
         
-        state.sessionId = loginData.session_id;
-        state.sessionSeed = loginData.session_seed;
+        // 3. Simpan data session
+        state.sessionId = loginData.session?.id || loginData.session_id;
+        state.sessionSeed = loginData.session?.seed || loginData.session_seed;
         state.examData = loginData.ujian;
+        state.studentInfo = loginData.student;
         state.waktuMulai = new Date();
         
-        // Get questions
+        // 4. Cek apakah sudah pernah ujian (berdasarkan response)
+        if (loginData.error && loginData.error.includes('sudah mengikuti ujian')) {
+            showScreen('screen-login');
+            
+            // Tampilkan informasi detail jika ada
+            let errorMsg = loginData.error;
+            if (loginData.restriction) {
+                errorMsg += `<br><small>${loginData.restriction}</small>`;
+            }
+            if (loginData.previous_attempt) {
+                errorMsg += `<br><small>Nilai sebelumnya: ${loginData.previous_attempt.nilai}</small>`;
+            }
+            if (loginData.time_remaining) {
+                errorMsg += `<br><small>Bisa mencoba lagi dalam: ${loginData.time_remaining}</small>`;
+            }
+            
+            showError(errorMsg, true); // true untuk allow HTML
+            return;
+        }
+        
+        // 5. Validasi data ujian
+        if (!state.examData || !state.examData.durasi) {
+            throw new Error('Data ujian tidak lengkap');
+        }
+        
+        if (!state.sessionId) {
+            throw new Error('Session ID tidak valid');
+        }
+        
+        // 6. Get questions
         document.getElementById('loading-message').textContent = 'Mengambil soal ujian...';
         
         const soalRes = await fetch(
@@ -260,49 +319,158 @@ async function handleLogin() {
         
         const soalData = await soalRes.json();
         
-        if (!soalData.success || !soalData.soal || soalData.soal.length === 0) {
+        if (!soalData.success) {
+            throw new Error(soalData.error || 'Gagal mengambil soal');
+        }
+        
+        if (!soalData.soal || soalData.soal.length === 0) {
             throw new Error('Tidak ada soal yang tersedia untuk ujian ini');
         }
         
+        // 7. Setup exam state
         state.questions = soalData.soal;
         state.startTime = new Date();
-        state.remainingTime = state.examData.durasi * 60;
+        state.remainingTime = state.examData.durasi * 60; // Konversi menit ke detik
         state.isExamActive = true;
         
-        // Setup exam screen
+        // Simpan metadata tambahan
+        state.examMetadata = {
+            jumlah_soal_total: soalData.jumlah_soal_total || 0,
+            jumlah_soal_ditampilkan: soalData.jumlah_soal_ditampilkan || soalData.soal.length,
+            limit_soal: soalData.limit_soal || soalData.soal.length,
+            session_seed: soalData.session_seed
+        };
+        
+        // 8. Setup exam screen
         setupExamScreen();
+        
+        // 9. Tampilkan informasi ujian di header
+        updateExamHeader();
+        
+        // 10. Tampilkan screen exam
         showScreen('screen-exam');
+        
+        // 11. Start timer
         startTimer();
+        
+        // 12. Show first question
         showQuestion(0);
         
-        // Enter fullscreen
+        // 13. Enter fullscreen dengan delay
         setTimeout(() => {
             enterFullscreen();
         }, 500);
         
-        // Start tab switch tracking
+        // 14. Start tab switch tracking
         startTabSwitchTracking();
         
+        // 15. Show success notification
         showNotification('Ujian dimulai. Selamat mengerjakan!', 'success');
+        
+        // 16. Log ke console untuk debugging
+        console.log('Login successful:', {
+            student: state.studentInfo,
+            exam: state.examData,
+            metadata: state.examMetadata,
+            sessionId: state.sessionId
+        });
         
     } catch (error) {
         console.error('Login error:', error);
         
         let errorMessage = error.message;
         
+        // Handle berbagai jenis error
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
             errorMessage = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
         }
         
         if (errorMessage.includes('Token') || errorMessage.includes('token')) {
-            errorMessage = 'Token ujian tidak valid. Pastikan token yang dimasukkan benar.';
+            if (errorMessage.includes('tidak ditemukan')) {
+                errorMessage = 'Token ujian tidak ditemukan. Pastikan token yang dimasukkan benar.';
+            } else if (errorMessage.includes('tidak aktif')) {
+                errorMessage = 'Ujian tidak aktif. Silakan hubungi guru.';
+            }
         }
         
+        if (errorMessage.includes('sudah mengikuti ujian')) {
+            // Pesan error sudah ditangani di atas
+            return;
+        }
+        
+        // Kembali ke screen login dengan error
         showScreen('screen-login');
         showError(errorMessage);
     }
 }
 
+// Fungsi untuk update header ujian dengan informasi lengkap
+function updateExamHeader() {
+    const examHeader = document.getElementById('exam-header');
+    if (examHeader && state.examData && state.studentInfo) {
+        examHeader.innerHTML = `
+            <div class="exam-info">
+                <div><strong>Mata Pelajaran:</strong> ${state.examData.mapel || 'Tidak diketahui'}</div>
+                <div><strong>Guru:</strong> ${state.examData.nama_guru || 'Tidak diketahui'}</div>
+                <div><strong>Siswa:</strong> ${state.studentInfo.nama || state.student.nama} (${state.studentInfo.kelas || state.student.kelas})</div>
+            </div>
+            <div class="exam-stats">
+                <div><strong>Soal:</strong> ${state.currentQuestion + 1}/${state.questions.length}</div>
+                <div><strong>Durasi:</strong> ${state.examData.durasi} menit</div>
+                <div><strong>Token:</strong> ${state.examData.token}</div>
+            </div>
+        `;
+    }
+}
+
+// Fungsi untuk setup exam screen
+function setupExamScreen() {
+    if (!state.questions || state.questions.length === 0) {
+        showError('Tidak ada soal untuk ditampilkan');
+        return;
+    }
+    
+    // Update total soal di navigation
+    const questionNav = document.getElementById('question-nav');
+    if (questionNav) {
+        questionNav.innerHTML = '';
+        state.questions.forEach((_, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'question-nav-btn';
+            btn.textContent = index + 1;
+            btn.onclick = () => showQuestion(index);
+            questionNav.appendChild(btn);
+        });
+    }
+    
+    // Update progress info
+    updateProgressInfo();
+    
+    // Reset current question
+    state.currentQuestion = 0;
+    state.answers = Array(state.questions.length).fill(null);
+    state.answeredCount = 0;
+}
+
+// Fungsi untuk update progress info
+function updateProgressInfo() {
+    const progressInfo = document.getElementById('progress-info');
+    if (progressInfo) {
+        const answered = state.answers.filter(a => a !== null).length;
+        const total = state.questions.length;
+        progressInfo.textContent = `Terjawab: ${answered}/${total}`;
+        
+        // Update juga di question navigation
+        const navButtons = document.querySelectorAll('.question-nav-btn');
+        navButtons.forEach((btn, index) => {
+            if (state.answers[index] !== null) {
+                btn.classList.add('answered');
+            } else {
+                btn.classList.remove('answered');
+            }
+        });
+    }
+}
 // ==================== EXAM SETUP ====================
 function setupExamScreen() {
     // Update exam info
@@ -808,3 +976,4 @@ document.addEventListener('drop', function(e) {
         return false;
     }
 });
+
