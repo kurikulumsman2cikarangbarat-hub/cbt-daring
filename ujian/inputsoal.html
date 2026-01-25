@@ -12,6 +12,7 @@
             --success: #28a745;
             --warning: #ff9800;
             --danger: #e74c3c;
+            --info: #17a2b8;
             --bg: #f4f7f6;
         }
 
@@ -51,7 +52,7 @@
         /* Panel Admin Style */
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1200px;
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
@@ -61,8 +62,57 @@
             margin-bottom: auto;
         }
 
-        .header { background: var(--primary); color: white; padding: 20px; text-align: center; }
-        .content-padding { padding: 30px; }
+        .header { 
+            background: var(--primary); 
+            color: white; 
+            padding: 20px; 
+            text-align: center;
+            position: relative;
+        }
+
+        .menu-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .menu-tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            font-weight: bold;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            color: #555;
+        }
+
+        .menu-tab:hover {
+            background: #e9ecef;
+            color: var(--primary);
+        }
+
+        .menu-tab.active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+            background: white;
+        }
+
+        .menu-tab i {
+            margin-right: 8px;
+        }
+
+        .content-padding { 
+            padding: 30px; 
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
 
         .form-grid {
             display: grid;
@@ -88,8 +138,8 @@
 
         .btn {
             background: var(--primary); color: white; border: none;
-            padding: 15px 25px; border-radius: 8px; cursor: pointer;
-            font-weight: bold; font-size: 16px; transition: 0.3s;
+            padding: 12px 20px; border-radius: 8px; cursor: pointer;
+            font-weight: bold; font-size: 14px; transition: 0.3s;
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
         }
 
@@ -97,8 +147,10 @@
         .btn-success { background: var(--success); }
         .btn-warning { background: var(--warning); }
         .btn-danger { background: var(--danger); }
-        .btn-info { background: #17a2b8; }
+        .btn-info { background: var(--info); }
+        .btn-secondary { background: #6c757d; }
         .btn-block { width: 100%; margin-top: 10px; }
+        .btn-sm { padding: 8px 15px; font-size: 13px; }
 
         .token-display {
             background: #e8f0fe; padding: 15px; border-radius: 8px;
@@ -131,7 +183,7 @@
             padding: 15px; 
             background: #e8f4fd; 
             border-radius: 8px; 
-            border-left: 4px solid #17a2b8;
+            border-left: 4px solid var(--info);
         }
         
         .status-indicator {
@@ -139,6 +191,109 @@
             padding: 8px; 
             border-radius: 5px; 
             display: none;
+        }
+
+        /* Table Styles for Results */
+        .results-container {
+            margin-top: 20px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .results-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .results-table th {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .results-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .results-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .results-table .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .badge-success { background: var(--success); }
+        .badge-danger { background: var(--danger); }
+        .badge-warning { background: var(--warning); }
+        .badge-info { background: var(--info); }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h4 {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stat-card p {
+            margin: 5px 0 0 0;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -165,89 +320,187 @@
             </button>
         </div>
 
-        <div id="setup-step" class="content-padding">
-            <h3><i class="fas fa-edit"></i> Pilih Token Ujian</h3>
-            <div style="display: flex; gap: 10px; margin: 15px 0;">
-                <input type="text" id="input-token" placeholder="Contoh: MTK2024" style="text-transform: uppercase;">
-                <button class="btn btn-warning" onclick="loadExistingData()">Edit Ujian</button>
-                <button class="btn btn-success" onclick="createNewExam()">Buat Baru</button>
+        <!-- Menu Tabs -->
+        <div class="menu-tabs">
+            <div class="menu-tab active" onclick="switchTab('manage')">
+                <i class="fas fa-edit"></i> Kelola Ujian
             </div>
-            <div id="action-notif"></div>
+            <div class="menu-tab" onclick="switchTab('results')">
+                <i class="fas fa-chart-bar"></i> Lihat Hasil
+            </div>
         </div>
 
-        <div id="main-content" class="content-padding" style="display: none;">
-            <div class="token-display">
-                <small>TOKEN UJIAN AKTIF</small>
-                <h2 id="display-token">-</h2>
-                <p id="mode-text" style="font-size: 0.8em; color: #666;"></p>
-            </div>
-
-            <div class="form-grid">
-                <div class="input-group"><label>Mata Pelajaran</label><input type="text" id="input-mapel"></div>
-                <div class="input-group"><label>Nama Guru</label><input type="text" id="input-guru"></div>
-                <div class="input-group"><label>Durasi (Menit)</label><input type="number" id="input-durasi" value="90"></div>
-                <div class="input-group"><label>Jumlah Soal Tampil</label><input type="number" id="input-jml-soal"></div>
-            </div>
-
-            <div class="input-group">
-                <label>Input Soal (TAB Separated)</label>
-                <textarea id="input-soal" placeholder="Paste data Excel di sini..." oninput="updateSoalCount()"></textarea>
-                <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-                    <small>Format: Soal [TAB] A [TAB] B [TAB] C [TAB] D [TAB] E [TAB] Kunci [TAB] Gambar</small>
-                    <small id="soal-count" style="font-weight: bold; color: var(--primary);">0 soal</small>
+        <!-- Kelola Ujian Tab -->
+        <div id="tab-manage" class="tab-content active">
+            <div id="setup-step" class="content-padding">
+                <h3><i class="fas fa-edit"></i> Pilih Token Ujian</h3>
+                <div style="display: flex; gap: 10px; margin: 15px 0;">
+                    <input type="text" id="input-token" placeholder="Contoh: MTK2024" style="text-transform: uppercase;">
+                    <button class="btn btn-warning" onclick="loadExistingData()">Edit Ujian</button>
+                    <button class="btn btn-success" onclick="createNewExam()">Buat Baru</button>
                 </div>
+                <div id="action-notif"></div>
             </div>
 
-            <!-- Pengaturan Lanjutan -->
-            <div class="advanced-settings">
-                <h4><i class="fas fa-cog"></i> Pengaturan Lanjutan</h4>
-                
-                <div class="form-grid" style="margin-top: 15px;">
-                    <div class="input-group">
-                        <label>Ubah Token Ujian</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="new-token" placeholder="Token baru" style="flex: 1;">
-                            <button class="btn btn-warning" onclick="updateToken()" style="white-space: nowrap;">
-                                <i class="fas fa-exchange-alt"></i> Ubah Token
-                            </button>
+            <div id="main-content" class="content-padding" style="display: none;">
+                <div class="token-display">
+                    <small>TOKEN UJIAN AKTIF</small>
+                    <h2 id="display-token">-</h2>
+                    <p id="mode-text" style="font-size: 0.8em; color: #666;"></p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="input-group"><label>Mata Pelajaran</label><input type="text" id="input-mapel"></div>
+                    <div class="input-group"><label>Nama Guru</label><input type="text" id="input-guru"></div>
+                    <div class="input-group"><label>Durasi (Menit)</label><input type="number" id="input-durasi" value="90"></div>
+                    <div class="input-group"><label>Jumlah Soal Tampil</label><input type="number" id="input-jml-soal"></div>
+                </div>
+
+                <div class="input-group">
+                    <label>Input Soal (TAB Separated)</label>
+                    <textarea id="input-soal" placeholder="Paste data Excel di sini..." oninput="updateSoalCount()"></textarea>
+                    <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                        <small>Format: Soal [TAB] A [TAB] B [TAB] C [TAB] D [TAB] E [TAB] Kunci [TAB] Gambar</small>
+                        <small id="soal-count" style="font-weight: bold; color: var(--primary);">0 soal</small>
+                    </div>
+                </div>
+
+                <!-- Pengaturan Lanjutan -->
+                <div class="advanced-settings">
+                    <h4><i class="fas fa-cog"></i> Pengaturan Lanjutan</h4>
+                    
+                    <div class="form-grid" style="margin-top: 15px;">
+                        <div class="input-group">
+                            <label>Ubah Token Ujian</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="new-token" placeholder="Token baru" style="flex: 1;">
+                                <button class="btn btn-warning" onclick="updateToken()" style="white-space: nowrap;">
+                                    <i class="fas fa-exchange-alt"></i> Ubah Token
+                                </button>
+                            </div>
+                            <small style="color: #666;">Token lama: <span id="current-token-display">-</span></small>
                         </div>
-                        <small style="color: #666;">Token lama: <span id="current-token-display">-</span></small>
+                        
+                        <div class="input-group">
+                            <label>Status Ujian</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select id="ujian-status" style="flex: 1;">
+                                    <option value="1">Aktif (Siswa bisa ujian)</option>
+                                    <option value="0">Nonaktif (Tutup sementara)</option>
+                                </select>
+                                <button class="btn btn-info" onclick="updateStatus()" style="white-space: nowrap;">
+                                    <i class="fas fa-save"></i> Simpan Status
+                                </button>
+                            </div>
+                            <div id="status-indicator" class="status-indicator">
+                                <i class="fas fa-circle" style="color: #28a745;"></i> 
+                                <span id="status-text">Aktif</span>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="input-group">
-                        <label>Status Ujian</label>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <select id="ujian-status" style="flex: 1;">
-                                <option value="1">Aktif (Siswa bisa ujian)</option>
-                                <option value="0">Nonaktif (Tutup sementara)</option>
-                            </select>
-                            <button class="btn btn-info" onclick="updateStatus()" style="white-space: nowrap;">
-                                <i class="fas fa-save"></i> Simpan Status
-                            </button>
-                        </div>
-                        <div id="status-indicator" class="status-indicator">
-                            <i class="fas fa-circle" style="color: #28a745;"></i> 
-                            <span id="status-text">Aktif</span>
-                        </div>
+                    <div class="info-box">
+                        <h5><i class="fas fa-info-circle"></i> Informasi:</h5>
+                        <ul style="margin: 10px 0 0 20px; color: #555;">
+                            <li>Ubah token akan mengupdate semua data terkait (soal, nilai, session)</li>
+                            <li>Status "Nonaktif" akan menutup akses siswa untuk ujian</li>
+                            <li>Status "Aktif" akan membuka akses siswa untuk ujian</li>
+                            <li>Pastikan token unik dan tidak duplikat dengan ujian lain</li>
+                        </ul>
                     </div>
                 </div>
-                
-                <div class="info-box">
-                    <h5><i class="fas fa-info-circle"></i> Informasi:</h5>
-                    <ul style="margin: 10px 0 0 20px; color: #555;">
-                        <li>Ubah token akan mengupdate semua data terkait (soal, nilai, session)</li>
-                        <li>Status "Nonaktif" akan menutup akses siswa untuk ujian</li>
-                        <li>Status "Aktif" akan membuka akses siswa untuk ujian</li>
-                        <li>Pastikan token unik dan tidak duplikat dengan ujian lain</li>
-                    </ul>
+
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <button class="btn btn-danger" onclick="location.reload()">Batal</button>
+                    <button class="btn btn-success" onclick="uploadData()" style="flex: 2;">
+                        <i class="fas fa-database"></i> Simpan Database
+                    </button>
                 </div>
             </div>
+        </div>
 
-            <div style="display: flex; gap: 15px; margin-top: 20px;">
-                <button class="btn btn-danger" onclick="location.reload()">Batal</button>
-                <button class="btn btn-success" onclick="uploadData()" style="flex: 2;">
-                    <i class="fas fa-database"></i> Simpan Database
-                </button>
+        <!-- Lihat Hasil Tab -->
+        <div id="tab-results" class="tab-content">
+            <div class="content-padding">
+                <div class="results-header">
+                    <h3><i class="fas fa-chart-bar"></i> Hasil Ujian</h3>
+                    <div>
+                        <input type="text" id="search-results" placeholder="Cari nama siswa..." style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; width: 250px;">
+                    </div>
+                </div>
+
+                <div class="results-filter">
+                    <div class="filter-group">
+                        <label>Token Ujian</label>
+                        <select id="filter-token" onchange="loadResults()">
+                            <option value="">Semua Token</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Kelas</label>
+                        <select id="filter-kelas" onchange="loadResults()">
+                            <option value="">Semua Kelas</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Urutkan</label>
+                        <select id="sort-results" onchange="loadResults()">
+                            <option value="nilai_desc">Nilai Tertinggi</option>
+                            <option value="nilai_asc">Nilai Terendah</option>
+                            <option value="nama_asc">Nama A-Z</option>
+                            <option value="nama_desc">Nama Z-A</option>
+                            <option value="waktu_desc">Terbaru</option>
+                            <option value="waktu_asc">Terlama</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="stats-summary" id="stats-summary">
+                    <!-- Stats akan diisi oleh JavaScript -->
+                </div>
+
+                <div class="results-container">
+                    <div style="overflow-x: auto;">
+                        <table class="results-table" id="results-table">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama Siswa</th>
+                                    <th>Kelas</th>
+                                    <th>Token</th>
+                                    <th>Mapel</th>
+                                    <th>Nilai</th>
+                                    <th>Benar</th>
+                                    <th>Salah</th>
+                                    <th>Waktu</th>
+                                    <th>Tanggal</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-body">
+                                <!-- Data akan diisi oleh JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="pagination" style="margin-top: 20px; text-align: center; display: none;">
+                        <button class="btn btn-sm btn-secondary" onclick="changePage(-1)"><i class="fas fa-chevron-left"></i> Sebelumnya</button>
+                        <span id="page-info" style="margin: 0 15px;">Halaman 1 dari 1</span>
+                        <button class="btn btn-sm btn-secondary" onclick="changePage(1)">Selanjutnya <i class="fas fa-chevron-right"></i></button>
+                    </div>
+
+                    <div class="export-buttons">
+                        <button class="btn btn-info" onclick="exportToExcel()">
+                            <i class="fas fa-file-excel"></i> Export Excel
+                        </button>
+                        <button class="btn btn-warning" onclick="exportToPDF()">
+                            <i class="fas fa-file-pdf"></i> Export PDF
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteAllResults()">
+                            <i class="fas fa-trash"></i> Hapus Semua
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -259,16 +512,47 @@
     </div>
 
     <script>
-        const API_URL = "https://ujian-baru.kurikulum-sman2cikarangbarat.workers.dev";
+        const API_URL = "https://admin-ujian.kurikulum-sman2cikarangbarat.workers.dev";
         let adminToken = "";
         let currentToken = "";
         let isEditMode = false;
+        
+        // Variables for results pagination
+        let currentPage = 1;
+        let totalPages = 1;
+        let resultsPerPage = 20;
+        let allResults = [];
+        let filteredResults = [];
 
         // Auto-login jika token sudah ada di session
         if (sessionStorage.getItem('adminToken')) {
             adminToken = sessionStorage.getItem('adminToken');
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('admin-panel').style.display = 'block';
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all menu tabs
+            document.querySelectorAll('.menu-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            
+            // Add active class to clicked menu tab
+            event.target.classList.add('active');
+            
+            // If switching to results tab, load results
+            if (tabName === 'results') {
+                loadTokenOptions();
+                loadResults();
+            }
         }
 
         function attemptLogin() {
@@ -283,28 +567,26 @@
         async function checkAdminAccess() {
             showLoading("Memverifikasi token...");
             try {
-                // Sekarang endpoint login adalah /api/admin/login dengan method POST
-                const res = await fetch(`${API_URL}/api/admin/login`, {
-                    method: 'POST',
+                const res = await fetch(`${API_URL}/api/admin/ujian`, {
+                    method: 'GET',
                     headers: { 
                         'Content-Type': 'application/json',
                         'X-Admin-Token': adminToken 
-                    },
-                    body: JSON.stringify({
-                        username: 'admin',
-                        password: 'admin'
-                    })
+                    }
                 });
                 
-                const data = await res.json();
-                
-                if (!res.ok || !data.success) {
+                if (!res.ok) {
+                    const data = await res.json();
                     throw new Error(data.error || "Token Admin Salah!");
                 }
 
                 sessionStorage.setItem('adminToken', adminToken);
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
+                
+                // Load token options for results tab
+                loadTokenOptions();
+                
             } catch (e) {
                 document.getElementById('login-notif').innerHTML = `<div class="notification notification-error">${e.message}</div>`;
             } finally {
@@ -317,6 +599,420 @@
             location.reload();
         }
 
+        // Fungsi untuk load token options di dropdown
+        async function loadTokenOptions() {
+            try {
+                const res = await fetch(`${API_URL}/api/admin/ujian`, {
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken 
+                    }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    const tokenSelect = document.getElementById('filter-token');
+                    tokenSelect.innerHTML = '<option value="">Semua Token</option>';
+                    
+                    if (data.data && Array.isArray(data.data)) {
+                        data.data.forEach(ujian => {
+                            const option = document.createElement('option');
+                            option.value = ujian.token;
+                            option.textContent = `${ujian.token} - ${ujian.mapel}`;
+                            tokenSelect.appendChild(option);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading token options:', error);
+            }
+        }
+
+        // Fungsi untuk load results
+        async function loadResults() {
+            showLoading("Memuat hasil ujian...");
+            
+            try {
+                const tokenFilter = document.getElementById('filter-token').value;
+                const kelasFilter = document.getElementById('filter-kelas').value;
+                const searchFilter = document.getElementById('search-results').value.toLowerCase();
+                const sortBy = document.getElementById('sort-results').value;
+                
+                let url = `${API_URL}/api/admin/nilai?page=${currentPage}&limit=${resultsPerPage}`;
+                
+                if (tokenFilter) {
+                    url += `&token=${tokenFilter}`;
+                }
+                
+                const res = await fetch(url, {
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken 
+                    }
+                });
+                
+                if (!res.ok) {
+                    throw new Error("Gagal memuat data hasil");
+                }
+                
+                const data = await res.json();
+                
+                if (data.success && data.data) {
+                    allResults = data.data;
+                    
+                    // Filter results
+                    filteredResults = allResults.filter(result => {
+                        const matchesToken = !tokenFilter || result.token === tokenFilter;
+                        const matchesKelas = !kelasFilter || result.kelas === kelasFilter;
+                        const matchesSearch = !searchFilter || 
+                            result.nama_siswa.toLowerCase().includes(searchFilter) ||
+                            result.token.toLowerCase().includes(searchFilter) ||
+                            result.mapel.toLowerCase().includes(searchFilter);
+                        
+                        return matchesToken && matchesKelas && matchesSearch;
+                    });
+                    
+                    // Sort results
+                    filteredResults.sort((a, b) => {
+                        switch (sortBy) {
+                            case 'nilai_desc':
+                                return b.nilai - a.nilai;
+                            case 'nilai_asc':
+                                return a.nilai - b.nilai;
+                            case 'nama_asc':
+                                return a.nama_siswa.localeCompare(b.nama_siswa);
+                            case 'nama_desc':
+                                return b.nama_siswa.localeCompare(a.nama_siswa);
+                            case 'waktu_desc':
+                                return new Date(b.submitted_at) - new Date(a.submitted_at);
+                            case 'waktu_asc':
+                                return new Date(a.submitted_at) - new Date(b.submitted_at);
+                            default:
+                                return 0;
+                        }
+                    });
+                    
+                    // Update stats
+                    updateStatsSummary(filteredResults);
+                    
+                    // Populate results table
+                    populateResultsTable();
+                    
+                    // Update pagination
+                    updatePagination();
+                    
+                    // Update kelas filter options
+                    updateKelasFilter();
+                }
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function updateStatsSummary(results) {
+            const statsDiv = document.getElementById('stats-summary');
+            
+            if (results.length === 0) {
+                statsDiv.innerHTML = '<p>Tidak ada data hasil ujian</p>';
+                return;
+            }
+            
+            // Calculate statistics
+            const totalSiswa = results.length;
+            const avgNilai = results.reduce((sum, r) => sum + r.nilai, 0) / totalSiswa;
+            const maxNilai = Math.max(...results.map(r => r.nilai));
+            const minNilai = Math.min(...results.map(r => r.nilai));
+            
+            // Count by grade
+            const gradeA = results.filter(r => r.nilai >= 85).length;
+            const gradeB = results.filter(r => r.nilai >= 70 && r.nilai < 85).length;
+            const gradeC = results.filter(r => r.nilai >= 55 && r.nilai < 70).length;
+            const gradeD = results.filter(r => r.nilai < 55).length;
+            
+            statsDiv.innerHTML = `
+                <div class="stat-card">
+                    <h4>Total Siswa</h4>
+                    <p>${totalSiswa}</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Rata-rata Nilai</h4>
+                    <p>${avgNilai.toFixed(1)}</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Nilai Tertinggi</h4>
+                    <p>${maxNilai}</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Nilai Terendah</h4>
+                    <p>${minNilai}</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Nilai A (≥85)</h4>
+                    <p>${gradeA}</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Nilai B (70-84)</h4>
+                    <p>${gradeB}</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Nilai C (55-69)</h4>
+                    <p>${gradeC}</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Nilai D (<55)</h4>
+                    <p>${gradeD}</p>
+                </div>
+            `;
+        }
+
+        function populateResultsTable() {
+            const tbody = document.getElementById('results-body');
+            tbody.innerHTML = '';
+            
+            const startIndex = (currentPage - 1) * resultsPerPage;
+            const endIndex = Math.min(startIndex + resultsPerPage, filteredResults.length);
+            
+            const pageResults = filteredResults.slice(startIndex, endIndex);
+            
+            pageResults.forEach((result, index) => {
+                const row = document.createElement('tr');
+                const submittedDate = new Date(result.submitted_at);
+                const dateStr = submittedDate.toLocaleDateString('id-ID');
+                const timeStr = submittedDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                
+                // Determine grade badge
+                let gradeBadge = '';
+                if (result.nilai >= 85) gradeBadge = '<span class="badge badge-success">A</span>';
+                else if (result.nilai >= 70) gradeBadge = '<span class="badge badge-info">B</span>';
+                else if (result.nilai >= 55) gradeBadge = '<span class="badge badge-warning">C</span>';
+                else gradeBadge = '<span class="badge badge-danger">D</span>';
+                
+                row.innerHTML = `
+                    <td>${startIndex + index + 1}</td>
+                    <td><strong>${result.nama_siswa}</strong></td>
+                    <td>${result.kelas || '-'}</td>
+                    <td><code>${result.token}</code></td>
+                    <td>${result.mapel || '-'}</td>
+                    <td><strong>${result.nilai}</strong> ${gradeBadge}</td>
+                    <td>${result.jml_benar || 0}</td>
+                    <td>${result.jml_salah || 0}</td>
+                    <td>${result.waktu_digunakan || '-'}</td>
+                    <td>${dateStr}<br><small>${timeStr}</small></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-info" onclick="viewDetail(${result.id})" title="Detail">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteResult(${result.id})" title="Hapus">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            if (pageResults.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="11" style="text-align: center; padding: 30px;">Tidak ada data hasil ujian</td>`;
+                tbody.appendChild(row);
+            }
+        }
+
+        function updatePagination() {
+            const paginationDiv = document.getElementById('pagination');
+            totalPages = Math.ceil(filteredResults.length / resultsPerPage);
+            
+            if (totalPages > 1) {
+                paginationDiv.style.display = 'block';
+                document.getElementById('page-info').textContent = `Halaman ${currentPage} dari ${totalPages}`;
+            } else {
+                paginationDiv.style.display = 'none';
+            }
+        }
+
+        function updateKelasFilter() {
+            const kelasSet = new Set();
+            filteredResults.forEach(result => {
+                if (result.kelas) {
+                    kelasSet.add(result.kelas);
+                }
+            });
+            
+            const kelasSelect = document.getElementById('filter-kelas');
+            const currentValue = kelasSelect.value;
+            kelasSelect.innerHTML = '<option value="">Semua Kelas</option>';
+            
+            Array.from(kelasSet).sort().forEach(kelas => {
+                const option = document.createElement('option');
+                option.value = kelas;
+                option.textContent = kelas;
+                if (kelas === currentValue) {
+                    option.selected = true;
+                }
+                kelasSelect.appendChild(option);
+            });
+        }
+
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                loadResults();
+            }
+        }
+
+        function viewDetail(resultId) {
+            const result = allResults.find(r => r.id === resultId);
+            if (result) {
+                const detailText = `
+Nama: ${result.nama_siswa}
+Kelas: ${result.kelas || '-'}
+Token: ${result.token}
+Mapel: ${result.mapel || '-'}
+Nilai: ${result.nilai}
+Benar: ${result.jml_benar || 0}
+Salah: ${result.jml_salah || 0}
+Waktu Digunakan: ${result.waktu_digunakan || '-'}
+Waktu Mulai: ${result.wkt_mulai || '-'}
+Waktu Selesai: ${result.wkt_selesai || '-'}
+Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
+                `;
+                alert(detailText);
+            }
+        }
+
+        async function deleteResult(resultId) {
+            if (!confirm('Apakah Anda yakin ingin menghapus hasil ujian ini?')) {
+                return;
+            }
+            
+            showLoading('Menghapus data...');
+            
+            try {
+                const res = await fetch(`${API_URL}/api/admin/nilai/${resultId}`, {
+                    method: 'DELETE',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken 
+                    }
+                });
+                
+                if (res.ok) {
+                    alert('Data berhasil dihapus');
+                    loadResults(); // Refresh the list
+                } else {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Gagal menghapus data');
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deleteAllResults() {
+            const tokenFilter = document.getElementById('filter-token').value;
+            
+            if (!confirm(`Apakah Anda yakin ingin menghapus SEMUA hasil ujian${tokenFilter ? ` untuk token ${tokenFilter}` : ''}?`)) {
+                return;
+            }
+            
+            showLoading('Menghapus semua data...');
+            
+            try {
+                let url = `${API_URL}/api/admin/nilai/all`;
+                if (tokenFilter) {
+                    url += `?token=${tokenFilter}`;
+                }
+                
+                const res = await fetch(url, {
+                    method: 'DELETE',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken 
+                    }
+                });
+                
+                if (res.ok) {
+                    alert('Semua data berhasil dihapus');
+                    loadResults(); // Refresh the list
+                } else {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Gagal menghapus data');
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function exportToExcel() {
+            if (filteredResults.length === 0) {
+                alert('Tidak ada data untuk diexport');
+                return;
+            }
+            
+            // Create CSV content
+            let csvContent = "Nama,Kelas,Token,Mapel,Nilai,Benar,Salah,Waktu Digunakan,Tanggal Submit\n";
+            
+            filteredResults.forEach(result => {
+                const row = [
+                    `"${result.nama_siswa}"`,
+                    `"${result.kelas || ''}"`,
+                    `"${result.token}"`,
+                    `"${result.mapel || ''}"`,
+                    result.nilai,
+                    result.jml_benar || 0,
+                    result.jml_salah || 0,
+                    `"${result.waktu_digunakan || ''}"`,
+                    `"${new Date(result.submitted_at).toLocaleString('id-ID')}"`
+                ];
+                csvContent += row.join(',') + '\n';
+            });
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `hasil_ujian_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert(`Data berhasil diexport (${filteredResults.length} records)`);
+        }
+
+        function exportToPDF() {
+            alert('Fitur export PDF akan segera tersedia');
+            // Implement PDF export using jsPDF library
+        }
+
+        // Search functionality
+        document.getElementById('search-results').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                loadResults();
+            }
+        });
+
+        // Debounce search
+        let searchTimeout;
+        document.getElementById('search-results').addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentPage = 1;
+                loadResults();
+            }, 500);
+        });
+
+        // Functions from original code (keep them as is)
         function createNewExam() {
             const t = document.getElementById('input-token').value.trim().toUpperCase();
             if (t.length < 3) return alert("Token minimal 3 karakter");
@@ -342,7 +1038,6 @@
             updateSoalCount();
         }
 
-        // Fungsi update tampilan ujian
         function updateUjianDisplay(token, status = 1) {
             currentToken = token;
             document.getElementById('current-token-display').textContent = token;
@@ -368,7 +1063,6 @@
             }
         }
 
-        // Fungsi update token
         async function updateToken() {
             const newToken = document.getElementById('new-token').value.trim().toUpperCase();
             
@@ -426,7 +1120,6 @@
             }
         }
 
-        // Fungsi update status
         async function updateStatus() {
             const status = document.getElementById('ujian-status').value;
             const statusText = status == 1 ? 'Aktif' : 'Nonaktif';
@@ -498,7 +1191,6 @@
                 document.getElementById('main-content').style.display = 'block';
                 
                 // Update pengaturan lanjutan
-                // Gunakan status jika ada, jika tidak gunakan aktif (backward compatibility)
                 const status = data.ujian.status !== undefined ? data.ujian.status : (data.ujian.aktif || 1);
                 updateUjianDisplay(t, status);
                 updateSoalCount();
@@ -642,7 +1334,6 @@
             document.getElementById('loading-modal').style.display = 'none';
         }
 
-        // Fungsi bantu untuk validasi
         function validateTokenFormat(token) {
             return token && token.length >= 3 && token.length <= 50 && /^[a-zA-Z0-9_-]+$/.test(token);
         }
