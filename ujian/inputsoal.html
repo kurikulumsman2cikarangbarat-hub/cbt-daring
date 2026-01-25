@@ -305,7 +305,7 @@
             <h2>Admin Login</h2>
             <p style="color: #666; margin-bottom: 25px;">Masukkan token admin untuk mengelola ujian</p>
             <div class="input-group">
-                <input type="password" id="admin-password" placeholder="Admin Token / Password" style="text-align: center;">
+                <input type="password" id="admin-password" placeholder="Admin Token / Password" style="text-align: center;" onkeypress="if(event.key === 'Enter') attemptLogin()">
             </div>
             <button class="btn btn-block" onclick="attemptLogin()">Login <i class="fas fa-sign-in-alt"></i></button>
             <div id="login-notif"></div>
@@ -335,7 +335,7 @@
             <div id="setup-step" class="content-padding">
                 <h3><i class="fas fa-edit"></i> Pilih Token Ujian</h3>
                 <div style="display: flex; gap: 10px; margin: 15px 0;">
-                    <input type="text" id="input-token" placeholder="Contoh: MTK2024" style="text-transform: uppercase;">
+                    <input type="text" id="input-token" placeholder="Contoh: MTK2024" style="text-transform: uppercase;" onkeypress="if(event.key === 'Enter') loadExistingData()">
                     <button class="btn btn-warning" onclick="loadExistingData()">Edit Ujian</button>
                     <button class="btn btn-success" onclick="createNewExam()">Buat Baru</button>
                 </div>
@@ -352,8 +352,8 @@
                 <div class="form-grid">
                     <div class="input-group"><label>Mata Pelajaran</label><input type="text" id="input-mapel"></div>
                     <div class="input-group"><label>Nama Guru</label><input type="text" id="input-guru"></div>
-                    <div class="input-group"><label>Durasi (Menit)</label><input type="number" id="input-durasi" value="90"></div>
-                    <div class="input-group"><label>Jumlah Soal Tampil</label><input type="number" id="input-jml-soal"></div>
+                    <div class="input-group"><label>Durasi (Menit)</label><input type="number" id="input-durasi" value="90" min="1" max="300"></div>
+                    <div class="input-group"><label>Jumlah Soal Tampil</label><input type="number" id="input-jml-soal" min="1" max="200"></div>
                 </div>
 
                 <div class="input-group">
@@ -411,7 +411,7 @@
                 </div>
 
                 <div style="display: flex; gap: 15px; margin-top: 20px;">
-                    <button class="btn btn-danger" onclick="location.reload()">Batal</button>
+                    <button class="btn btn-danger" onclick="resetForm()">Batal</button>
                     <button class="btn btn-success" onclick="uploadData()" style="flex: 2;">
                         <i class="fas fa-database"></i> Simpan Database
                     </button>
@@ -546,7 +546,7 @@
             document.getElementById(`tab-${tabName}`).classList.add('active');
             
             // Add active class to clicked menu tab
-            event.target.classList.add('active');
+            event.currentTarget.classList.add('active');
             
             // If switching to results tab, load results
             if (tabName === 'results') {
@@ -557,9 +557,11 @@
 
         function attemptLogin() {
             const pass = document.getElementById('admin-password').value;
-            if (!pass) return;
+            if (!pass) {
+                document.getElementById('login-notif').innerHTML = '<div class="notification notification-error">Masukkan token admin!</div>';
+                return;
+            }
             
-            // Simpan sementara untuk testing akses
             adminToken = pass;
             checkAdminAccess();
         }
@@ -584,8 +586,8 @@
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
                 
-                // Load token options for results tab
-                loadTokenOptions();
+                // Clear login notification
+                document.getElementById('login-notif').innerHTML = '';
                 
             } catch (e) {
                 document.getElementById('login-notif').innerHTML = `<div class="notification notification-error">${e.message}</div>`;
@@ -595,8 +597,10 @@
         }
 
         function logout() {
-            sessionStorage.removeItem('adminToken');
-            location.reload();
+            if (confirm('Apakah Anda yakin ingin logout?')) {
+                sessionStorage.removeItem('adminToken');
+                location.reload();
+            }
         }
 
         // Fungsi untuk load token options di dropdown
@@ -666,8 +670,8 @@
                         const matchesKelas = !kelasFilter || result.kelas === kelasFilter;
                         const matchesSearch = !searchFilter || 
                             result.nama_siswa.toLowerCase().includes(searchFilter) ||
-                            result.token.toLowerCase().includes(searchFilter) ||
-                            result.mapel.toLowerCase().includes(searchFilter);
+                            (result.token && result.token.toLowerCase().includes(searchFilter)) ||
+                            (result.mapel && result.mapel.toLowerCase().includes(searchFilter));
                         
                         return matchesToken && matchesKelas && matchesSearch;
                     });
@@ -680,13 +684,13 @@
                             case 'nilai_asc':
                                 return a.nilai - b.nilai;
                             case 'nama_asc':
-                                return a.nama_siswa.localeCompare(b.nama_siswa);
+                                return (a.nama_siswa || '').localeCompare(b.nama_siswa || '');
                             case 'nama_desc':
-                                return b.nama_siswa.localeCompare(a.nama_siswa);
+                                return (b.nama_siswa || '').localeCompare(a.nama_siswa || '');
                             case 'waktu_desc':
-                                return new Date(b.submitted_at) - new Date(a.submitted_at);
+                                return new Date(b.submitted_at || 0) - new Date(a.submitted_at || 0);
                             case 'waktu_asc':
-                                return new Date(a.submitted_at) - new Date(b.submitted_at);
+                                return new Date(a.submitted_at || 0) - new Date(b.submitted_at || 0);
                             default:
                                 return 0;
                         }
@@ -722,15 +726,15 @@
             
             // Calculate statistics
             const totalSiswa = results.length;
-            const avgNilai = results.reduce((sum, r) => sum + r.nilai, 0) / totalSiswa;
-            const maxNilai = Math.max(...results.map(r => r.nilai));
-            const minNilai = Math.min(...results.map(r => r.nilai));
+            const avgNilai = results.reduce((sum, r) => sum + (r.nilai || 0), 0) / totalSiswa;
+            const maxNilai = Math.max(...results.map(r => r.nilai || 0));
+            const minNilai = Math.min(...results.map(r => r.nilai || 0));
             
             // Count by grade
-            const gradeA = results.filter(r => r.nilai >= 85).length;
-            const gradeB = results.filter(r => r.nilai >= 70 && r.nilai < 85).length;
-            const gradeC = results.filter(r => r.nilai >= 55 && r.nilai < 70).length;
-            const gradeD = results.filter(r => r.nilai < 55).length;
+            const gradeA = results.filter(r => (r.nilai || 0) >= 85).length;
+            const gradeB = results.filter(r => (r.nilai || 0) >= 70 && (r.nilai || 0) < 85).length;
+            const gradeC = results.filter(r => (r.nilai || 0) >= 55 && (r.nilai || 0) < 70).length;
+            const gradeD = results.filter(r => (r.nilai || 0) < 55).length;
             
             statsDiv.innerHTML = `
                 <div class="stat-card">
@@ -779,34 +783,34 @@
             
             pageResults.forEach((result, index) => {
                 const row = document.createElement('tr');
-                const submittedDate = new Date(result.submitted_at);
+                const submittedDate = result.submitted_at ? new Date(result.submitted_at) : new Date();
                 const dateStr = submittedDate.toLocaleDateString('id-ID');
                 const timeStr = submittedDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                 
                 // Determine grade badge
                 let gradeBadge = '';
-                if (result.nilai >= 85) gradeBadge = '<span class="badge badge-success">A</span>';
-                else if (result.nilai >= 70) gradeBadge = '<span class="badge badge-info">B</span>';
-                else if (result.nilai >= 55) gradeBadge = '<span class="badge badge-warning">C</span>';
+                if ((result.nilai || 0) >= 85) gradeBadge = '<span class="badge badge-success">A</span>';
+                else if ((result.nilai || 0) >= 70) gradeBadge = '<span class="badge badge-info">B</span>';
+                else if ((result.nilai || 0) >= 55) gradeBadge = '<span class="badge badge-warning">C</span>';
                 else gradeBadge = '<span class="badge badge-danger">D</span>';
                 
                 row.innerHTML = `
                     <td>${startIndex + index + 1}</td>
-                    <td><strong>${result.nama_siswa}</strong></td>
+                    <td><strong>${result.nama_siswa || '-'}</strong></td>
                     <td>${result.kelas || '-'}</td>
-                    <td><code>${result.token}</code></td>
+                    <td><code>${result.token || '-'}</code></td>
                     <td>${result.mapel || '-'}</td>
-                    <td><strong>${result.nilai}</strong> ${gradeBadge}</td>
+                    <td><strong>${result.nilai || 0}</strong> ${gradeBadge}</td>
                     <td>${result.jml_benar || 0}</td>
                     <td>${result.jml_salah || 0}</td>
                     <td>${result.waktu_digunakan || '-'}</td>
                     <td>${dateStr}<br><small>${timeStr}</small></td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn btn-sm btn-info" onclick="viewDetail(${result.id})" title="Detail">
+                            <button class="btn btn-sm btn-info" onclick="viewDetail('${result.id}')" title="Detail">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteResult(${result.id})" title="Hapus">
+                            <button class="btn btn-sm btn-danger" onclick="deleteResult('${result.id}')" title="Hapus">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -866,20 +870,20 @@
         }
 
         function viewDetail(resultId) {
-            const result = allResults.find(r => r.id === resultId);
+            const result = allResults.find(r => r.id == resultId);
             if (result) {
                 const detailText = `
-Nama: ${result.nama_siswa}
+Nama: ${result.nama_siswa || '-'}
 Kelas: ${result.kelas || '-'}
-Token: ${result.token}
+Token: ${result.token || '-'}
 Mapel: ${result.mapel || '-'}
-Nilai: ${result.nilai}
+Nilai: ${result.nilai || 0}
 Benar: ${result.jml_benar || 0}
 Salah: ${result.jml_salah || 0}
 Waktu Digunakan: ${result.waktu_digunakan || '-'}
 Waktu Mulai: ${result.wkt_mulai || '-'}
 Waktu Selesai: ${result.wkt_selesai || '-'}
-Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
+Tanggal Submit: ${result.submitted_at ? new Date(result.submitted_at).toLocaleString('id-ID') : '-'}
                 `;
                 alert(detailText);
             }
@@ -963,15 +967,15 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
             
             filteredResults.forEach(result => {
                 const row = [
-                    `"${result.nama_siswa}"`,
+                    `"${result.nama_siswa || ''}"`,
                     `"${result.kelas || ''}"`,
-                    `"${result.token}"`,
+                    `"${result.token || ''}"`,
                     `"${result.mapel || ''}"`,
-                    result.nilai,
+                    result.nilai || 0,
                     result.jml_benar || 0,
                     result.jml_salah || 0,
                     `"${result.waktu_digunakan || ''}"`,
-                    `"${new Date(result.submitted_at).toLocaleString('id-ID')}"`
+                    `"${result.submitted_at ? new Date(result.submitted_at).toLocaleString('id-ID') : ''}"`
                 ];
                 csvContent += row.join(',') + '\n';
             });
@@ -1015,7 +1019,10 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
         // Functions from original code (keep them as is)
         function createNewExam() {
             const t = document.getElementById('input-token').value.trim().toUpperCase();
-            if (t.length < 3) return alert("Token minimal 3 karakter");
+            if (t.length < 3) {
+                document.getElementById('action-notif').innerHTML = '<div class="notification notification-error">Token minimal 3 karakter</div>';
+                return;
+            }
             
             currentToken = t;
             isEditMode = false;
@@ -1036,6 +1043,8 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
             document.getElementById('input-jml-soal').value = '';
             document.getElementById('input-soal').value = '';
             updateSoalCount();
+            
+            document.getElementById('action-notif').innerHTML = '';
         }
 
         function updateUjianDisplay(token, status = 1) {
@@ -1066,12 +1075,19 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
         async function updateToken() {
             const newToken = document.getElementById('new-token').value.trim().toUpperCase();
             
-            if (!newToken || newToken === currentToken) {
-                return alert('Token baru harus berbeda dari token lama!');
+            if (!newToken) {
+                alert('Masukkan token baru!');
+                return;
+            }
+            
+            if (newToken === currentToken) {
+                alert('Token baru harus berbeda dari token lama!');
+                return;
             }
             
             if (newToken.length < 3) {
-                return alert('Token minimal 3 karakter');
+                alert('Token minimal 3 karakter');
+                return;
             }
             
             if (!confirm(`Apakah Anda yakin ingin mengubah token dari "${currentToken}" ke "${newToken}"?\n\nSemua data terkait (soal, nilai, session) akan diupdate.`)) {
@@ -1083,15 +1099,18 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
             try {
                 const res = await fetch(`${API_URL}/api/admin/ujian`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken 
+                    },
                     body: JSON.stringify({
                         old_token: currentToken,
                         token: newToken,
                         mapel: document.getElementById('input-mapel').value.trim(),
                         nama_guru: document.getElementById('input-guru').value.trim(),
-                        durasi: parseInt(document.getElementById('input-durasi').value),
-                        jml_soal: parseInt(document.getElementById('input-jml-soal').value),
-                        status: parseInt(document.getElementById('ujian-status').value)
+                        durasi: parseInt(document.getElementById('input-durasi').value) || 90,
+                        jml_soal: parseInt(document.getElementById('input-jml-soal').value) || 0,
+                        status: parseInt(document.getElementById('ujian-status').value) || 1
                     })
                 });
                 
@@ -1125,7 +1144,8 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
             const statusText = status == 1 ? 'Aktif' : 'Nonaktif';
             
             if (!currentToken) {
-                return alert('Token belum dipilih!');
+                alert('Token belum dipilih!');
+                return;
             }
             
             if (!confirm(`Ubah status ujian menjadi "${statusText}"?`)) {
@@ -1137,7 +1157,10 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
             try {
                 const res = await fetch(`${API_URL}/api/admin/ujian/status`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken 
+                    },
                     body: JSON.stringify({
                         token: currentToken,
                         status: parseInt(status)
@@ -1164,11 +1187,18 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
 
         async function loadExistingData(token = null) {
             const t = token || document.getElementById('input-token').value.trim().toUpperCase();
-            if (!t) return;
+            if (!t) {
+                document.getElementById('action-notif').innerHTML = '<div class="notification notification-error">Masukkan token ujian!</div>';
+                return;
+            }
             
             showLoading("Mengambil data...");
             try {
-                const res = await fetch(`${API_URL}/api/admin/get-ujian?token=${t}`);
+                const res = await fetch(`${API_URL}/api/admin/get-ujian?token=${t}`, {
+                    headers: {
+                        'X-Admin-Token': adminToken
+                    }
+                });
                 const data = await res.json();
                 
                 if (!data.success) throw new Error(data.error || "Ujian tidak ditemukan");
@@ -1195,8 +1225,10 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
                 updateUjianDisplay(t, status);
                 updateSoalCount();
                 
+                document.getElementById('action-notif').innerHTML = '';
+                
             } catch (e) {
-                alert(e.message);
+                document.getElementById('action-notif').innerHTML = `<div class="notification notification-error">${e.message}</div>`;
             } finally { 
                 hideLoading(); 
             }
@@ -1204,7 +1236,7 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
 
         function updateSoalCount() {
             const text = document.getElementById('input-soal').value.trim();
-            const count = text ? text.split('\n').length : 0;
+            const count = text ? text.split('\n').filter(line => line.trim().length > 0).length : 0;
             document.getElementById('soal-count').textContent = `${count} soal`;
         }
 
@@ -1216,42 +1248,44 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
             const durasi = document.getElementById('input-durasi').value;
             const status = document.getElementById('ujian-status').value;
 
-            if (!currentToken) return alert("Token belum ditentukan!");
-            if (!soalRaw || !mapel || !guru || !jml || !durasi) {
-                return alert("Lengkapi semua data: mapel, guru, durasi, jumlah soal, dan soal!");
+            if (!currentToken) {
+                alert("Token belum ditentukan!");
+                return;
+            }
+            
+            if (!mapel || !guru || !jml || !durasi || !soalRaw) {
+                alert("Lengkapi semua data: mapel, guru, durasi, jumlah soal, dan soal!");
+                return;
             }
 
-            const lines = soalRaw.split('\n');
+            const lines = soalRaw.split('\n').filter(line => line.trim().length > 0);
+            if (lines.length === 0) {
+                alert("Data soal tidak boleh kosong!");
+                return;
+            }
+
             showLoading("Menyimpan Metadata...");
             document.getElementById('progress-fill').style.width = '10%';
 
             try {
-                // Debug: Tampilkan data yang akan dikirim
-                console.log("Data ujian yang akan dikirim:", {
-                    token: currentToken,
-                    mapel: mapel,
-                    nama_guru: guru,
-                    durasi: parseInt(durasi),
-                    jml_soal: parseInt(jml),
-                    status: parseInt(status)
-                });
-
                 // 1. Simpan Ujian
                 const uRes = await fetch(`${API_URL}/api/admin/ujian`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken 
+                    },
                     body: JSON.stringify({
                         token: currentToken,
                         mapel: mapel,
                         nama_guru: guru,
-                        durasi: parseInt(durasi),
-                        jml_soal: parseInt(jml),
-                        status: parseInt(status)
+                        durasi: parseInt(durasi) || 90,
+                        jml_soal: parseInt(jml) || lines.length,
+                        status: parseInt(status) || 1
                     })
                 });
                 
                 const uData = await uRes.json();
-                console.log("Response simpan ujian:", uData);
                 
                 if (!uRes.ok) {
                     throw new Error(uData.error || `Gagal simpan metadata ujian (Status: ${uRes.status})`);
@@ -1259,10 +1293,12 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
 
                 // 2. Jika edit, hapus soal lama
                 if (isEditMode) {
-                    console.log("Mode edit: Menghapus soal lama...");
                     await fetch(`${API_URL}/api/admin/soal`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-Admin-Token': adminToken 
+                        },
                         body: JSON.stringify({ 
                             token: currentToken, 
                             DELETE_OLD: true, 
@@ -1272,7 +1308,6 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
                 }
 
                 // 3. Upload Soal
-                console.log(`Mulai upload ${lines.length} soal...`);
                 let soalSukses = 0;
                 for (let i = 0; i < lines.length; i++) {
                     const c = lines[i].split('\t');
@@ -1294,11 +1329,12 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
                         aktif: 1
                     };
                     
-                    console.log(`Upload soal ${i+1}:`, soalData);
-
                     const sRes = await fetch(`${API_URL}/api/admin/soal`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-Admin-Token': adminToken 
+                        },
                         body: JSON.stringify(soalData)
                     });
                     
@@ -1315,12 +1351,24 @@ Tanggal Submit: ${new Date(result.submitted_at).toLocaleString('id-ID')}
                 }
                 
                 alert(`Sukses! Data telah diperbarui.\n\nTotal soal: ${soalSukses}/${lines.length}`);
-                location.reload();
+                resetForm();
+                
             } catch (e) {
                 console.error("Upload error details:", e);
                 alert(`ERROR: ${e.message}\n\nCoba buka console (F12) untuk detail.`);
             } finally { 
                 hideLoading(); 
+            }
+        }
+
+        function resetForm() {
+            if (confirm('Apakah Anda yakin ingin membatalkan dan reset form?')) {
+                document.getElementById('setup-step').style.display = 'block';
+                document.getElementById('main-content').style.display = 'none';
+                document.getElementById('input-token').value = '';
+                document.getElementById('action-notif').innerHTML = '';
+                currentToken = '';
+                isEditMode = false;
             }
         }
 
