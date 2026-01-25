@@ -208,79 +208,47 @@ select.form-control {
     to { transform: translateX(0); opacity: 1; }
 }
 
-/* ====== PROGRESS BAR ====== */
-.progress-bar-container {
-    position: relative;
-    width: 180px;
-    height: 34px;
-    background: #e0e0e0;
-    border-radius: 17px;
-    overflow: hidden;
-    margin: 0 auto 8px;
-    order: 1;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.progress-bar-bg {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, #e3f2fd, #bbdefb);
-}
-
-.progress-bar-fill {
-    position: absolute;
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #1a73e8 0%, #0d47a1 100%);
-    border-radius: 17px;
-    transition: width 0.3s ease;
-    box-shadow: 0 2px 8px rgba(26, 115, 232, 0.4);
-}
-
-.progress-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-weight: 700;
-    color: white;
-    font-size: 0.85rem;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-    z-index: 2;
-}
-
-/* REORDER EXAM HEADER LAYOUT */
+/* EXAM HEADER (Perbaikan layout - Progress & Timer sejajar) */
 .exam-header {
     background: #f8f9fa;
-    padding: 12px 15px 8px;
+    padding: 10px 15px;
     border-bottom: 2px solid #e0e0e0;
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     position: sticky;
     top: 0;
     z-index: 100;
+    flex-wrap: nowrap;
 }
 
 .exam-info {
-    order: 2;
-    margin-top: 5px;
+    flex: 1;
+    text-align: center;
     color: #555;
     font-size: 0.85rem;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 200px;
+}
+
+.exam-progress {
+    font-weight: 700;
+    color: #1a73e8;
+    background: #e3f2fd;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    min-width: 60px;
     text-align: center;
-    max-width: 100%;
-    padding: 0 10px;
+    order: 1;
 }
 
 .exam-timer {
-    order: 3;
-    margin-top: 5px;
     background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
     color: white;
     padding: 6px 12px;
@@ -291,11 +259,7 @@ select.form-control {
     min-width: 80px;
     text-align: center;
     box-shadow: 0 4px 8px rgba(26, 115, 232, 0.2);
-}
-
-/* Remove old exam-progress styles */
-.exam-progress {
-    display: none !important;
+    order: 3;
 }
 
 /* QUESTION AREA (Gambar di bawah soal, di atas pilihan) */
@@ -773,29 +737,6 @@ select.form-control {
     }
 }
 
-/* RESPONSIVE untuk progress bar */
-@media (max-width: 768px) {
-    .progress-bar-container {
-        width: 150px;
-        height: 30px;
-    }
-    
-    .progress-text {
-        font-size: 0.8rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .progress-bar-container {
-        width: 130px;
-        height: 28px;
-    }
-    
-    .progress-text {
-        font-size: 0.75rem;
-    }
-}
-
 /* RESPONSIVE */
 @media (max-width: 768px) {
     .container {
@@ -819,18 +760,20 @@ select.form-control {
     
     .exam-header {
         padding: 10px;
+        flex-wrap: wrap;
         gap: 8px;
     }
     
     .exam-info {
-        order: 2;
+        order: 1;
         min-width: 100%;
         font-size: 0.8rem;
         text-align: center;
     }
     
+    .exam-progress,
     .exam-timer {
-        order: 3;
+        order: 2;
         padding: 5px 10px;
         font-size: 0.8rem;
         min-width: auto;
@@ -988,15 +931,7 @@ select.form-control {
 
 /* Very small devices */
 @media (max-width: 320px) {
-    .progress-bar-container {
-        width: 120px;
-        height: 26px;
-    }
-    
-    .progress-text {
-        font-size: 0.7rem;
-    }
-    
+    .exam-progress,
     .exam-timer {
         padding: 4px 8px;
         font-size: 0.75rem;
