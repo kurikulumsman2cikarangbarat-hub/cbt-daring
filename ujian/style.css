@@ -945,3 +945,82 @@ select.form-control {
         font-size: 0.75rem;
     }
 }
+    /* TAMBAHKAN DI ATURAN CSS YANG SUDAH ADA */
+
+/* Limit Info Styling */
+.limit-info {
+    background: rgba(26, 115, 232, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #1a73e8;
+    border: 1px solid rgba(26, 115, 232, 0.2);
+    text-align: center;
+    white-space: nowrap;
+}
+
+#timer-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Result Screen Updates */
+.result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.result-label {
+    font-weight: 600;
+    color: #555;
+    text-align: left;
+    flex: 1;
+}
+
+.result-value {
+    font-weight: 500;
+    color: #1a73e8;
+    text-align: right;
+    flex: 1;
+}
+
+/* Update untuk responsive result row */
+@media (max-width: 768px) {
+    .result-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .result-value {
+        text-align: left;
+    }
+}
+
+/* Exam Header Adjustment */
+.exam-timer {
+    min-width: 80px;
+}
+
+/* Fix untuk layout exam info */
+@media (max-width: 768px) {
+    .exam-info {
+        order: 1;
+        width: 100%;
+        margin-bottom: 8px;
+        text-align: center;
+    }
+    
+    .exam-progress {
+        order: 2;
+    }
+    
+    .exam-timer {
+        order: 3;
+    }
+}
